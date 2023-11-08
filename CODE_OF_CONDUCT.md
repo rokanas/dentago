@@ -1,4 +1,4 @@
-# Terminarium – Code of Conduct
+# dentago – Code of Conduct
 
 ## Our Pledge
 
