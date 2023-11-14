@@ -34,9 +34,14 @@ To ensure correctness and traceability in project contributions, **all contribut
 The team will be taking an **Agile software development** approach, accompanied by a **modified version of <u>Scrum</u>** deemed suitable for the project's context and scope. This entails:
 
 #### Incremental delivery
-In the form of **two week *sprints*** (three in total throughout the project's duration).
-  - Includes ***planning*** and ***evaluation/review* phases** at the start and end of each sprint, respectively.
-  - The team will synchronise appropriate **meeting times on a per-instance basis** with respect to the sprint's duration. 
+In the form of **two week *Sprints*** (three in total throughout the project's duration).
+  - Includes ***planning*** and ***evaluation/review* phases** at the start and end of each Sprint, respectively.
+    - The **planning phase** shall define and plan the work to be executed during a Sprint, however - since the team is working Agile - the ongoing Sprint's planning is constantly evaluated and adjusted when necessary.
+    - The **evaluation phase** shall focus on reviewing the Sprint and answer the following questions:
+      1. What went well?
+      2. What went wrong?
+      3. What can we do better?
+  - The team will synchronise appropriate **meeting times on a per-instance basis** with respect to the Sprint's duration. 
 
 #### Daily Scrum "Stand-ups"
 Conducted **online** in the team's Discord server - specifically, in the "daily-scrum" channel.
@@ -70,7 +75,7 @@ The team has **agreed to work in a hybrid manner**, allowing both physical and o
 - Each issue must have the appropriate **labels** attached, such as *'feature'* for a new feature or *'bug'* for a bug in the code.
 - **Sprint information** label (e.g. *'Sprint:2'*) should almost always be provided;
   - the **exceptions** being bug fixes or updates to the documentation, in which case such a label can be omitted.
-- An appropriate **due date** should be added to the issue with respect to the sprint's deadline.
+- An appropriate **due date** should be added to the issue with respect to the Sprint's deadline.
 - When creating an issue that corresponds to a **feature request**, it is important to adhere to the provided **issue template**:
   - The issue description should include a **user story** or **SRS-format** requirement description. 
     - This shall correlate with, and link to, the corresponding requirement listed in the project's `wiki` section. <!-- TODO: add link -->
