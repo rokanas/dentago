@@ -5,7 +5,12 @@
  * - Be notified when bookings have been cancelled
  */
 
-// TODO: Decide how will the system send notifications
+/**
+ * TOPICS:
+ *      sub 'dentago/booking/res'
+ * NOTIFICATIONS:
+ *      server-sent-notifications?
+ */
 
 const API_INFO = Object.freeze({
     "message": "Oh, hi there! 😎",
@@ -13,6 +18,7 @@ const API_INFO = Object.freeze({
     "version": 'v0.1.0',
 });
 
+// TODO: Decide on a port
 const PORT = 5000;
 
 const express = require('express');
@@ -20,11 +26,34 @@ const app = express();
 
 app.use(express.json());
 
+/**
+ * Main endpoint to fetch version information
+ */
 app.get('/', (_, res) => {
     res.status(200).send(API_INFO);
 });
 
-app.post('/slots', (req, res) => {
+/**
+ * Get the info of a given dentist
+ */
+//TODO: Is this going to be provided by the UI?
+app.get('/dentists/:dentist_id', (req, res) => {
+    res.status(200).send('ALL DENTIST INFO');
+});
+
+/**
+ * Get all the timeslots for a given dentist
+ */
+// TODO: define how dentist works (attributes)
+app.get('/clinics/:clinic_id/slots/:dentist_id', (req, res) => {
+    res.status(200).send('ALL DENTIST TIMESLOTS');
+});
+
+/**
+ * Register a new open slot for this dentist
+ */
+// TODO: define how do we create the timeslots
+app.patch('/clinics/:clinic_id/slots/', (req, res) => {
     let isEmpty = Object.keys(req.body).length === 0;
 
     if (isEmpty)
@@ -33,9 +62,8 @@ app.post('/slots', (req, res) => {
     }
 
     res.status(201).send('Created');
-})
+});
 
-// TODO: Decide on a port
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`)
-})
+});
