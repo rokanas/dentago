@@ -42,17 +42,17 @@ app.get('/dentists/:dentist_id', (req, res) => {
 });
 
 /**
- * Get all the timeslots for a given dentist
+ * Get all the time slots for a given dentist
  */
-// TODO: define how dentist works (attributes)
+// TODO: define how dentist will work (attributes)
 app.get('/clinics/:clinic_id/slots/:dentist_id', (req, res) => {
-    res.status(200).send('ALL DENTIST TIMESLOTS');
+    res.status(200).send('ALL DENTIST TIME SLOTS');
 });
 
 /**
  * Register a new open slot for this dentist
  */
-// TODO: define how do we create the timeslots
+// TODO: define how do we create the time slots
 app.patch('/clinics/:clinic_id/slots/', (req, res) => {
     let isEmpty = Object.keys(req.body).length === 0;
 
