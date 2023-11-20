@@ -16,6 +16,7 @@ build:
   script:
     - echo "Hello!"
     - npm install
+    - ls
 
 api-test:
   stage: test
