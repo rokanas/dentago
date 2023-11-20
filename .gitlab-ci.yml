@@ -22,7 +22,7 @@ api-test:
   tags:
     - docker
   script:
-    - echo "This will test the API"
+    - npm run test
 
 mqtt-test:
   stage: test
