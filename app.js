@@ -100,7 +100,7 @@ app.patch('/clinics/:clinic_id/slots/', (req, res) => {
         return res.status(400).send('Empty body');
     }
 
-    res.status(201).send('Created');
+    res.status(200).send('Slot opened');
 });
 
 app.listen(PORT, () => {
