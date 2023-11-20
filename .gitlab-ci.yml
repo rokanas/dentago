@@ -23,6 +23,7 @@ api-test:
   tags:
     - docker
   script:
+    - ls
     - npm run test
 
 mqtt-test:
