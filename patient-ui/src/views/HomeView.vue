@@ -10,7 +10,22 @@
       Google Maps <br>
       <iframe width="600" height="450" style="border:0" loading="lazy" allowfullscreen src="https://www.google.com/maps/embed/v1/view?zoom=10&center=57.7089%2C11.9746&key=AIzaSyDJI6Bl-wI_G2ITSbo18kUAytoJPSp_q3g"></iframe>
     </div>
-    <div class="banner"> Contact info and stuff </div>
+    <div id="footer" class="banner">
+      <div>
+        <img src="../assets/email_material_icon.png">
+        dentago@gmail.com
+      </div>
+
+      <div>
+        <img src="../assets/phone_material_icon.png">
+        +461234567890
+      </div>
+
+      <div>
+        <img src="../assets/twitter_icon.png">
+        @dentago
+      </div>
+    </div>
   </div>
 </template>
 
@@ -19,6 +34,10 @@
   display: flex;
   background-color: bisque;
   padding: 2%;
+}
+
+#footer.banner{
+  justify-content: space-evenly;
 }
 </style>
 
