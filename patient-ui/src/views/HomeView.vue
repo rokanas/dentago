@@ -11,20 +11,20 @@
       <iframe width="600" height="450" style="border:0" loading="lazy" allowfullscreen :src=maps_url></iframe>
     </div>
     <div id="footer" class="banner">
-      <div>
-        <img src="../assets/email_material_icon.png">
-        dentago@gmail.com
-      </div>
+      <ContactInfoItem
+      img_src = "src/assets/email_material_icon.png"
+      text = "dentago@gmail.com"
+      ></ContactInfoItem>
 
-      <div>
-        <img src="../assets/phone_material_icon.png">
-        +461234567890
-      </div>
+      <ContactInfoItem
+      img_src = "src/assets/phone_material_icon.png"
+      text = "+461234567890"
+      ></ContactInfoItem>
 
-      <div>
-        <img src="../assets/twitter_icon.png">
-        @dentago
-      </div>
+      <ContactInfoItem
+      img_src = "src/assets/twitter_icon.png"
+      text = "@dentago"
+      ></ContactInfoItem>
     </div>
   </div>
 </template>
@@ -43,6 +43,7 @@
 
 <script>
 import HeaderBar from '@/components/HeaderBar.vue'
+import ContactInfoItem from '@/components/ContactInfoItem.vue'
 
 export default {
   data() {
@@ -51,7 +52,8 @@ export default {
     }
   },
   components: {
-    HeaderBar
+    HeaderBar,
+    ContactInfoItem
   }
 }
 </script>
