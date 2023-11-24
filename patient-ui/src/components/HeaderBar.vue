@@ -9,7 +9,7 @@
 <style scoped>
 #navbar{
     display: flex;
-    background-color: violet;
+    background-color: #FFA686;
     filter: drop-shadow(0px 2px 2px #000000);
     justify-content: space-evenly;
 }
