@@ -20,11 +20,40 @@ const API_INFO = Object.freeze({
 
 // TODO: Decide on a port
 const PORT = 5000;
+const MQTT_TOPIC = 'dentago/booking/res';
+
+const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://test.mosquitto.org');
 
 const express = require('express');
 const app = express();
 
 app.use(express.json());
+
+/**
+ * Start MQTT client
+ */
+client.on('connect', () => {
+    // TODO: Change QOS
+    client.subscribe(MQTT_TOPIC, (err) => {
+        if (err)
+        {
+            console.log('MQTT CONNECTION ERROR: ' + err);
+        }
+        else 
+        {
+            console.log('MQTT Connected!');
+        }
+    })
+})
+
+/**
+ * Callback for incoming MQTT messages
+ */
+client.on('message', (topic, msg) => {
+    console.log(topic + ' | ' + msg.toString());
+    // TODO: Implement notification system
+})
 
 /**
  * Main endpoint to fetch version information
@@ -38,7 +67,12 @@ app.get('/', (_, res) => {
  */
 //TODO: Is this going to be provided by the UI?
 app.get('/dentists/:dentist_id', (req, res) => {
-    res.status(200).send('ALL DENTIST INFO');
+
+    obj = {
+        "res": "ALL DENTIST INFO"
+    };
+
+    res.status(200).send(obj);
 });
 
 /**
@@ -46,7 +80,12 @@ app.get('/dentists/:dentist_id', (req, res) => {
  */
 // TODO: define how dentist will work (attributes)
 app.get('/clinics/:clinic_id/slots/:dentist_id', (req, res) => {
-    res.status(200).send('ALL DENTIST TIME SLOTS');
+
+    obj = {
+        "res": "ALL DENTIST TIME SLOTS"
+    };
+
+    res.status(200).send(obj);
 });
 
 /**
@@ -61,7 +100,7 @@ app.patch('/clinics/:clinic_id/slots/', (req, res) => {
         return res.status(400).send('Empty body');
     }
 
-    res.status(201).send('Created');
+    res.status(200).send('Slot opened');
 });
 
 app.listen(PORT, () => {
