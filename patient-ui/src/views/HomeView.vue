@@ -8,7 +8,7 @@
     </div>
     <div>
       Google Maps <br>
-      <iframe width="600" height="450" style="border:0" loading="lazy" allowfullscreen src="https://www.google.com/maps/embed/v1/view?zoom=10&center=57.7089%2C11.9746&key=AIzaSyDJI6Bl-wI_G2ITSbo18kUAytoJPSp_q3g"></iframe>
+      <iframe width="600" height="450" style="border:0" loading="lazy" allowfullscreen :src=maps_url></iframe>
     </div>
     <div id="footer" class="banner">
       <div>
@@ -41,7 +41,18 @@
 }
 </style>
 
-<script setup>
+<script>
 import HeaderBar from '@/components/HeaderBar.vue'
+
+export default {
+  data() {
+    return {
+      maps_url: 'https://www.google.com/maps/embed/v1/view?zoom=10&center=57.7089%2C11.9746&key=' + import.meta.env.VITE_API_KEY
+    }
+  },
+  components: {
+    HeaderBar
+  }
+}
 </script>
 
