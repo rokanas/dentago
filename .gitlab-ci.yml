@@ -1,0 +1,34 @@
+image: node:18-alpine
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - ./node_modules/
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  tags:
+    - docker
+  script:
+    - echo "Hello!"
+    - npm install
+    - ls
+
+api-test:
+  stage: test
+  tags:
+    - docker
+  script:
+    - ls
+    - npm run test
+
+mqtt-test:
+  stage: test
+  tags:
+    - docker
+  script:
+  - echo "This will test the MQTT client"
