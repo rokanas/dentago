@@ -1,7 +1,10 @@
 const express = require("express");
 const crypto = require("crypto");
 const mqtt = require('./mqtt.js');
+const Clinic = require('./models/clinic');
+const Dentist = require('./models/dentist');
 const router = express.Router();
+
 router.use(express.json());
 
 // TODO: Response from server timeouts
@@ -14,8 +17,9 @@ function generateID() {
 
 /*====================  ROUTE HANDLERS  ==================== */
 
+
 // get all timeslots
-router.get('/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
+router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
     try {
         // extract clinic ID from request parameter     
         const clinicID = req.params.clinic_id;
@@ -41,7 +45,7 @@ router.get('/:clinic_id/timeslots', async (req, res) => {       // TODO: add tim
 });
 
 // book timeslot
-router.patch('/:clinic_id/timeslots/:slot_id', async (req, res) => {
+router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
     try {
 
         // extract clinic and slot IDs from request parameter     

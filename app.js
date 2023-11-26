@@ -9,10 +9,11 @@ const cors = require('cors');
 const history = require('connect-history-api-fallback');
 const controller = require('./controller');
 
-
 // Variables
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://cluster0.lcgdwwv.mongodb.net/'; 
-const port = process.env.PORT || 3000;
+require('dotenv').config();
+
+const mongoURI = process.env.MONGODB_URI
+const port = process.env.PORT
 
 // Connect to MongoDB (PLACEHOLDER UNTIL SQL DB IS SET UP)
 mongoose.connect(mongoURI).catch(function(err) {
@@ -37,7 +38,7 @@ app.options('*', cors());
 app.use(cors());
 
 // import routes
-app.use('/api/clinics', controller);
+app.use('/api', controller);
 
 // catch all non-error handler for api (i.e., 404 Not Found)
 app.use('/api/*', function (_, res) {
