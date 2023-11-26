@@ -9,22 +9,18 @@ router.use(express.json());
 // get all timeslots
 router.get('/:clinic_id/timeslots', async (req, res) => {
     try {
-        // TODO: add function logic
+        // publish clinic ID to availability service
+        const clinicID = req.params.clinic_id;
         const pubTopic = 'dentago/availability/req';
-
-        // topic to listen to availability service
-        const subTopic = 'dentago/availability/res';
+        mqtt.publish(pubTopic, clinicID);
 
         // subscribe to topic to receive timeslots payload
-        client.subscribe(subTopic, (err) => {
-            if (!err) {
-              console.log(`Subscribed to topic: ${subTopic}`);
-            } else {
-              console.error('Subscription failed', err);
-            }
-          });
-    
-        // TODO: add response 
+        const subTopic = 'dentago/availability/res';
+        mqtt.subscribe(subTopic, (payload) => {
+          // respond with timeslots and unsubscribe
+          res.status(200).json({data: payload});
+          mqtt.unsubscribe(subTopic);
+        });
 
     } catch(err) {
         res.status(500).json({error: err.message});  // internal server error

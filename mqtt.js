@@ -33,10 +33,21 @@ const subscribe = (topic, callback) => {
         if (!err) {
             console.log(`Subscribed to topic: ${topic}`);
         } else {
-            console.error('Subscription failed', err);
+            console.error('Subscription to topic failed', err);
         }
     }
 )};
+
+// unsubscribe from a topic
+const unsubscribe = (topic, callback) => {
+    client.unsubscribe(topic, function (err) {
+        if (!err) {
+            console.log(`Unsubscribed from topic: ${topic}`)
+        } else {
+            console.log(err)
+        }
+    });
+};
   
 // event handler for received messages
 client.on('message', (receivedTopic, message) => {
@@ -46,7 +57,9 @@ client.on('message', (receivedTopic, message) => {
     }
 });
 
+
 module.exports = {
     publish,
     subscribe,
+    unsubscribe
   };
