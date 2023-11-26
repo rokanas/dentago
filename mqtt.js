@@ -39,17 +39,17 @@ function subscribe(topic) {
                 reject(err);
             }
         });
-
               
         // Subscribe to the message event
         client.on('message', (receivedTopic, message) => {
-            if (receivedTopic === topic) {
-                console.log(`Received message on topic ${topic}: ${message.toString()}`);
-                // Unsubscribe from the topic after receiving the message
-                unsubscribe(topic);
-                // Resolve the Promise with the received message
-                resolve(message.toString());
-            }
+            console.log(`Received message on topic ${topic}: ${message.toString()}`);
+            
+            // Unsubscribe from the topic after receiving the message
+            unsubscribe(topic);
+           
+            // Resolve the Promise with the received message
+            resolve(message.toString());
+            
         });
     });
 }

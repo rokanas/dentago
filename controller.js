@@ -21,21 +21,45 @@ function generateID() {
 router.get('/clinics', async (_, res) => {
     try {
         const clinics = await Clinic.find();
-        res.status(200).json(clinics);             // request successful
+        res.status(200).json(clinics);               // request successful
     } catch(err) {
         res.status(500).json({error: err.message});  // internal server error
     }
 });
 
-// TODO:
-// get specific clinic
+// get specific clinic by id
+router.get('/clinics/:clinic_id', async (req, res) => {
+    try {
+        const clinic = await Clinic.findOne({clinicId :req.params.clinic_id});
+        if(!clinic) {
+            return res.status(404).json({error: 'Clinic not found'}); // resource not found
+        }
+        res.status(200).json(clinic);                // request successful
+    } catch (err) {
+        res.status(500).json({error: err.message});  // internal server error
+    }
+});
 
-// get all dentists in clinic
-
-// get specific dentist
+/* TODO:
+//get all dentists in clinic
+Clinic schema doesn't currently include dentists attribute
 
 // create user account
+Must agree upon user account schema
+*/
 
+//get specific dentist
+router.get('/dentists/:dentist_id', async (req, res) => {
+    try {
+        const dentist = await Dentist.findOne({dentistId :req.params.dentist_id});
+        if(!dentist) {
+            return res.status(404).json({error: 'Dentist not found'}); // resource not found
+        }
+        res.status(200).json(dentist);                // request successful
+    } catch (err) {
+        res.status(500).json({error: err.message});  // internal server error
+    }
+});
 
 // get all timeslots
 router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
@@ -85,7 +109,7 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         mqtt.publish(pubTopic, pubPayload);
 
         // subscribe to topic to receive timeslots payload
-        const subTopic = 'dentago/booking/' + reqID; // include reqID in topic to ensure correct incoming payload
+        const subTopic = 'dentago/booking/' + reqID + '/#'; // include reqID in topic to ensure correct incoming payload
         const payload = await mqtt.subscribe(subTopic);
         res.status(200).json({ data: payload });
 
