@@ -2,7 +2,7 @@ const mqtt = require('mqtt');
 
 /*====================  MQTT SETUP  ==================== */
 
-const broker = ''; // TODO: add HiveMQ address
+const broker = 'mqtt://127.0.0.1:1883'; // TODO: change to hosted mosquitto address
 
 // connect to the MQTT broker
 const client = mqtt.connect(broker);
@@ -27,19 +27,35 @@ const publish = (topic, payload) => {
     client.publish(topic, payload);
 };
   
-// subscribe to topic and handle incoming messages
-const subscribe = (topic, callback) => {
-    client.subscribe(topic, (err) => {
-        if (!err) {
-            console.log(`Subscribed to topic: ${topic}`);
-        } else {
-            console.error('Subscription to topic failed', err);
-        }
-    }
-)};
+
+
+function subscribe(topic) {
+    return new Promise((resolve, reject) => {
+        client.subscribe(topic, (err) => {
+            if (!err) {
+                console.log(`Subscribed to topic: ${topic}`);
+            } else {
+                console.error('Subscription to topic failed', err);
+                reject(err);
+            }
+        });
+
+              
+        // Subscribe to the message event
+        client.on('message', (receivedTopic, message) => {
+            if (receivedTopic === topic) {
+                console.log(`Received message on topic ${topic}: ${message.toString()}`);
+                // Unsubscribe from the topic after receiving the message
+                unsubscribe(topic);
+                // Resolve the Promise with the received message
+                resolve(message.toString());
+            }
+        });
+    });
+}
 
 // unsubscribe from a topic
-const unsubscribe = (topic, callback) => {
+const unsubscribe = (topic) => {
     client.unsubscribe(topic, function (err) {
         if (!err) {
             console.log(`Unsubscribed from topic: ${topic}`)
@@ -48,14 +64,6 @@ const unsubscribe = (topic, callback) => {
         }
     });
 };
-  
-// event handler for received messages
-client.on('message', (receivedTopic, message) => {
-    if (receivedTopic === topic) {
-        console.log(`Received message on topic ${topic}: ${message.toString()}`);
-        callback(message.toString());
-    }
-});
 
 
 module.exports = {
