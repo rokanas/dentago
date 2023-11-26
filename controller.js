@@ -17,6 +17,25 @@ function generateID() {
 
 /*====================  ROUTE HANDLERS  ==================== */
 
+// get all clinics
+router.get('/clinics', async (_, res) => {
+    try {
+        const clinics = await Clinic.find();
+        res.status(200).json(clinics);             // request successful
+    } catch(err) {
+        res.status(500).json({error: err.message});  // internal server error
+    }
+});
+
+// TODO:
+// get specific clinic
+
+// get all dentists in clinic
+
+// get specific dentist
+
+// create user account
+
 
 // get all timeslots
 router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
