@@ -48,6 +48,16 @@ Clinic schema doesn't currently include dentists attribute
 Must agree upon user account schema
 */
 
+// get all dentists
+router.get('/dentists', async (_, res) => {
+    try {
+        const dentists = await Dentist.find();
+        res.status(200).json(dentists);               // request successful
+    } catch(err) {
+        res.status(500).json({error: err.message});  // internal server error
+    }
+});
+
 //get specific dentist
 router.get('/dentists/:dentist_id', async (req, res) => {
     try {
@@ -87,22 +97,22 @@ router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO:
     }
 });
 
-// book timeslot
+// book / cancel timeslot
 router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
     try {
-
         // extract clinic and slot IDs from request parameter     
         const clinicID = req.params.clinic_id;
         const slotID = req.params.slot_id;
 
-        // extract user ID from request body
-        const userID = req.body.user_id;
+        // extract content from request body
+        // content is a JSON string containing either a user ID or the word "cancel"
+        const content = req.body.content;
 
         // generate random request ID
         const reqID = generateID();
         
         // create payload as JSON string containing clinic, user and request IDs
-        const pubPayload = `{"clinicID": "${clinicID}", "slotID": "${slotID}", "userID": "${userID}", "reqID": "${reqID}"}`;
+        const pubPayload = `{"clinicID": "${clinicID}", "slotID": "${slotID}", "content": "${content}", "reqID": "${reqID}"}`;
 
         // publish payload to booking service
         const pubTopic = 'dentago/booking/';
