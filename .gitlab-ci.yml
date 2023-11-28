@@ -1,0 +1,39 @@
+# Define the docker image to use for the jobs
+image: node:18-alpine
+
+# Define the cache to use for the jobs
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - ./node_modules/
+
+# Define the stages / jobs for the pipeline
+stages:
+  - install
+  - test
+
+# Install dependencies
+install:
+  stage: install
+  tags: 
+    - docker
+  script:
+    - echo "Installing dependencies..."       # Print a message
+    - npm install                             # Install the dependencies
+    - echo "Dependencies installed!"          # Print affirmative message
+
+api-test:
+  stage: test
+  tags:
+    - docker
+  script:
+    - ls
+    - npm run test
+
+#TODO: Add MQTT test
+mqtt-test:
+  stage: test
+  tags:
+    - docker
+  script:
+  - echo "This will test the MQTT client"
