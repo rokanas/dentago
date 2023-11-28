@@ -18,17 +18,19 @@ install:
   tags: 
     - docker
   script:
-    - echo "Installing dependencies..."       # Print a message
-    - npm install                             # Install the dependencies
-    - echo "Dependencies installed!"          # Print affirmative message
+    - echo "Installing dependencies..."       # print a message
+    - npm install                             # install the dependencies
+    - echo "Dependencies installed!"          # print affirmative message
 
 api-test:
   stage: test
   tags:
     - docker
   script:
-    - ls
-    - npm run test
+    - ls                                      # list files in current directory
+    - echo "Running tests..."                 # print a message
+    - npm run test                            # run postman tests
+    - echo "Testing complete!"                # print affirmative message
 
 #TODO: Add MQTT test
 mqtt-test:
