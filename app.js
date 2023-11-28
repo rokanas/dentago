@@ -40,7 +40,7 @@ const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
     createSlot: 'dentago/creation/slots',
-    bookingNotification: 'dentago/booking/+/+/+' //+clinic_id/+user_id/+status
+    bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
 }
 
 const MQTT_OPTIONS = {
@@ -98,17 +98,17 @@ async function handleBookingNotification(topic) {
         const topicArray = topic.split('/');
 
         /**
-         * Example message: dentago/booking/clinic1/user1/approved.
+         * Example message: dentago/booking/reqId/clinicId/approved.
          *                     0  /   1   /   2   /  3  /    4
          * Since the subscribed topic uses + as a wildcard,
          * the size of the topicArray will always be correct
          */
 
-        const clinicId = topicArray[2];
+        const clinicId = topicArray[3];
         const status = topicArray[4];
 
         // Check valid message
-        if (clinicId.length === 0 || status.length === 0 || !(status === 'approved' || status === 'cancelled')) {
+        if (clinicId.length === 0 || status.length === 0 || !(status === 'SUCCESS' || status === 'FAILURE')) {
             throw new Error('Invalid topic data');
         }
 
