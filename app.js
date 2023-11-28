@@ -21,7 +21,7 @@ const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 require('dotenv').config();
 
-const { createClinic, createDentist } = require('./utils/entityCreation');
+const { createClinic, createDentist, createSlot } = require('./utils/entityCreation');
 
 // Connect to MongoDB
 const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
@@ -39,7 +39,8 @@ mongoose.connect(mongoURI).then(() => {
 const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
-    bookingNotification: 'dentago/booking/+/+/+' //+clinic_id/+user_id/+status
+    createSlot: 'dentago/creation/slots',
+    bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
 }
 
 const MQTT_OPTIONS = {
@@ -74,6 +75,9 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['createDentist']:
             createDentist(payload);
             break;
+        case MQTT_TOPICS['createSlot']:
+            createSlot(payload);
+            break;
         default:
             handleBookingNotification(topic);
             break;
@@ -94,17 +98,17 @@ async function handleBookingNotification(topic) {
         const topicArray = topic.split('/');
 
         /**
-         * Example message: dentago/booking/clinic1/user1/approved.
+         * Example message: dentago/booking/reqId/clinicId/approved.
          *                     0  /   1   /   2   /  3  /    4
          * Since the subscribed topic uses + as a wildcard,
          * the size of the topicArray will always be correct
          */
 
-        const clinicId = topicArray[2];
+        const clinicId = topicArray[3];
         const status = topicArray[4];
 
         // Check valid message
-        if (clinicId.length === 0 || status.length === 0 || !(status === 'approved' || status === 'cancelled')) {
+        if (clinicId.length === 0 || status.length === 0 || !(status === 'SUCCESS' || status === 'FAILURE')) {
             throw new Error('Invalid topic data');
         }
 
