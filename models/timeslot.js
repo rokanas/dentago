@@ -3,19 +3,10 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const slotSchema = new Schema({
-  timeslotId: {
-    type: String,
-    unique: true,
-    required: true,
-  },
-  timeslotName: {
-    type: String,
-    required: true,
-  },
   timeslotDentist: {
     type: Schema.Types.ObjectId,
     ref: "Dentist",
-    required: true,
+    required: false,
   },
   timeslotClinic: {
     type: Schema.Types.ObjectId,
