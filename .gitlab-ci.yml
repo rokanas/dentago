@@ -14,17 +14,8 @@ build:
   tags:
     - docker
   script:
-    - echo "Hello!"
     - npm install
     - ls
-
-api-test:
-  stage: test
-  tags:
-    - docker
-  script:
-    - ls
-    - npm run test
 
 mqtt-test:
   stage: test

@@ -1,0 +1,10 @@
+Test messages for the MQTT CLI
+
+mqtt pub -t dentago/creation/clinics -h test.mosquitto.org -m '{ \"clinicId\": \"greenHillZoneClinic\", \"clinicName\": \"Green Hill Zone Clinic\", \"clinicAddress\": \"Green Hill Street 123\", \"clinicLocation\": {\"lat\": 3.0, \"lng\": 3.0}}'
+mqtt pub -t dentago/creation/clinics -h test.mosquitto.org -m '{ \"clinicId\": \"crisisCityClinic\", \"clinicName\": \"Crisis City Clinic\", \"clinicAddress\": \"Crisis Street 456\", \"clinicLocation\": {\"lat\": 69.0, \"lng\": 42.0}}'
+mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"sonicDentist\", \"dentistName\": \"Sonic The Hedgehog\", \"dentistClinic\": \"greenHillZoneClinic\"}'
+mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"tailsDentist\", \"dentistName\": \"Miles "Tails" Prower\", \"dentistClinic\": \"greenHillZoneClinic\"}'
+mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"shadowDentist\", \"dentistName\": \"Shadow The Hedgehog\", \"dentistClinic\": \"crisisCityClinic\"}'
+mqtt pub -t dentago/booking/clinic1/user1/approved -h test.mosquitto.org -m 'test'
+mqtt sub -t dentago/booking/clinic1/+ -h test.mosquitto.org
+

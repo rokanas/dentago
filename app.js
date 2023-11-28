@@ -1,108 +1,119 @@
+// TODO: 
 /**
- * The dentist API allows dentist to:
- * - Register open slots
- * - Be notified when slots have been booked
- * - Be notified when bookings have been cancelled
+ * - FIRST VERSION:
+ *      - Add endpoint for creating Clinics [Done]
+ *      - Add endpoint for creating Dentists [Done]
+ *      - Add endpoint for booking notifications [Done]
+ *      - Add endpoint for cancelling notifications [Done]
+ * - LATER VERSION:
+ *      - Add endpoint for creating slots
+ *      - Add endpoint for registering dentists in a slot
+ * - EXTRA:
+ *      - We might need the dentist ID as a payload for the notification
  */
 
 /**
- * TOPICS:
- *      sub 'dentago/booking/res'
- * NOTIFICATIONS:
- *      server-sent-notifications?
+ * Some of the mongodb setup was taken from https://git.chalmers.se/courses/dit342/2023/group-15-web
  */
 
-const API_INFO = Object.freeze({
-    "message": "Oh, hi there! 😎",
-    "description": "DentistAPI for the Dentago System",
-    "version": 'v0.1.0',
-});
-
-// TODO: Decide on a port
-const PORT = 5000;
-const MQTT_TOPIC = 'dentago/booking/res';
-
+// Dependencies
+const mongoose = require('mongoose');
 const mqtt = require('mqtt');
-const client = mqtt.connect('mqtt://test.mosquitto.org');
+require('dotenv').config();
 
-const express = require('express');
-const app = express();
+const { createClinic, createDentist } = require('./utils/entityCreation');
 
-app.use(express.json());
+// Connect to MongoDB
+const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
 
-/**
- * Start MQTT client
- */
+mongoose.connect(mongoURI).then(() => {
+    console.log(`Connected to MongoDB!\n`);
+}).catch((err) => {
+    console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
+    console.error(err.stack);
+    process.exit(1);
+});
+
+// MQTT
+// TODO: define QOS here
+const MQTT_TOPICS = {
+    createClinic: 'dentago/creation/clinics',
+    createDentist: 'dentago/creation/dentists',
+    bookingNotification: 'dentago/booking/+/+/+' //+clinic_id/+user_id/+status
+}
+
+const MQTT_OPTIONS = {
+    // Placeholder to add options in the future
+    keepalive: 0
+}
+
+const client = mqtt.connect('mqtt://test.mosquitto.org', MQTT_OPTIONS);
+
 client.on('connect', () => {
-    // TODO: Change QOS
-    client.subscribe(MQTT_TOPIC, (err) => {
-        if (err)
-        {
-            console.log('MQTT CONNECTION ERROR: ' + err);
-        }
-        else 
-        {
-            console.log('MQTT Connected!');
-        }
-    })
-})
+    console.log('MQTT successfully connected!');
 
-/**
- * Callback for incoming MQTT messages
- */
-client.on('message', (topic, msg) => {
-    console.log(topic + ' | ' + msg.toString());
-    // TODO: Implement notification system
-})
+    let topicList = [];
 
-/**
- * Main endpoint to fetch version information
- */
-app.get('/', (_, res) => {
-    res.status(200).send(API_INFO);
+    Object.values(MQTT_TOPICS).forEach(element => {
+        //    console.log(element);
+        topicList.push(element);
+    });
+
+    // Subscribe to topics
+    client.subscribe(topicList, (err) => {
+        if (err) console.log('MQTT connection error: ' + err);
+    });
 });
 
-/**
- * Get the info of a given dentist
- */
-//TODO: Is this going to be provided by the UI?
-app.get('/dentists/:dentist_id', (req, res) => {
+client.on('message', (topic, payload) => {
 
-    obj = {
-        "res": "ALL DENTIST INFO"
-    };
-
-    res.status(200).send(obj);
-});
-
-/**
- * Get all the time slots for a given dentist
- */
-// TODO: define how dentist will work (attributes)
-app.get('/clinics/:clinic_id/slots/:dentist_id', (req, res) => {
-
-    obj = {
-        "res": "ALL DENTIST TIME SLOTS"
-    };
-
-    res.status(200).send(obj);
-});
-
-/**
- * Register a new open slot for this dentist
- */
-// TODO: define how do we create the time slots
-app.patch('/clinics/:clinic_id/slots/', (req, res) => {
-    let isEmpty = Object.keys(req.body).length === 0;
-
-    if (isEmpty)
-    {
-        return res.status(400).send('Empty body');
+    switch (topic) {
+        case MQTT_TOPICS['createClinic']:
+            createClinic(payload);
+            break;
+        case MQTT_TOPICS['createDentist']:
+            createDentist(payload);
+            break;
+        default:
+            handleBookingNotification(topic);
+            break;
     }
-
-    res.status(200).send('Slot opened');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`)
+client.on('error', (err) => {
+    console.error(err);
+    process.exit(1);
 });
+
+async function handleBookingNotification(topic) {
+
+    // Forwards the request to a specific client that subscribed to their respective topic
+    console.log('Handle booking notification');
+
+    try {
+        const topicArray = topic.split('/');
+
+        /**
+         * Example message: dentago/booking/clinic1/user1/approved.
+         *                     0  /   1   /   2   /  3  /    4
+         * Since the subscribed topic uses + as a wildcard,
+         * the size of the topicArray will always be correct
+         */
+
+        const clinicId = topicArray[2];
+        const status = topicArray[4];
+
+        // Check valid message
+        if (clinicId.length === 0 || status.length === 0 || !(status === 'approved' || status === 'cancelled')) {
+            throw new Error('Invalid topic data');
+        }
+
+        let resTopic = `dentago/booking/${clinicId}/`;
+        resTopic += status;
+
+        client.publish(resTopic, `Booking ${status}`);
+
+    } catch (error) {
+        console.log(error);
+    }
+}
