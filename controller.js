@@ -111,7 +111,7 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         // generate random request ID
         const reqID = generateID();
         
-        // create payload as JSON string containing clinic, user and request IDs
+        // create payload as JSON string containing clinic, request content and ID
         const pubPayload = `{"clinicID": "${clinicID}", "slotID": "${slotID}", "content": "${content}", "reqID": "${reqID}"}`;
 
         // publish payload to booking service
