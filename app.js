@@ -1,27 +1,42 @@
 /**
  * The Availability Service is a Node.js application designed for the Dentago distributed system. 
  */
-
 //TODO: refactor and modularise the functionality into multiple components
 
+const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 
-// TODO: implement DB connection
+// Variables
+require('dotenv').config();
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
 
 // TODO: change to the non-public mosquitto broker once implemented
 const broker = 'mqtt://test.mosquitto.org/:1883';
 const topic = 'dentago/availability/'
-
 const client = mqtt.connect(broker);
 
 
+/**
+ * Connect to MongoDB
+ */
+mongoose.connect(mongoUri).then(() => {
+    console.log(`Connected to MongoDB with URI: ${mongoUri}`);
+}).catch((error) => {
+    console.error(`Failed to connect to MongoDB with UrI: ${mongoUri}`);
+    console.error(error.stack);
+    process.exit(1);
+});
+
+    
+/**
+ * Connect to MQTT broker and subscribe the general Availability service topic
+ */
 client.on('connect', () => {
     console.log("Connected to MQTT broker");
 
     client.subscribe(topic, (error) => {
         if (!error) {
             console.log("Subscribed to messages on: " + topic);
-            client.publish(topic);
         }
     });
 });
@@ -35,7 +50,7 @@ client.on('message', async (topic, message) => {
         const reqID = payload.reqID;
 
         // TODO: actually fetch data from MongoDB
-        const result = await FETCHDATAFROMDBMETHOD();
+        const result = await FETCHDATAFROMDB;
 
         console.log(result);
         // Append recipient address to the service topic
