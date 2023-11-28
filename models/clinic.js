@@ -23,21 +23,16 @@ const clinicSchema = new Schema({
         required: true
     },
     clinicLocation: {
-        // Location is stored as [longitude, latitude]
-        type: {
-            type: String,
-            enum: ['Point'],
+        lat: {
+            type: Number,
             required: true
         },
-        coordinates: {
-            type: [Number],
-            required: true,
+        lng: {
+            type: Number,
+            required: true
         }
     }
     // TODO: add opening hours
 });
-
-// Add support for geospatial indexes
-clinicSchema.index( { clinicLocation: '2dsphere' });
 
 module.exports = mongoose.model("Clinic", clinicSchema);
