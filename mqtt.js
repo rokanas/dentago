@@ -2,7 +2,7 @@ const mqtt = require('mqtt');
 
 /*====================  MQTT SETUP  ==================== */
 
-const broker = 'mqtt://127.0.0.1:1883'; // TODO: change to hosted mosquitto address
+const broker = 'mqtt://test.mosquitto.org'; // TODO: change to hosted mosquitto address (local = 'mqtt://127.0.0.1:1883')
 
 // connect to the MQTT broker
 const client = mqtt.connect(broker);
