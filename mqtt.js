@@ -12,6 +12,11 @@ client.on('connect', () => {
   console.log('Connected to MQTT broker');
 });
 
+// event handler for successful reconnection
+client.on('reconnect', () => {
+    console.log('Reconnected to MQTT broker');
+  });
+
 // event handler for unexpected disconnection
 client.on('close', () => {
     console.log('Connection closed unexpectedly');
@@ -27,8 +32,7 @@ const publish = (topic, payload) => {
     client.publish(topic, payload);
 };
   
-
-
+// subscribe to a topic and return the message in the form of a Promise
 function subscribe(topic) {
     return new Promise((resolve, reject) => {
         client.subscribe(topic, (err) => {
@@ -40,14 +44,14 @@ function subscribe(topic) {
             }
         });
               
-        // Subscribe to the message event
+        // subscribe to the message event
         client.on('message', (receivedTopic, message) => {
             console.log(`Received message on topic ${topic}: ${message.toString()}`);
             
-            // Unsubscribe from the topic after receiving the message
+            // unsubscribe from the topic after receiving the message
             unsubscribe(topic);
            
-            // Resolve the Promise with the received message
+            // resolve the Promise with the received message
             resolve(message.toString());
             
         });
@@ -65,9 +69,17 @@ const unsubscribe = (topic) => {
     });
 };
 
+// close connection to MQTT broker gracefully when app is manually terminated
+process.on('SIGINT', () => {
+    console.log('Closing MQTT connection...');
+    client.end({ reasonCode: 0x00 }, () => {
+      console.log('MQTT connection closed');
+      process.exit();
+    });
+  });
+
 
 module.exports = {
     publish,
-    subscribe,
-    unsubscribe
+    subscribe
   };

@@ -1,5 +1,4 @@
-// TODO: Modify processes and dependencies as the system demands
-// TODO: Change database from MongoDB to PostgreSQL 
+// TODO: Modify processes and dependencies as the system demands 
 
 const express = require('express');
 const mongoose = require('mongoose');
