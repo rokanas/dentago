@@ -17,18 +17,16 @@ const clinicSchema = new Schema({
         required: true
     },
     clinicLocation: {
-        // Location is stored as [longitude, latitude]
-        type: {
-            type: String,
-            enum: ['Point'],
+        // Location is stored as {longitude, latitude}
+        lat: {
+            type: Number,
             required: true
         },
-        coordinates: {
-            type: [Number],
+        lng: {
+            type: Number,
             required: true,
         }
     }
-    // TODO: add opening hours
 });
 
 module.exports = mongoose.model("Clinic", clinicSchema);
