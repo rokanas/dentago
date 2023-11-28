@@ -15,16 +15,16 @@ require('dotenv').config();
 const mongoURI = process.env.MONGODB_URI
 const port = process.env.PORT
 
-// Connect to MongoDB (PLACEHOLDER UNTIL SQL DB IS SET UP)
-mongoose.connect(mongoURI).catch(function(err) {
-    if (err) {
-        console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
-        console.error(err.stack);
-        process.exit(1);
-    }
+// Connect to MongoDB
+mongoose.connect(mongoURI)
+  .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
-});
-
+  })
+  .catch((err) => {
+    console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
+    console.error(err.stack);
+    process.exit(1);
+  });
 
 // create Express app
 const app = express();
