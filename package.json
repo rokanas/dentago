@@ -4,7 +4,7 @@
   "description": "Booking Service for the Dentago system",
   "main": "start",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "nodemon mqttService.js",
     "eslint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,14 +19,15 @@
   ],
   "author": "Group 13",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "mqtt": "^5.3.0"
+  },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "eslint": "^8.54.0"
+    "eslint": "^8.54.0",
+    "nodemon": "^3.0.1"
   },
   "eslintConfig": {
     "extends": "eslint:recommended",
-    "rules": {
-    }
+    "rules": {}
   }
 }
