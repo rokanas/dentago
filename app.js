@@ -6,6 +6,10 @@
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 
+// Import schemas
+const Clinic = require('./models/clinic');
+const Timeslot = require('./models/timeslot');
+
 // Variables
 require('dotenv').config();
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
@@ -20,14 +24,17 @@ const client = mqtt.connect(broker);
  * Connect to MongoDB
  */
 mongoose.connect(mongoUri).then(() => {
-    console.log(`Connected to MongoDB with URI: ${mongoUri}`);
+    //console.log(`Connected to MongoDB with URI: ${mongoUri}`);
+    console.log('Connected to MongoDB');
+
 }).catch((error) => {
-    console.error(`Failed to connect to MongoDB with UrI: ${mongoUri}`);
+    //console.error(`Failed to connect to MongoDB with UrI: ${mongoUri}`);
+    console.error('Failed to connect to MongoDB');
     console.error(error.stack);
     process.exit(1);
 });
 
-    
+
 /**
  * Connect to MQTT broker and subscribe the general Availability service topic
  */
@@ -48,14 +55,21 @@ client.on('message', async (topic, message) => {
     try {
         const payload = JSON.parse(message);
         const reqID = payload.reqID;
+        const clinicId = payload.clinicID;
 
-        // TODO: actually fetch data from MongoDB
-        const result = await FETCHDATAFROMDB;
+        const clinic = await Clinic.findOne({ clinicId: clinicId });
+        
+        if (!clinic) {
+            client.publish(responseTopic);
+            throw new Error('Clinic not found');
+        }
 
-        console.log(result);
+        const timeslots = await Timeslot.find({ timeslotClinic: clinic._id })
+            .populate('timeslotDentist', 'dentistName').exec();
+
         // Append recipient address to the service topic
         const responseTopic = topic + reqID;
-        client.publish(responseTopic, result);
+        client.publish(responseTopic, JSON.stringify(timeslots));
     } catch (error) {
         console.log("Error when processing MQTT message: ", error);
     }
