@@ -23,7 +23,7 @@ install:
     - echo "Dependencies installed!"          # print affirmative message
 
 test:
-  stage: ci-test
+  stage: test
   tags:
     - docker
   script:
