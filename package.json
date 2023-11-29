@@ -8,7 +8,7 @@
     "dev": "nodemon app.js",
     "ci-test": "npm run newman-server",
     "newman-server": "npm-run-all -p -r start newman-wait",
-    "newman-wait": "wait-on $CI_HOST/api && npm run newman",
+    "newman-wait": "echo $CI_HOST && wait-on $CI_HOST/api && npm run newman",
     "newman": "newman run ./tests/dentago.postman_collection.json --env-var host=$CI_HOST"
   },
   "keywords": [],
