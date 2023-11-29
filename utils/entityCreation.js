@@ -1,6 +1,6 @@
 const Clinic = require('../models/clinic');
 const Dentist = require('../models/dentist');
-const Timeslot = require('../models/slot');
+const Timeslot = require('../models/timeslot');
 
 async function createClinic(payload) {
     // Parse the payload
@@ -47,32 +47,29 @@ async function createDentist(payload){
 
 async function createTimeslot(payload){
     // TODO: Fix the date issues
-    // TODO: Make sure that we have a separate function to create slots without any dentists
+    
     // Parse the payload
     try {
         const objSlot = JSON.parse(payload);
-
-        // console.log(objSlot);
         
-        const dentist =  await Dentist.findOne({dentistId: objSlot['timeslotDentist']}).exec();
         const clinic =  await Clinic.findOne({clinicId: objSlot['timeslotClinic']}).exec();
+        const dentist =  await Dentist.findOne({dentistId: objSlot['timeslotDentist']}).exec();
 
-        // console.log(dentist._id);
-        // console.log(clinic._id);
+        let clinicId = clinic._id;
+        let dentistId = dentist !== null ? dentist._id : null; // Check if there is a dentist_id passed in the payload
 
         const newTimeslot = new Timeslot({
-            timeslotDentist: dentist._id,
-            timeslotClinic: clinic._id,
+            timeslotClinic: clinicId,
+            timeslotDentist: dentistId,
+            timeslotPatient: null,
             timeslotStartTime: objSlot['timeslotStartTime'],
-            timeslotEndTime: objSlot['timeslotEndTime']
+            timeslotEndTime: objSlot['timeslotEndTime'],
         });
 
         newTimeslot.save().then(() => {
             console.log('Timeslot created');
         }).catch((err) => {
-            // This is pointless now I think
-            if (err.code === 11000) console.error('ERROR! Timeslot with this id already exists');
-            else console.error(err);
+            console.error(err);
         });
     }
     catch  (error) {
