@@ -8,8 +8,8 @@
     "dev": "nodemon app.js",
     "ci-test": "npm run newman-server",
     "newman-server": "npm-run-all -p -r start newman-wait",
-    "newman-wait": "wait-on "$CI_HOST"/api && npm run newman",
-    "newman": "newman run ./tests/dentago.postman_collection.json --env-var host="$CI_HOST""
+    "newman-wait": "echo $CI_HOST echo Hello wait-on $CI_HOST/api && npm run newman",
+    "newman": "newman run ./tests/dentago.postman_collection.json --env-var host=$CI_HOST"
   },
   "keywords": [],
   "author": "",
@@ -21,10 +21,11 @@
     "express": "^4.18.2",
     "mongoose": "^8.0.1",
     "morgan": "^1.10.0",
-    "mqtt": "^5.2.2",
-    "newman": "^6.0.0"
+    "mqtt": "^5.2.2"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
+    "newman": "^6.0.0",
     "nodemon": "^3.0.1",
     "npm-run-all": "^4.1.5",
     "wait-on": "^7.2.0"
