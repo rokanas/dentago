@@ -1,15 +1,19 @@
 {
   "name": "api-patient",
   "version": "1.0.0",
-  "description": "To make it easy for you to get started with GitLab, here's a list of recommended next steps.",
+  "description": "Patient API for the Dentago system",
   "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.chalmers.se/courses/dit355/2023/student-teams/dit356-2023-13/api-patient"
+  },
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
     "ci-test": "npm run newman-server",
     "newman-server": "npm-run-all -p -r start newman-wait",
     "newman-wait": "echo $CI_HOST wait-on $CI_HOST/api && npm run newman",
-    "newman": "newman run ./tests/dentago.postman_collection.json --env-var host=$CI_HOST"
+    "newman": "newman run ./tests/dentago.postman_collection.json --env-var host= $CI_HOST"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +28,6 @@
     "mqtt": "^5.2.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "newman": "^6.0.0",
     "nodemon": "^3.0.1",
     "npm-run-all": "^4.1.5",
