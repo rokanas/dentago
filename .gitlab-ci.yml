@@ -22,7 +22,7 @@ install:
     - npm install                             # install the dependencies
     - echo "Dependencies installed!"          # print affirmative message
 
-api-test:
+test:
   stage: ci-test
   tags:
     - docker
