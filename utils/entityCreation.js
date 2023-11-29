@@ -45,7 +45,7 @@ async function createDentist(payload){
     }
 }
 
-async function createSlot(payload){
+async function createTimeslot(payload){
     // TODO: Fix the date issues
     // TODO: Make sure that we have a separate function to create slots without any dentists
     // Parse the payload
@@ -80,4 +80,4 @@ async function createSlot(payload){
     }
 }
 
-module.exports = { createClinic, createDentist, createSlot };
+module.exports = { createClinic, createDentist, createTimeslot };

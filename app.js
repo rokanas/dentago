@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 require('dotenv').config();
 
-const { createClinic, createDentist, createSlot } = require('./utils/entityCreation');
+const { createClinic, createDentist, createTimeslot } = require('./utils/entityCreation');
 
 // Connect to MongoDB
 const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
@@ -33,7 +33,7 @@ mongoose.connect(mongoURI).then(() => {
 const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
-    createSlot: 'dentago/creation/slots', //TODO: rename to createTimeslot for consistency
+    createTimeslot: 'dentago/creation/timeslot', //TODO: rename to createTimeslot for consistency
     bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
 }
 
@@ -69,8 +69,8 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['createDentist']:
             createDentist(payload);
             break;
-        case MQTT_TOPICS['createSlot']:
-            createSlot(payload);
+        case MQTT_TOPICS['createTimeslot']:
+            createTimeslot(payload);
             break;
         default:
             handleBookingNotification(topic, payload);
