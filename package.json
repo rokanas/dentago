@@ -6,11 +6,10 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "npm run newman-server",
-    "newman-server": "cross-env-shell PORT=3000 \"npm run dropdb && run-p --race start newman-wait\"",
-    "newman-wait": "wait-on http://localhost:3000/api && npm run newman",
-    "newman": "newman run ./tests/tests.postman_collection.json --env-var host=http://localhost:3000",
-    "dropdb": "node ./tests/dropdb.js"
+    "ci-test": "npm run newman-server",
+    "newman-server": "cross-env-shell PORT=$CI_PORT \"npm run dropdb && run-p --race start newman-wait\"",
+    "newman-wait": "wait-on $CI_HOST/api && npm run newman",
+    "newman": "newman run ./tests/dentago.postman_collection.json --env-var host=$CI_HOST"
   },
   "keywords": [],
   "author": "",
