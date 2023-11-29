@@ -73,7 +73,7 @@ client.on('message', (topic, payload) => {
             createSlot(payload);
             break;
         default:
-            handleBookingNotification(topic);
+            handleBookingNotification(topic, payload);
             break;
     }
 });
@@ -83,7 +83,7 @@ client.on('error', (err) => {
     process.exit(1);
 });
 
-async function handleBookingNotification(topic) {
+async function handleBookingNotification(topic, payload) {
 
     // Forwards the request to a specific client that subscribed to their respective topic
     try {
@@ -107,7 +107,21 @@ async function handleBookingNotification(topic) {
         let resTopic = `dentago/booking/${clinicId}/`;
         resTopic += status;
         
-        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status}`);
+        let bro = JSON.parse(payload.toString())['timeslotPatient'];
+        let message = "";
+
+        // TODO: Remove this after establishing consistency with the payload and the topics
+        if (bro == null)
+        {
+            message = "Canceled";
+        }
+        else
+        {
+            message = "Booked";
+        }
+
+        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${message}`);
+        // console.log(JSON.parse(payload.toString())['timeslotPatient']);
 
         client.publish(resTopic, `Booking ${status}`);
 
