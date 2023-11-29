@@ -1,12 +1,6 @@
 // TODO: 
 /**
- * - FIRST VERSION:
- *      - Add endpoint for creating Clinics [Done]
- *      - Add endpoint for creating Dentists [Done]
- *      - Add endpoint for booking notifications [Done]
- *      - Add endpoint for cancelling notifications [Done]
- * - LATER VERSION:
- *      - Add endpoint for creating slots
+ *      - Add endpoint for creating slots [Partially done]
  *      - Add endpoint for registering dentists in a slot
  * - EXTRA:
  *      - We might need the dentist ID as a payload for the notification
@@ -39,7 +33,7 @@ mongoose.connect(mongoURI).then(() => {
 const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
-    createSlot: 'dentago/creation/slots',
+    createSlot: 'dentago/creation/slots', //TODO: rename to createTimeslot for consistency
     bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
 }
 
@@ -92,8 +86,6 @@ client.on('error', (err) => {
 async function handleBookingNotification(topic) {
 
     // Forwards the request to a specific client that subscribed to their respective topic
-    console.log('Handle booking notification');
-
     try {
         const topicArray = topic.split('/');
 
@@ -114,6 +106,8 @@ async function handleBookingNotification(topic) {
 
         let resTopic = `dentago/booking/${clinicId}/`;
         resTopic += status;
+        
+        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status}`);
 
         client.publish(resTopic, `Booking ${status}`);
 
