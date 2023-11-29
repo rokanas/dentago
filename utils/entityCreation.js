@@ -48,7 +48,6 @@ async function createDentist(payload){
 async function createSlot(payload){
     // TODO: Fix the date issues
     // TODO: Make sure that we have a separate function to create slots without any dentists
-    console.log('Create Slot');
     // Parse the payload
     try {
         const objSlot = JSON.parse(payload);
