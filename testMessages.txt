@@ -6,12 +6,21 @@ mqtt pub -t dentago/creation/clinics -h test.mosquitto.org -m '{ \"clinicId\": \
 mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"sonicDentist\", \"dentistName\": \"Sonic The Hedgehog\", \"dentistClinic\": \"greenHillZoneClinic\"}'
 mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"tailsDentist\", \"dentistName\": \"Miles "Tails" Prower\", \"dentistClinic\": \"greenHillZoneClinic\"}'
 mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"shadowDentist\", \"dentistName\": \"Shadow The Hedgehog\", \"dentistClinic\": \"crisisCityClinic\"}'
+mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"dentistId\": \"leonardoDentist\", \"dentistName\": \"Leonardo The Turtle\", \"dentistClinic\": \"crisisCityClinic\"}'
 
 mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotDentist\": \"shadowDentist\", \"timeslotClinic\": \"crisisCityClinic\", \"timeslotStartTime\": \"2023-11-28T12:34:56Z\", \"timeslotEndTime\": \"2023-11-28T12:34:56Z\"}'
 mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotDentist\": \"sonicDentist\", \"timeslotClinic\": \"greenHillZoneClinic\", \"timeslotStartTime\": \"2023-11-28T12:34:56Z\", \"timeslotEndTime\": \"2023-11-28T12:34:56Z\"}'
 mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotClinic\": \"greenHillZoneClinic\", \"timeslotStartTime\": \"2023-11-28T12:34:56Z\", \"timeslotEndTime\": \"2023-11-28T12:34:56Z\"}'
 
+mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslotId\": \"6567598b5ad8b769a8f2e959\", \"timeslotDentist\": \"6567598a5ad8b769a8f2e94c\"}'
+mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslotId\": \"6567598b5ad8b769a8f2e959\", \"timeslotDentist\": null}'
+
 mqtt pub -t dentago/booking/clinic1/user1/approved -h test.mosquitto.org -m 'test'
 mqtt sub -t dentago/booking/clinic1/+ -h test.mosquitto.org
 mqtt sub -t dentago/+ -h test.mosquitto.org
 
+
+
+6567598a5ad8b769a8f2e94c
+
+6567598a5ad8b769a8f2e94c
