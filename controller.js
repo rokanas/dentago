@@ -10,7 +10,7 @@ router.use(express.json());
 // TODO: Response from server timeouts
 
 // define correct length for mongo object IDs
-const ObjIdLength = 24;
+const OBJ_ID_LENGTH = 24;
 
 // generate random ID for each request
 function generateID() {
@@ -34,7 +34,7 @@ router.get('/clinics', async (_, res) => {
 router.get('/clinics/:clinic_id', async (req, res) => {
     try {
         const clinicID = req.params.clinic_id;
-        if(clinicID.length !== ObjIdLength) {
+        if(clinicID.length !== OBJ_ID_LENGTH) {
             return res.status(400).json({Error: 'Not a valid ObjectID'})
         }
 
@@ -70,7 +70,7 @@ router.get('/dentists', async (_, res) => {
 router.get('/dentists/:dentist_id', async (req, res) => {
     try {
         const dentistID = req.params.dentist_id;
-        if(dentistID.length !== ObjIdLength) {
+        if(dentistID.length !== OBJ_ID_LENGTH) {
             return res.status(400).json({Error: 'Not a valid ObjectID'})
         }
 
