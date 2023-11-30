@@ -17,7 +17,7 @@ const clinicSchema = new Schema({
         required: true
     },
     clinicLocation: {
-        // Location is stored as {longitude, latitude}
+        // Location is stored as {latitude, longitude}
         lat: {
             type: Number,
             required: true

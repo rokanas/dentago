@@ -9,6 +9,9 @@ router.use(express.json());
 
 // TODO: Response from server timeouts
 
+// define correct length for mongo object IDs
+const OBJ_ID_LENGTH = 24;
+
 // generate random ID for each request
 function generateID() {
     const id = crypto.randomBytes(8).toString("hex");
@@ -23,20 +26,25 @@ router.get('/clinics', async (_, res) => {
         const clinics = await Clinic.find();
         res.status(200).json(clinics);               // request successful
     } catch(err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
 // get specific clinic by id
 router.get('/clinics/:clinic_id', async (req, res) => {
     try {
-        const clinic = await Clinic.findOne({clinicId :req.params.clinic_id});
+        const clinicID = req.params.clinic_id;
+        if(clinicID.length !== OBJ_ID_LENGTH) {
+            return res.status(400).json({Error: 'Not a valid ObjectID'})
+        }
+
+        const clinic = await Clinic.findOne({_id: clinicID});
         if(!clinic) {
-            return res.status(404).json({error: 'Clinic not found'}); // resource not found
+            return res.status(404).json({Error: 'Clinic not found'}); // resource not found
         }
         res.status(200).json(clinic);                // request successful
     } catch (err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
@@ -54,20 +62,25 @@ router.get('/dentists', async (_, res) => {
         const dentists = await Dentist.find();
         res.status(200).json(dentists);               // request successful
     } catch(err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});   // internal server error
     }
 });
 
 //get specific dentist
 router.get('/dentists/:dentist_id', async (req, res) => {
     try {
-        const dentist = await Dentist.findOne({dentistId :req.params.dentist_id});
+        const dentistID = req.params.dentist_id;
+        if(dentistID.length !== OBJ_ID_LENGTH) {
+            return res.status(400).json({Error: 'Not a valid ObjectID'})
+        }
+
+        const dentist = await Dentist.findOne({_id: dentistID});
         if(!dentist) {
-            return res.status(404).json({error: 'Dentist not found'}); // resource not found
+            return res.status(404).json({Error: 'Dentist not found'}); // resource not found
         }
         res.status(200).json(dentist);                // request successful
     } catch (err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});   // internal server error
     }
 });
 
@@ -90,10 +103,10 @@ router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO:
         // subscribe to topic to receive timeslots payload
         const subTopic = 'dentago/availability/' + reqID; // include reqID in topic to ensure correct incoming payload
         const payload = await mqtt.subscribe(subTopic);
-        res.status(200).json({ data: payload });
+        res.status(200).json({ Data: payload });
 
     } catch(err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
@@ -121,10 +134,10 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         // subscribe to topic to receive timeslots payload
         const subTopic = 'dentago/booking/' + reqID + '/#'; // include reqID in topic to ensure correct incoming payload
         const payload = await mqtt.subscribe(subTopic);
-        res.status(200).json({ data: payload });
+        res.status(200).json({ Data: payload });
 
     } catch(err) {
-        res.status(500).json({error: err.message});  // internal server error
+        res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
