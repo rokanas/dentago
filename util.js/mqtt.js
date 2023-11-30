@@ -1,8 +1,10 @@
 import mqtt from "mqtt";
+import bookTimeslot from "../functionalities/bookTimeslot.js";
+import cancelTimeslot from "../functionalities/cancelTimeslot.js";
 
 const brokerUrl = "mqtt://test.mosquitto.org";
-const subscribeTopic = "hearingTeeth";
-const publishTopic = "hearingTeeth"; // yellingTeeth
+const subscribeTopic = "dentago/booking/";
+const publishTopic = "dentago/booking";
 
 const options = {
   clientId: "OopsPulledWrongTooth",
@@ -21,12 +23,28 @@ const mqttInit = async () => {
     });
 
     console.log(`Publishing message to ${publishTopic}`);
-    client.publish(publishTopic, `Now subscribing to ${publishTopic}`);
   });
 
-  client.on("message", (topic, message) => {
+  client.on("message", async (topic, message) => {
     if (topic === subscribeTopic) {
-      console.log("Received following message:", message.toString());
+      const payload = message.toString(); // should have these properties: instruction, slotID, patientID, reqID.
+      const { instruction, slotID, patientID, reqID, clinicID } = JSON.parse(payload);
+
+      let timeslot;
+      if (instruction === "BOOK") {
+        timeslot = await bookTimeslot(slotID, patientID);
+      } else if (instruction === "CANCEL") {
+        timeslot = await cancelTimeslot(slotID, patientID);
+      }
+
+      let response;
+      if (timeslot) {
+        response = "SUCCESS";
+      } else {
+        response = "FAILURE";
+      }
+
+      client.publish(`${publishTopic}/${reqID}/${clinicID}/${response}`, timeslot);
     }
   });
 };

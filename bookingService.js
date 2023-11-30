@@ -8,7 +8,7 @@ import mqttInit from "./util.js/mqtt.js";
 await mqttInit();
 await connectDatabase();
 
-await createTimeslot(); // Just because there were none. Will be removed later.
-await createPatient(); // Just because there were none. Will be removed later.
-await bookTimeslot("12345", "65660acd52d3208340929920");
-await cancelTimeslot("12345", "65660acd52d3208340929920");
+//await createTimeslot(); // Just because there were none. Will be removed later.
+//await createPatient(); // Just because there were none. Will be removed later.
+//await bookTimeslot("656642f014684bc6d694d7aa", "65660acd52d3208340929920");
+//await cancelTimeslot("656642f014684bc6d694d7aa", "65660acd52d3208340929920");
