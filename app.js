@@ -35,7 +35,7 @@ const MQTT_TOPICS = {
     createDentist: 'dentago/creation/dentists',
     createTimeslot: 'dentago/creation/timeslot', //TODO: rename to createTimeslot for consistency,
     assignDentist: 'dentago/assignment/timeslot',
-    bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
+    bookingNotification: 'dentago/booking/+/+/SUCCESS' //+reqId/+clinicId/+status
 }
 
 const MQTT_OPTIONS = {
@@ -104,28 +104,16 @@ async function handleBookingNotification(topic, payload) {
         const status = topicArray[4];
 
         // Check valid message
-        if (clinicId.length === 0 || status.length === 0 || !(status === 'SUCCESS' || status === 'FAILURE')) {
+        if (clinicId.length === 0 || status.length === 0) {
             throw new Error('Invalid topic data');
         }
 
         let resTopic = `dentago/booking/${clinicId}/`;
         resTopic += status;
         
-        let bro = JSON.parse(payload.toString())['timeslotPatient'];
-        let message = "";
+        let instruction = JSON.parse(payload.toString())['instruction'];
 
-        // TODO: Remove this after establishing consistency with the payload and the topics
-        if (bro == null)
-        {
-            message = "Canceled";
-        }
-        else
-        {
-            message = "Booked";
-        }
-
-        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${message}`);
-        // console.log(JSON.parse(payload.toString())['timeslotPatient']);
+        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
 
         client.publish(resTopic, `Booking ${status}`);
 
