@@ -3,7 +3,7 @@ require('dotenv').config();
 
 /*====================  MQTT SETUP  ==================== */
 
-const broker = process.env.MOSQUITTO_URI; // TODO: change to hosted mosquitto address 
+const broker = process.env.MOSQUITTO_URI || process.env.CI_MOSQUITTO_URI;
 
 // connect to the MQTT broker
 const client = mqtt.connect(broker);

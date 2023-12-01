@@ -1,0 +1,268 @@
+{
+	"info": {
+		"_postman_id": "b948a13c-0006-4138-a1fb-46be57e25631",
+		"name": "Dentago Client",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29533952"
+	},
+	"item": [
+		{
+			"name": "Get all clinics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('clinicName');\r",
+							"            pm.expect(item).to.have.property('clinicAddress');\r",
+							"            pm.expect(item).to.have.property('clinicLocation');\r",
+							"        \r",
+							"            // Check clinicLocation for the required attributes\r",
+							"            const locationObject = item.clinicLocation;\r",
+							"            pm.expect(locationObject).to.have.property('lat');\r",
+							"            pm.expect(locationObject).to.have.property('lng');\r",
+							"        });\r",
+							"    \r",
+							"        // Set CLINIC collection variable with the id of the first item in the array\r",
+							"        const clinicID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", clinicID);\r",
+							"\r",
+							"    // If no clinics in the DB\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get specific clinic",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const clinicID = pm.collectionVariables.get(\"CLINIC_ID\");\r",
+							"\r",
+							"pm.test(\"Response to have correct status code\", function () {\r",
+							"    if (clinicID === undefined || clinicID.length != 24) {\r",
+							"        pm.response.to.have.status(400);\r",
+							"    } else if (clinicID === '000000000000000000000000') {\r",
+							"        pm.response.to.have.status(404);\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes\", function () {\r",
+							"\r",
+							"    if(pm.response.status === 200) {\r",
+							"        const responseData = pm.response.json();\r",
+							"\r",
+							"        pm.expect(responseData).to.have.property('_id');\r",
+							"        pm.expect(responseData).to.have.property('clinicName');\r",
+							"        pm.expect(responseData).to.have.property('clinicAddress');\r",
+							"        pm.expect(responseData).to.have.property('clinicLocation');\r",
+							"        \r",
+							"        // Check clinicLocation for the required attributes\r",
+							"        const locationObject = responseData.clinicLocation;\r",
+							"        pm.expect(locationObject).to.have.property('lat');\r",
+							"        pm.expect(locationObject).to.have.property('lng');\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Reset the CLINIC collection variable\r",
+							"pm.collectionVariables.unset(\"CLINIC_ID\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/{{CLINIC_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						"{{CLINIC_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all dentists",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('dentistName');\r",
+							"            pm.expect(item).to.have.property('dentistClinic');\r",
+							"        });\r",
+							"\r",
+							"        // Set dentist id variable with the id of the first item in the array\r",
+							"        const dentistID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"DENTIST_ID\", dentistID);\r",
+							"    \r",
+							"    // If no dentists in the DB, set dentist ID variable to 0x12\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"DENTIST_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/dentists/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"dentists",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get specific dentist",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const dentistID = pm.collectionVariables.get(\"DENTIST_ID\");\r",
+							"\r",
+							"pm.test(\"Response to have correct status code\", function () {\r",
+							"    if (dentistID === undefined || dentistID.length != 24) {\r",
+							"        pm.response.to.have.status(400);\r",
+							"    } else if (dentistID === '000000000000000000000000') {\r",
+							"        pm.response.to.have.status(404);\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    if (pm.response.status === 200) {\r",
+							"        pm.expect(responseData).to.have.property('_id');\r",
+							"        pm.expect(responseData).to.have.property('dentistName');\r",
+							"        pm.expect(responseData).to.have.property('dentistClinic');\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Reset the CLINIC collection variable\r",
+							"pm.collectionVariables.unset(\"DENTIST_ID\");\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/dentists/{{DENTIST_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"dentists",
+						"{{DENTIST_ID}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "HOST",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "NUM_DENTISTS",
+			"value": ""
+		}
+	]
+}

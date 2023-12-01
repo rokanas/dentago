@@ -11,8 +11,8 @@ const controller = require('./controller');
 // Variables
 require('dotenv').config();
 
-const mongoURI = process.env.MONGODB_URI
-const port = process.env.PORT
+const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
+const port = process.env.PORT || process.env.CI_PORT;
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
