@@ -2,7 +2,7 @@
     <div id="navbar">
         <router-link id="title" to="/"> Header Bar </router-link>
         <button> Notifications </button>
-        <button> Profile </button>
+        <button @click="redirect()"> Profile </button>
     </div>
 </template>
 
@@ -19,3 +19,18 @@
     font-size: larger;
 }
 </style>
+
+<script>
+export default {
+    data() {
+        return {
+            username: 'ratKing' // placeholder value
+        }
+    },
+    methods: {
+        redirect(){
+            this.$router.push('/user/' + this.username);
+        }
+    }
+}
+</script>
