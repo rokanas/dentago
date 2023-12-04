@@ -94,7 +94,10 @@ router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO:
         const reqID = generateID();
 
         // create payload as JSON string containing clinic and request IDs
-        const pubPayload = `{"clinicID": "${clinicID}", "reqID": "${reqID}"}`;
+        const pubPayload = `{
+                             "clinicID": "${clinicID}", 
+                             "reqID": "${reqID}"
+                            }`;
 
         // publish payload to availability service
         const pubTopic = 'dentago/availability/';
@@ -104,7 +107,7 @@ router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO:
         const subTopic = 'dentago/availability/' + reqID; // include reqID in topic to ensure correct incoming payload
         let payload = await mqtt.subscribe(subTopic);
         payload = JSON.parse(payload);
-        res.status(200).json({ data: payload });
+        res.status(200).json({ Data: payload });
 
     } catch(err) {
         res.status(500).json({Error: err.message});  // internal server error
@@ -126,8 +129,14 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         // generate random request ID
         const reqID = generateID();
         
-        // create payload as JSON string containing clinic, request content and ID
-        const pubPayload = `{"instruction": "${instruction}", "slotID": "${slotID}",  "clinicID": "${clinicID}", "patientID": "${patientID}", "reqID": "${reqID}"}`;
+        // create payload as JSON string
+        const pubPayload = `{
+                             "instruction": "${instruction}", 
+                             "slotID": "${slotID}",  
+                             "clinicID": "${clinicID}", 
+                             "patientID": "${patientID}", 
+                             "reqID": "${reqID}"
+                            }`;
 
         // publish payload to booking service
         const pubTopic = 'dentago/booking/';
@@ -136,13 +145,26 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         // subscribe to topic to receive timeslots payload
         const subTopic = 'dentago/booking/' + reqID + '/' + clinicID + '/#'; // include reqID in topic to ensure correct incoming payload
         let payload = await mqtt.subscribe(subTopic);
+
+        // parse MQTT message to JSON
         payload = JSON.parse(payload);
-        res.status(200).json({ data: payload });
+        payload.timeslot = JSON.parse(payload.timeslot);
+        payload.status = JSON.parse(payload.status);
+
+        // respond with relevant status code and message
+        res.status(payload.status.code).json({ Message: payload.status.message, Data: payload.data });
 
     } catch(err) {
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
+/*
+        // respond according to instruction
+        if(payload.instruction === "BOOK") {
+            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
+        } else if (payload.instruction === "CANCEL") {
+            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
+        }  */
 
 // export the router
 module.exports = router;

@@ -12,6 +12,7 @@ const controller = require('./controller');
 require('dotenv').config();
 
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
+const host = process.env.HOST || process.env.CI_HOST;
 const port = process.env.PORT || process.env.CI_PORT;
 
 // Connect to MongoDB
@@ -72,8 +73,8 @@ app.use(function(err, req, res, next) {
 app.listen(port, function(err) {
     if (err) throw err;
     console.log(`Express server listening on port ${port}, in ${env} mode`);
-    console.log(`Backend: http://localhost:${port}/api/`);
-    console.log(`Frontend (production): http://localhost:${port}/`);
+    console.log(`Backend: ${host}:${port}/api/`);
+    console.log(`Frontend (production): ${host}:${port}/`);
 });
 
 module.exports = app;
