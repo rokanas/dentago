@@ -42,9 +42,6 @@ app.use('/api/*', function (_, res) {
     res.status(404).json({ 'message': 'Not Found' });
 });
 
-// configuration for serving frontend in production mode
-// support Vuejs HTML 5 history mode
-app.use(history());
 // serve static assets
 let root = path.normalize(__dirname + '/..');
 let client = path.join(root, 'client', 'dist');
@@ -74,4 +71,4 @@ app.listen(port, function(err) {
     console.log(`Frontend (production): ${host}:${port}/`);
 });
 
-module.exports = authServer;
+module.exports = app;

@@ -1,10 +1,15 @@
 {
   "name": "service-authentication",
   "version": "1.0.0",
-  "description": "Repository for the authentication server of the \"Dentago\" system.",
-  "main": "index.js",
+  "description": "Patient authentication server for the Dentago system.",
+  "main": "authServer.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.chalmers.se/courses/dit355/2023/student-teams/dit356-2023-13/service-authentication"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node authServer.js",
+    "dev": "nodemon authServer.js"
   },
   "keywords": [],
   "author": "",
