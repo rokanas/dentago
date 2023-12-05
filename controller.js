@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const jwt = require ("jsonwebtoken");
 const mqtt = require('./mqtt.js');
 const Clinic = require('./models/clinic');
 const Dentist = require('./models/dentist');
@@ -166,6 +167,79 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         } else if (payload.instruction === "CANCEL") {
             res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
         }  */
+
+/*====================  USER AUTH  ==================== */
+
+// middleware for jwt token authentication
+function authenticateToken(req, res, next) {
+    // token comes from auth portion of request header
+    const authHeader = req.headers['authorization'];
+
+    // if we have auth header, return token portion, otherwise return undefined
+    const token = authHeader && authHeader.split(' ')[1];   // split space between bearer and token in auth header
+
+    // if token is undefined, return 401 unauthorized
+    if(token == null) {
+        return res.sendStatus(401).json({ Error: "Access unauthorized: no valid authentication credentials" });
+    }
+
+    // verify validity of access token
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        // if request has access token but token is no longer valid, return 403 forbidden
+        if(err) {
+            return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
+        }
+        // if access token is valid, proceed with valid user
+        req.body = ({user: user});
+        next();
+    });
+}
+
+/* 
+**** unnecessary for now, but commented out for potential future use ****
+
+// get all patients
+router.get('/patients', async (_, res) => {
+    try {
+        const patients = await Patient.find();
+        res.status(200).json(patients);              // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+*/
+
+// TODO: discuss endpoint name
+// get specific patient by authenticated userID
+router.get('/patients/', authenticateToken, async (req, res) => {
+    try {
+        const patient = await Patient.findOne({ id: req.body.user.id });
+        if(!patient) {
+            return res.status(404).json({Message: "Patient not found"});
+        }
+        res.status(200).json(patient);              // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+
+// *** PURELY FOR TESTING ****
+// create new patient
+router.post('/patients', async (req, res) => {
+    try {
+        const existingPatient = await Patient.findOne({ id: req.body.id });
+        // if patient doesn't already exist, proceed
+        if (!existingPatient) { 
+            const patient = new Patient(req.body);
+            await patient.save();
+            return res.status(201).json({ Message: 'Patient created successfully', AccessToken: patient.refreshToken });
+        } else {
+            return res.status(409).json({ Error: 'Patient already exists' });
+        }
+    } catch (err) {
+        res.status(500).json({Error: err.message});
+    }
+});
 
 // export the router
 module.exports = router;
