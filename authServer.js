@@ -3,10 +3,10 @@ const mongoose = require('mongoose');       // mongoDB data structuring and sche
 const morgan = require('morgan');           // logs HTTP requests in the terminal
 const path = require('path');               // handles file paths
 const cors = require('cors');               // handles cross-origin requests (relevant for production)
-const controller = require('./controller'); // file contains HTTP request endpoints
+const controller = require('./controller'); // file containing HTTP request endpoints
 
 // Variables
-require('dotenv').config();                 // loads environmental variables from .env file to process.env object
+require('dotenv').config();                 // load environmental variables from .env file to process.env object
 
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 const host = process.env.HOST || process.env.CI_HOST;
