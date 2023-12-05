@@ -11,7 +11,7 @@ async function createClinic(payload) {
         newClinic.save().then(() => {
             console.log('Clinic created');
         }).catch((err) => {
-            if (err.code === 11000) console.error('ERROR! Clinic with this id already exists');
+            if (err.code === 11000) console.error('ERROR! Clinic with this id already exists | ' + err);
             else console.error(err);
         });
     }
@@ -25,18 +25,18 @@ async function createDentist(payload) {
     try {
         const objDentist = JSON.parse(payload);
         // Find object ID
-        const test = await Clinic.findOne({ clinicId: objDentist['dentistClinic'] }).exec();
+        const test = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
 
         const newDentist = new Dentist({
-            dentistId: objDentist['dentistId'],
-            dentistName: objDentist['dentistName'],
-            dentistClinic: test._id,
+            id: objDentist['id'],
+            name: objDentist['name'],
+            clinic: test._id,
         });
 
         newDentist.save().then(() => {
             console.log('Dentist created');
         }).catch((err) => {
-            if (err.code === 11000) console.error('ERROR! Dentist with this id already exists');
+            if (err.code === 11000) console.error('ERROR! Dentist with this id already exists | ' + err);
             else console.error(err);
         });
     }
@@ -51,18 +51,18 @@ async function createTimeslot(payload) {
     try {
         const objSlot = JSON.parse(payload);
 
-        const clinic = await Clinic.findOne({ clinicId: objSlot['timeslotClinic'] }).exec();
-        const dentist = await Dentist.findOne({ dentistId: objSlot['timeslotDentist'] }).exec();
+        const clinic = await Clinic.findOne({ id: objSlot['clinic'] }).exec();
+        const dentist = await Dentist.findOne({ id: objSlot['dentist'] }).exec();
 
         let clinicId = clinic._id;
         let dentistId = dentist !== null ? dentist._id : null; // Check if there is a dentist_id passed in the payload
 
         const newTimeslot = new Timeslot({
-            timeslotClinic: clinicId,
-            timeslotDentist: dentistId,
-            timeslotPatient: null,
-            timeslotStartTime: objSlot['timeslotStartTime'],
-            timeslotEndTime: objSlot['timeslotEndTime'],
+            clinic: clinicId,
+            dentist: dentistId,
+            patient: null,
+            startTime: objSlot['startTime'],
+            endTime: objSlot['endTime'],
         });
 
         newTimeslot.save().then(() => {
@@ -79,23 +79,23 @@ async function createTimeslot(payload) {
 async function assignDentist(payload) {
     console.log('Patch timeslot');
 
-    // The payload will consist of a Stringified Json in the form of {"timeslotId": "123095124", "timeslotDentist": "dentistId"}
+    // The payload will consist of a Stringified Json in the form of {"timeslot": "123095124", "dentist": "dentistId"}
     try {
         const objPayload = JSON.parse(payload);
-        const dentistId = objPayload.timeslotDentist;
+        const timeslotId = objPayload.timeslot;
+        const dentistId = objPayload.dentist;
 
         let dentistObjId = null;
 
         // If no dentist is provided, we want to unassign the slot
         if (dentistId !== null)
         {
-            const dentist = await Dentist.findOne({ dentistId: dentistId }).exec();
+            const dentist = await Dentist.findOne({ id: dentistId }).exec();
             dentistObjId = dentist['_id'];
         }
 
         // Find a timeslot by its id, and updates its dentist field to the assigned dentist
-        let timeslotId = objPayload.timeslotId;
-        let result = await Timeslot.findByIdAndUpdate(timeslotId, {timeslotDentist: dentistObjId}, {new: true}).exec();
+        let result = await Timeslot.findByIdAndUpdate(timeslotId, {dentist: dentistObjId}, {new: true}).exec();
         console.log(result); // Optional
 
     } catch (error) {

@@ -3,16 +3,16 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const dentistSchema = new Schema({
-    dentistId: {
+    id: {
         type: String,
         unique: true,
         required: true
     },
-    dentistName: {
+    name: {
         type: String,
         required: true
     },
-    dentistClinic: {
+    clinic: {
         type: Schema.Types.ObjectId, ref: "Clinic"
     }
 });

@@ -3,26 +3,26 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const timeslotSchema = new Schema({
-    timeslotClinic: {
+    clinic: {
         type: Schema.Types.ObjectId,
         ref: "Clinic",
         required: true,
     },
-    timeslotDentist: {
+    dentist: {
         type: Schema.Types.ObjectId,
         ref: "Dentist",
         required: false,
     },
-    timeslotPatient: {
+    patient: {
         type: Schema.Types.ObjectId,
         ref: "Patient",
         required: false,
     },
-    timeslotStartTime: {
+    startTime: {
         type: Date,
         required: true,
     },
-    timeslotEndTime: {
+    endTime: {
         type: Date,
         required: true,
     },
