@@ -12,15 +12,9 @@ mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotDent
 mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotDentist\": \"sonicDentist\", \"timeslotClinic\": \"greenHillZoneClinic\", \"timeslotStartTime\": \"2023-11-28T12:34:56Z\", \"timeslotEndTime\": \"2023-11-28T12:34:56Z\"}'
 mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"timeslotClinic\": \"greenHillZoneClinic\", \"timeslotStartTime\": \"2023-11-28T12:34:56Z\", \"timeslotEndTime\": \"2023-11-28T12:34:56Z\"}'
 
-mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslotId\": \"656ee38b68c9712cc02f9023\", \"timeslotDentist\": \"sonicDentist\"}'
+mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.sorg -m '{\"timeslotId\": \"656ee38b68c9712cc02f9023\", \"timeslotDentist\": \"sonicDentist\"}'
 mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslotId\": \"656ee38b68c9712cc02f9023\", \"timeslotDentist\": null}'
 
 mqtt pub -t dentago/booking/clinic1/user1/approved -h test.mosquitto.org -m 'test'
 mqtt sub -t dentago/booking/clinic1/+ -h test.mosquitto.org
 mqtt sub -t dentago/+ -h test.mosquitto.org
-
-
-
-6567598a5ad8b769a8f2e94c
-
-6567598a5ad8b769a8f2e94c
