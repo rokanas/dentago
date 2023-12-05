@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const mqtt = require('./mqtt.js');
 const Clinic = require('./models/clinic');
 const Dentist = require('./models/dentist');
+const Patient = require('./models/patient');
 const router = express.Router();
 
 router.use(express.json());
