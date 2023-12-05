@@ -1,11 +1,3 @@
-// TODO: 
-/**
- *      - Add endpoint for creating slots [Partially done]
- *      - Add endpoint for registering dentists in a slot
- * - EXTRA:
- *      - We might need the dentist ID as a payload for the notification
- */
-
 /**
  * Some of the mongodb setup was taken from https://git.chalmers.se/courses/dit342/2023/group-15-web
  */
@@ -33,7 +25,7 @@ mongoose.connect(mongoURI).then(() => {
 const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
-    createTimeslot: 'dentago/creation/timeslot', //TODO: rename to createTimeslot for consistency,
+    createTimeslot: 'dentago/creation/timeslot',
     assignDentist: 'dentago/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS' //+reqId/+clinicId/+status
 }
@@ -51,7 +43,6 @@ client.on('connect', () => {
     let topicList = [];
 
     Object.values(MQTT_TOPICS).forEach(element => {
-        //    console.log(element);
         topicList.push(element);
     });
 

@@ -46,7 +46,6 @@ async function createDentist(payload) {
 }
 
 async function createTimeslot(payload) {
-    // TODO: Fix the date issues
 
     // Parse the payload
     try {
@@ -80,48 +79,27 @@ async function createTimeslot(payload) {
 async function assignDentist(payload) {
     console.log('Patch timeslot');
 
-    // The payload will consist of a Stringified Json in the form of {"timeslotId": "123095124", "timeslotDentist": "123901414"}
+    // The payload will consist of a Stringified Json in the form of {"timeslotId": "123095124", "timeslotDentist": "dentistId"}
     try {
         const objPayload = JSON.parse(payload);
-        // const requestedTimeslot = await Timeslot.findById(objPayload.slotId);
+        const dentistId = objPayload.timeslotDentist;
+
+        let dentistObjId = null;
+
+        // If no dentist is provided, we want to unassign the slot
+        if (dentistId !== null)
+        {
+            const dentist = await Dentist.findOne({ dentistId: dentistId }).exec();
+            dentistObjId = dentist['_id'];
+        }
 
         // Find a timeslot by its id, and updates its dentist field to the assigned dentist
-
         let timeslotId = objPayload.timeslotId;
-        let dentistId = objPayload.timeslotDentist;
-
-        console.log('Timeslot: ' + timeslotId + ' Dentist: ' + dentistId);
-        // console.log('Timeslot: ' + timeslotId);
-        console.log('Timeslot ID: ')
-        console.log(timeslotId);
-        console.log('Dentist ID: ')
-        console.log(dentistId);
-        // '6567598a5ad8b769a8f2e94c'
-        let a = '6567598a5ad8b769a8f2e94c';
-        '6567598a5ad8b769a8f2e94c'
-        // let a = null;
-
-        let bro = await Timeslot.findByIdAndUpdate(timeslotId, {timeslotDentist: dentistId}, {new: true}).exec();
-
-
-        // let bro = await Timeslot.findOneAndUpdate({_id: timeslotId}, {timeslotDentist: dentistId}).exec();
-        // let bro = await Timeslot.findOneAndUpdate({_id: '6567598b5ad8b769a8f2e959'}, {timeslotDentist: '6567598a5ad8b769a8f2e94c'}).exec();
-
-        console.log(bro);
-
-        // const timeslotTest = await Timeslot.find({_id: '65675ca18d47694885131813'}).exec();
-        // const timeslotTest = await Timeslot.find({_id: '6567598b5ad8b769a8f2e95d'}).exec();
-        // console.log(timeslotTest);
-
-        // TODO: Fix the update
-        // let bro = await Timeslot.findOneAndUpdate({_id: timeslotId}, { timeslotDentist: dentistId });
-        // let bro = await Timeslot.findOne({_id: timeslotId});
-
-        // console.log(bro);
-
+        let result = await Timeslot.findByIdAndUpdate(timeslotId, {timeslotDentist: dentistObjId}, {new: true}).exec();
+        console.log(result); // Optional
 
     } catch (error) {
-
+        console.error('ERROR: ' + error);
     }
 }
 
