@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const jwt = require ("jsonwebtoken");
 const mqtt = require('./mqtt.js');
 const Clinic = require('./models/clinic');
@@ -195,14 +196,23 @@ function authenticateToken(req, res, next) {
     });
 }
 
-/* 
+/*
 **** unnecessary for now, but commented out for potential future use ****
 
 // get all patients
-router.get('/patients', async (_, res) => {
+router.get('/allpatients', async (_, res) => {
     try {
         const patients = await Patient.find();
         res.status(200).json(patients);              // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+
+router.delete('/patients', async (_, res) => {
+    try {
+        await Patient.deleteMany();
+        res.status(200);             // request successful
     } catch(err) {
         res.status(500).json({Error: err.message});  // internal server error
     }
@@ -217,20 +227,26 @@ router.get('/patients/', authenticateToken, async (req, res) => {
         if(!patient) {
             return res.status(404).json({Message: "Patient not found"});
         }
-        res.status(200).json(patient);              // request successful
+        res.status(200).json(patient);               // request successful
     } catch(err) {
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
-// *** PURELY FOR TESTING ****
-// create new patient
-router.post('/patients', async (req, res) => {
+// *** TO BE MOVED TO AUTHENTICATION SERVICE ****
+// register new patient
+router.post('/register', async (req, res) => {
     try {
         const existingPatient = await Patient.findOne({ id: req.body.id });
         // if patient doesn't already exist, proceed
         if (!existingPatient) { 
             const patient = new Patient(req.body);
+
+            // hash password using salt for greater security
+            const salt = await bcrypt.genSalt(); // default parameter 10
+            const hashedPassword = await bcrypt.hash(req.body.password, salt);
+            patient.password = hashedPassword;
+            
             await patient.save();
             return res.status(201).json({ Message: 'Patient created successfully', AccessToken: patient.refreshToken });
         } else {
