@@ -1,11 +1,3 @@
-// TODO: 
-/**
- *      - Add endpoint for creating slots [Partially done]
- *      - Add endpoint for registering dentists in a slot
- * - EXTRA:
- *      - We might need the dentist ID as a payload for the notification
- */
-
 /**
  * Some of the mongodb setup was taken from https://git.chalmers.se/courses/dit342/2023/group-15-web
  */
@@ -15,7 +7,7 @@ const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 require('dotenv').config();
 
-const { createClinic, createDentist, createSlot } = require('./utils/entityCreation');
+const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
 
 // Connect to MongoDB
 const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
@@ -33,8 +25,9 @@ mongoose.connect(mongoURI).then(() => {
 const MQTT_TOPICS = {
     createClinic: 'dentago/creation/clinics',
     createDentist: 'dentago/creation/dentists',
-    createSlot: 'dentago/creation/slots', //TODO: rename to createTimeslot for consistency
-    bookingNotification: 'dentago/booking/+/+/+' //+reqId/+clinicId/+status
+    createTimeslot: 'dentago/creation/timeslot',
+    assignDentist: 'dentago/assignment/timeslot',
+    bookingNotification: 'dentago/booking/+/+/SUCCESS' //+reqId/+clinicId/+status
 }
 
 const MQTT_OPTIONS = {
@@ -50,7 +43,6 @@ client.on('connect', () => {
     let topicList = [];
 
     Object.values(MQTT_TOPICS).forEach(element => {
-        //    console.log(element);
         topicList.push(element);
     });
 
@@ -69,8 +61,11 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['createDentist']:
             createDentist(payload);
             break;
-        case MQTT_TOPICS['createSlot']:
-            createSlot(payload);
+        case MQTT_TOPICS['createTimeslot']:
+            createTimeslot(payload);
+            break;
+        case MQTT_TOPICS['assignDentist']:
+            assignDentist(payload);
             break;
         default:
             handleBookingNotification(topic, payload);
@@ -100,28 +95,16 @@ async function handleBookingNotification(topic, payload) {
         const status = topicArray[4];
 
         // Check valid message
-        if (clinicId.length === 0 || status.length === 0 || !(status === 'SUCCESS' || status === 'FAILURE')) {
+        if (clinicId.length === 0 || status.length === 0) {
             throw new Error('Invalid topic data');
         }
 
         let resTopic = `dentago/booking/${clinicId}/`;
         resTopic += status;
         
-        let bro = JSON.parse(payload.toString())['timeslotPatient'];
-        let message = "";
+        let instruction = JSON.parse(payload.toString())['instruction'];
 
-        // TODO: Remove this after establishing consistency with the payload and the topics
-        if (bro == null)
-        {
-            message = "Canceled";
-        }
-        else
-        {
-            message = "Booked";
-        }
-
-        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${message}`);
-        // console.log(JSON.parse(payload.toString())['timeslotPatient']);
+        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
 
         client.publish(resTopic, `Booking ${status}`);
 

@@ -3,20 +3,20 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const clinicSchema = new Schema({
-    clinicId: {
+    id: {
         type: String,
         unique: true,
         required: true
     },
-    clinicName: {
+    name: {
         type: String,
         required: true
     },
-    clinicAddress: {
+    address: {
         type: String,
         required: true
     },
-    clinicLocation: {
+    location: {
         lat: {
             type: Number,
             required: true
