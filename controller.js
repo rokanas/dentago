@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt");
 const Patient = require('./patient');
 
 router.use(express.json());
@@ -32,7 +33,8 @@ router.patch('/login', async (req, res) => {
             return res.status(404).json({ Error: 'Access forbidden: invalid patient ID' }); // resource not found
         }
 
-        if(patient.password !== userPassword) {
+        // compare hashed password in DB with hashed password provided by login request
+        if(await bcrypt.compare(patient.password, userPassword)) {
             return res.status(403).json({ Error: "Access forbidden: invalid password"});
         }
 
@@ -42,7 +44,7 @@ router.patch('/login', async (req, res) => {
 
         // patch patient with valid refresh token
         patient.refreshToken = refreshToken;
-        patient.save();
+        await patient.save();
   
         // respond with access token
         res.json({ accessToken: accessToken});
