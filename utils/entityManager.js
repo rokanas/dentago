@@ -30,6 +30,7 @@ async function createDentist(payload) {
         const newDentist = new Dentist({
             id: objDentist['id'],
             name: objDentist['name'],
+            password: objDentist['password'],
             clinic: test._id,
         });
 
