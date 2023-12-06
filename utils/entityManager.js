@@ -11,6 +11,7 @@ async function createClinic(payload) {
         newClinic.save().then(() => {
             console.log('Clinic created');
         }).catch((err) => {
+            // Mongoose error code
             if (err.code === 11000) console.error('ERROR! Clinic with this id already exists | ' + err);
             else console.error(err);
         });
@@ -50,20 +51,33 @@ async function createTimeslot(payload) {
 
     // Parse the payload
     try {
-        const objSlot = JSON.parse(payload);
+        const objTimeslot = JSON.parse(payload);
 
-        const clinic = await Clinic.findOne({ id: objSlot['clinic'] }).exec();
-        const dentist = await Dentist.findOne({ id: objSlot['dentist'] }).exec();
-
+        const clinic = await Clinic.findOne({ id: objTimeslot['clinic'] }).exec();
         let clinicId = clinic._id;
-        let dentistId = dentist !== null ? dentist._id : null; // Check if there is a dentist_id passed in the payload
+
+        // If a dentist is provided
+        let dentist = null;
+        if (objTimeslot['dentist'] != null)
+        {
+            // Query the dentist
+            dentist = await Dentist.findOne({ id: objTimeslot['dentist'] }).exec();
+
+            // If a dentist was provided but the id was not found
+            if (dentist === null)
+            {
+                throw new Error("ERROR: Dentist not found");
+            }
+        }
+
+        let dentistId = dentist === null ? null : dentist._id; // Get the dentist_id
 
         const newTimeslot = new Timeslot({
             clinic: clinicId,
             dentist: dentistId,
             patient: null,
-            startTime: objSlot['startTime'],
-            endTime: objSlot['endTime'],
+            startTime: objTimeslot['startTime'],
+            endTime: objTimeslot['endTime'],
         });
 
         newTimeslot.save().then(() => {
