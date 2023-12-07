@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mqtt = require('./mqtt.js');
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt");
 const Patient = require('./patient');
