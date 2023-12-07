@@ -24,50 +24,49 @@ function generateRefreshToken(user) {
 async function register(patient) {
 
     // declare response attributes
-    const status = "";
-    const message = "";
-    const data = "";
+    const status = ({ code: "", message: "" });
+    const data = ({ patient: "", accessToken: "" });
 
     try {
         const existingPatient = await Patient.findOne({ id: patient.id });
-        // if patient doesn't already exist, proceed
+        // if patient doesn't already exist, create one 
         if (!existingPatient) { 
             const newPatient = new Patient(patient);
 
-            // hash password using salt for greater security
+            // hash password using salt for greater security and update patient object
             const salt = await bcrypt.genSalt(); // default parameter 10
-            const hashedPassword = await bcrypt.hash(patient.password, salt);
+            const hashedPassword = await bcrypt.hash(newPatient.password, salt);
             newPatient.password = hashedPassword;
 
-            // call functions to generate access and refresh tokens using user object
+            // call functions to generate access and refresh tokens using patient id
             const accessToken = generateAccessToken({ id: newPatient.id });
             const refreshToken = generateRefreshToken({ id: newPatient.id });
 
-            // store refresh token in user object
+            // store refresh token in patient object
             newPatient.refreshToken = refreshToken;
 
             // save the user to the DB
             await newPatient.save();
 
-            // create response object payload
-            status = 201;
-            message = "Patient created successfully"
-            data = ({ patient: newPatient, accessToken: accessToken});
+            // update response object attributes
+            status.code = 201;
+            status.message = "Patient created successfully"
+            data.patient = newPatient;
+            data.accessToken = accessToken;
 
         } else {
             // if patient already exists in the database
-            status = 409;
-            message = "Error: Patient already exists";
+            status.code = 409;
+            status.message = "Error: Patient already exists";
         }
     } catch (err) {
-        status = 500;
-        message = err.message;
+        status.code = 500;
+        status.message = err.message;
     } finally {
         const response = `{
                            "Status": "${status}",
-                           "Message": "${message}",
                            "Data": "${data}",
-                           }`;
+                          }`;
         return response;
     }
 }
