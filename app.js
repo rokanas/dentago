@@ -85,6 +85,7 @@ client.on('error', (error) => {
  * Handle unexpected disconnections
  */
 client.on('close', () => {
+    // "\n" due to Windows cmd prompt
     console.log('\nClient disconnected from MQTT broker');
 });
 
@@ -97,11 +98,12 @@ client.on('reconnect', () => {
 
 /**
  * Handle application shutdown 
- * SIGINT is the signal sent when terminating the process by pressing 'ctrl + C'
+ * SIGINT is the signal sent when terminating the process by pressing 'ctrl+c'
  */
 // TODO: Can we remove the "Terminate batch job y/n?" prompt?
 process.on('SIGINT', () => {
     console.log('Closing MQTT connection...');
+    // End MQTT connection and exit process using success codes for both
     client.end({ reasonCode: 0x00 }, () => {
         console.log('MQTT connection closed');
         process.exit(0);
