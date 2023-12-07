@@ -2,6 +2,13 @@
 
 Repository for the patient UI of the system *"Dentago"*.
 
+## Tech Stack
+- [Vue 3](https://vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Vue3 Google Maps library](https://www.npmjs.com/package/vue3-google-map)
+- [Google Maps API](https://developers.google.com/maps)
+- [Axios](https://axios-http.com/docs/intro)
+
 ## Configuration
 
 After cloning the repository, open a terminal and move to the `patient-ui` directory. There, you can run:
