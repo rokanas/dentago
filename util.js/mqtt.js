@@ -4,7 +4,7 @@ import cancelTimeslot from "../functionalities/cancelTimeslot.js";
 
 const brokerUrl = "mqtt://test.mosquitto.org";
 const subscribeTopic = "dentago/booking/";
-const publishTopic = "dentago/booking";
+const publishTopic = "dentago/booking/";
 
 const options = {
   clientId: "OopsPulledWrongTooth",
@@ -21,32 +21,38 @@ const mqttInit = async () => {
         console.error(`Error subscribing to: ${subscribeTopic}`, err);
       }
     });
-
-    console.log(`Publishing message to ${publishTopic}`);
   });
 
-  client.on("message", async (topic, message) => {
+  client.on("message", async (topic, mqttMessage) => {
     if (topic === subscribeTopic) {
-      const payload = message.toString(); // should have these properties: instruction, slotID, patientID, reqID.
-      const { instruction, slotID, patientID, reqID, clinicID } = JSON.parse(payload);
+      const payload = mqttMessage.toString();
 
-      let timeslot;
+      const { instruction, slotId, clinicId, patientId, reqId } = JSON.parse(payload);
+
+      let operation;
       if (instruction === "BOOK") {
-        timeslot = await bookTimeslot(slotID, patientID);
+        operation = await bookTimeslot(slotId, patientId);
       } else if (instruction === "CANCEL") {
-        timeslot = await cancelTimeslot(slotID, patientID);
+        operation = await cancelTimeslot(slotId, patientId);
       }
+
+      let { timeslot, code, message } = operation;
 
       let response;
-      if (timeslot) {
-        response = "SUCCESS";
-      } else {
-        response = "FAILURE";
-      }
+      code === "200" ? (response = "SUCCESS") : (response = "FAILURE");
 
-      client.publish(`${publishTopic}/${reqID}/${clinicID}/${response}`, timeslot);
+      const status = { code, message };
+
+      const customRequestTopic = `${reqId}/${clinicId}/${response}`;
+      client.publish(
+        `${publishTopic}${customRequestTopic}`,
+        JSON.stringify({ timeslot, instruction, status })
+      );
+      console.log(`Published message to ${publishTopic}${customRequestTopic}`);
     }
   });
 };
 
 export default mqttInit;
+
+//instruction ==="ERROR_OVERBOOK";

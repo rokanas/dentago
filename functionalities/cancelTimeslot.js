@@ -2,19 +2,56 @@ import Timeslot from "../models/timeslot.js";
 
 async function cancelTimeslot(timeslot_id, patientId) {
   const timeslot = await Timeslot.findById(timeslot_id);
-  console.log("timeslot: " + timeslot);
-  if (timeslot) {
-    timeslot.timeslotPatient = null;
+
+  if (
+    timeslot &&
+    timeslot.timeslotPatient &&
+    timeslot.timeslotPatient.toString() === patientId
+  ) {
     try {
+      timeslot.timeslotPatient = null;
       await timeslot.save();
-    } catch {
-      console.error(`Error cancelling timeslot for patient ${patientId}`);
+    } catch (error) {
+      const errorMessage = `Error cancelling timeslot for patient ${patientId}: ${error.message}`;
+      console.error(errorMessage);
+      return {
+        timeslotJSON: JSON.stringify(timeslot),
+        code: "500",
+        message: errorMessage,
+      };
     } finally {
-      console.log(`Timeslot was cancelled for patient ${patientId}`);
-      return JSON.stringify(timeslot);
+      const successMessage = `Timeslot was cancelled for patient ${patientId}`;
+      console.log(successMessage);
+      return {
+        timeslotJSON: JSON.stringify(timeslot),
+        code: "200",
+        message: successMessage,
+      };
     }
+  } else if (
+    timeslot &&
+    timeslot.timeslotPatient &&
+    timeslot.timeslotPatient.toString() !== patientId
+  ) {
+    const errorMessage = `Error cancelling timeslot for patient ${patientId}. The timeslot was indeed booked, but not for this patient.`;
+    console.error(errorMessage);
+    return {
+      timeslotJSON: JSON.stringify(timeslot),
+      code: "403",
+      message: errorMessage,
+    };
+  } else if (timeslot && !timeslot.timeslotPatient) {
+    const errorMessage = `Error cancelling timeslot for patient ${patientId}. The timeslot was not booked.`;
+    console.error(errorMessage);
+    return {
+      timeslotJSON: JSON.stringify(timeslot),
+      code: "409",
+      message: errorMessage,
+    };
   } else {
-    console.error("The timeslot was not found in the database.");
+    const errorMessage = `Timeslot was not found in the database`;
+    console.error(errorMessage);
+    return { timeslotJSON: {}, code: "404", message: errorMessage };
   }
 }
 
