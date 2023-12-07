@@ -1,32 +1,31 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Define schema for the clinic resource
 const clinicSchema = new Schema({
-    clinicId: {
+    id: {
         type: String,
         unique: true,
         required: true
     },
-    clinicName: {
+    name: {
         type: String,
         required: true
     },
-    clinicAddress: {
+    address: {
         type: String,
         required: true
     },
-    clinicLocation: {
-        // Location is stored as {longitude, latitude}
+    location: {
         lat: {
             type: Number,
             required: true
         },
         lng: {
             type: Number,
-            required: true,
+            required: true
         }
     }
+    // TODO: add opening hours
 });
 
 module.exports = mongoose.model("Clinic", clinicSchema);

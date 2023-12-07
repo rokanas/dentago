@@ -1,31 +1,30 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Define schema for the dentist resource
-const slotSchema = new Schema({
-  timeslotDentist: {
-    type: Schema.Types.ObjectId,
-    ref: "Dentist",
-    required: false,
+const timeslotSchema = new Schema({
+  clinic: {
+      type: Schema.Types.ObjectId,
+      ref: "Clinic",
+      required: true,
   },
-  timeslotClinic: {
-    type: Schema.Types.ObjectId,
-    ref: "Clinic",
-    required: true,
+  dentist: {
+      type: Schema.Types.ObjectId,
+      ref: "Dentist",
+      required: false,
   },
-  timeslotPatient: {
-    type: Schema.Types.ObjectId,
-    ref: "Patient",
-    required: false,
+  patient: {
+      type: Schema.Types.ObjectId,
+      ref: "Patient",
+      required: false,
   },
-  timeslotStartTime: {
-    type: Date,
-    required: true,
+  startTime: {
+      type: Date,
+      required: true,
   },
-  timeslotEndTime: {
-    type: Date,
-    required: true,
+  endTime: {
+      type: Date,
+      required: true,
   },
 });
 
-module.exports = mongoose.model("Timeslot", slotSchema);
+module.exports = mongoose.model("Timeslot", timeslotSchema);
