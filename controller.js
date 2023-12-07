@@ -16,160 +16,10 @@ router.use(express.json());
 const OBJ_ID_LENGTH = 24;
 
 // generate random ID for each request
-function generateID() {
+function generateId() {
     const id = crypto.randomBytes(8).toString("hex");
     return id;
 }
-
-/*====================  ROUTE HANDLERS  ==================== */
-
-// get all clinics
-router.get('/clinics', async (_, res) => {
-    try {
-        const clinics = await Clinic.find();
-        res.status(200).json(clinics);               // request successful
-    } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-
-// get specific clinic by id
-router.get('/clinics/:clinic_id', async (req, res) => {
-    try {
-        const clinicID = req.params.clinic_id;
-        if(clinicID.length !== OBJ_ID_LENGTH) {
-            return res.status(400).json({Error: 'Not a valid ObjectID'})
-        }
-
-        const clinic = await Clinic.findOne({_id: clinicID});
-        if(!clinic) {
-            return res.status(404).json({Error: 'Clinic not found'}); // resource not found
-        }
-        res.status(200).json(clinic);                // request successful
-    } catch (err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-
-/* TODO:
-//get all dentists in clinic
-Clinic schema doesn't currently include dentists attribute
-
-// create user account
-Must agree upon user account schema
-*/
-
-// get all dentists
-router.get('/dentists', async (_, res) => {
-    try {
-        const dentists = await Dentist.find();
-        res.status(200).json(dentists);               // request successful
-    } catch(err) {
-        res.status(500).json({Error: err.message});   // internal server error
-    }
-});
-
-//get specific dentist
-router.get('/dentists/:dentist_id', async (req, res) => {
-    try {
-        const dentistID = req.params.dentist_id;
-        if(dentistID.length !== OBJ_ID_LENGTH) {
-            return res.status(400).json({Error: 'Not a valid ObjectID'})
-        }
-
-        const dentist = await Dentist.findOne({_id: dentistID});
-        if(!dentist) {
-            return res.status(404).json({Error: 'Dentist not found'}); // resource not found
-        }
-        res.status(200).json(dentist);                // request successful
-    } catch (err) {
-        res.status(500).json({Error: err.message});   // internal server error
-    }
-});
-
-// get all timeslots
-router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
-    try {
-        // extract clinic ID from request parameter     
-        const clinicID = req.params.clinic_id;
-
-        // generate random request ID
-        const reqID = generateID();
-
-        // create payload as JSON string containing clinic and request IDs
-        const pubPayload = `{
-                             "clinicID": "${clinicID}", 
-                             "reqID": "${reqID}"
-                            }`;
-
-        // publish payload to availability service
-        const pubTopic = 'dentago/availability/';
-        mqtt.publish(pubTopic, pubPayload);
-
-        // subscribe to topic to receive timeslots payload
-        const subTopic = 'dentago/availability/' + reqID; // include reqID in topic to ensure correct incoming payload
-        let payload = await mqtt.subscribe(subTopic);
-        payload = JSON.parse(payload);
-        res.status(200).json({ Data: payload });
-
-    } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-
-// book / cancel timeslot
-router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
-    try {
-        // extract clinic and slot IDs from request parameter     
-        const slotID = req.params.slot_id;
-        const clinicID = req.params.clinic_id;
-
-        // extract content from request body
-        // content is a JSON string containing instruction (BOOK or CANCEL) and patient ID
-        const instruction = req.body.instruction;
-        const patientID = req.body.patient_id;
-
-        // generate random request ID
-        const reqID = generateID();
-        
-        // create payload as JSON string
-        const pubPayload = `{
-                             "instruction": "${instruction}", 
-                             "slotID": "${slotID}",  
-                             "clinicID": "${clinicID}", 
-                             "patientID": "${patientID}", 
-                             "reqID": "${reqID}"
-                            }`;
-
-        // publish payload to booking service
-        const pubTopic = 'dentago/booking/';
-        mqtt.publish(pubTopic, pubPayload);
-
-        // subscribe to topic to receive timeslots payload
-        const subTopic = 'dentago/booking/' + reqID + '/' + clinicID + '/#'; // include reqID in topic to ensure correct incoming payload
-        let payload = await mqtt.subscribe(subTopic);
-
-        // parse MQTT message to JSON
-        payload = JSON.parse(payload);
-        payload.timeslot = JSON.parse(payload.timeslot);
-        payload.status = JSON.parse(payload.status);
-
-        // respond with relevant status code and message
-        res.status(payload.status.code).json({ Message: payload.status.message, Data: payload.data });
-
-    } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-/*
-        // respond according to instruction
-        if(payload.instruction === "BOOK") {
-            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
-        } else if (payload.instruction === "CANCEL") {
-            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
-        }  */
-
-/*====================  USER AUTH  ==================== */
 
 // middleware for jwt token authentication
 function authenticateToken(req, res, next) {
@@ -191,10 +41,156 @@ function authenticateToken(req, res, next) {
             return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
         }
         // if access token is valid, proceed with valid user
-        req.body = ({user: user});
+        req.body = ({ user: user });
         next();
     });
 }
+
+/*====================  ROUTE HANDLERS  ==================== */
+/*==================  CLINICS & DENTISTS  ================== */
+
+// get all clinics
+router.get('/clinics', async (_, res) => {
+    try {
+        const clinics = await Clinic.find();
+        res.status(200).json(clinics);               // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+
+// get specific clinic by id
+router.get('/clinics/:clinic_id', async (req, res) => {
+    try {
+        const clinicId = req.params.clinic_id;
+        if(clinicId.length !== OBJ_ID_LENGTH) {
+            return res.status(400).json({Error: 'Not a valid ObjectID'})
+        }
+
+        const clinic = await Clinic.findOne({_id: clinicId});
+        if(!clinic) {
+            return res.status(404).json({Error: 'Clinic not found'}); // resource not found
+        }
+        res.status(200).json(clinic);                // request successful
+    } catch (err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+
+/* TODO:
+//get all dentists in clinic
+Clinic schema doesn't currently include dentists attribute
+*/
+
+// get all dentists
+router.get('/dentists', async (_, res) => {
+    try {
+        const dentists = await Dentist.find();
+        res.status(200).json(dentists);               // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});   // internal server error
+    }
+});
+
+//get specific dentist
+router.get('/dentists/:dentist_id', async (req, res) => {
+    try {
+        const dentistId = req.params.dentist_id;
+        if(dentistId.length !== OBJ_ID_LENGTH) {
+            return res.status(400).json({Error: 'Not a valid ObjectID'})
+        }
+
+        const dentist = await Dentist.findOne({ _id: dentistId });
+        if(!dentist) {
+            return res.status(404).json({Error: 'Dentist not found'}); // resource not found
+        }
+        res.status(200).json(dentist);                // request successful
+    } catch (err) {
+        res.status(500).json({Error: err.message});   // internal server error
+    }
+});
+
+// get all timeslots
+router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
+    try {
+        // extract clinic ID from request parameter     
+        const clinicId = req.params.clinic_id;
+
+        // generate random request ID
+        const reqId = generateId();
+
+        // create payload as JSON string containing clinic and request IDs
+        const pubPayload = `{
+                             "clinicID": "${clinicId}", 
+                             "reqID": "${reqId}"
+                            }`;
+
+        // publish payload to availability service
+        const pubTopic = 'dentago/availability/';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to receive timeslots payload
+        const subTopic = 'dentago/availability/' + reqId; // include reqID in topic to ensure correct incoming payload
+        let subPayload = await mqtt.subscribe(subTopic);
+        subPayload = JSON.parse(subPayload);
+        res.status(200).json({ Data: subPayload });
+
+    } catch(err) {
+        res.status(500).json({ Error: err.message });  // internal server error
+    }
+});
+
+// book / cancel timeslot
+router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
+    try {
+        // extract clinic and slot IDs from request parameter     
+        const slotId = req.params.slot_id;
+        const clinicId = req.params.clinic_id;
+
+        // extract content from request body
+        // content is a JSON string containing instruction (BOOK or CANCEL) and patient ID
+        const instruction = req.body.instruction;
+        const patientId = req.body.patient_id;
+
+        // generate random request ID
+        const reqId = generateId();
+        
+        // create payload as JSON string
+        const pubPayload = `{
+                             "instruction": "${instruction}", 
+                             "slotId": "${slotId}",  
+                             "clinicId": "${clinicId}", 
+                             "patientId": "${patientId}", 
+                             "reqId": "${reqId}"
+                            }`;
+
+        // publish payload to booking service
+        const pubTopic = 'dentago/booking/';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to receive timeslots payload
+        const subTopic = 'dentago/booking/' + reqId + '/' + clinicId + '/#'; // include reqID in topic to ensure correct incoming payload
+        let subPayload = await mqtt.subscribe(subTopic);
+        
+        // parse MQTT message to JSON
+        subPayload = JSON.parse(subPayload);
+
+        // respond with relevant status code and message
+        res.status(subPayload.status.code).json({ Message: subPayload.status.message, Data: subPayload.data });
+
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+/*
+        // respond according to instruction
+        if(payload.instruction === "BOOK") {
+            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
+        } else if (payload.instruction === "CANCEL") {
+            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
+        }  */
+/*==================  ROUTE HANDLERS ================== */
+/*====================  USER AUTH  ==================== */
 
 /*
 **** unnecessary for now, but commented out for potential future use ****
@@ -225,35 +221,49 @@ router.get('/patients/', authenticateToken, async (req, res) => {
     try {
         const patient = await Patient.findOne({ id: req.body.user.id });
         if(!patient) {
-            return res.status(404).json({Message: "Patient not found"});
+            return res.status(404).json({ Message: "Patient not found" });
         }
         res.status(200).json(patient);               // request successful
     } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
+        res.status(500).json({ Error: err.message });  // internal server error
     }
 });
 
-// *** TO BE MOVED TO AUTHENTICATION SERVICE ****
 // register new patient
 router.post('/register', async (req, res) => {
     try {
-        const existingPatient = await Patient.findOne({ id: req.body.id });
-        // if patient doesn't already exist, proceed
-        if (!existingPatient) { 
-            const patient = new Patient(req.body);
+        // create patient object using request body
+        const patient = req.body;
 
-            // hash password using salt for greater security
-            const salt = await bcrypt.genSalt(); // default parameter 10
-            const hashedPassword = await bcrypt.hash(req.body.password, salt);
-            patient.password = hashedPassword;
-            
-            await patient.save();
-            return res.status(201).json({ Message: 'Patient created successfully', AccessToken: patient.refreshToken });
-        } else {
-            return res.status(409).json({ Error: 'Patient already exists' });
-        }
-    } catch (err) {
-        res.status(500).json({Error: err.message});
+        // generate random request ID
+        const reqId = generateId();
+
+        // create payload as JSON string
+        const pubPayload = `{
+                             "patient": "${patient}",
+                             "reqId": "${reqId}"
+                            }`;
+
+        // publish payload to authentication service
+        const pubTopic = 'dentago/authentication/register';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to access token payload
+        const subTopic = 'dentago/authentication/register/' + reqId;
+        let subPayload = await mqtt.subscribe(subTopic);
+        
+        // parse MQTT message to JSON
+        subPayload = JSON.parse(subPayload);
+
+        // respond with relevant status code and message
+        res.status(subPayload.status.code).json({ 
+            Message: subPayload.status.message, 
+            Patient: subPayload.data.patient,
+            AccessToken: subPayload.data.accessToken
+        });
+
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
     }
 });
 
