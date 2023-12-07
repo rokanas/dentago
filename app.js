@@ -56,6 +56,7 @@ client.on('message', async (topic, message) => {
         const payload = JSON.parse(message);
         const reqID = payload.reqID;
         const clinicId = payload.clinicID;
+        const responseTopic = topic + reqID; // Append recipient address
 
         const clinic = await Clinic.findOne({ clinicId: clinicId });
         
@@ -67,8 +68,6 @@ client.on('message', async (topic, message) => {
         const timeslots = await Timeslot.find({ timeslotClinic: clinic._id })
             .populate('timeslotDentist', 'dentistName').exec();
 
-        // Append recipient address to the service topic
-        const responseTopic = topic + reqID;
         client.publish(responseTopic, JSON.stringify(timeslots));
     } catch (error) {
         console.log("Error when processing MQTT message: ", error);
