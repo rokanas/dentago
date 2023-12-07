@@ -10,7 +10,7 @@
     <div>
       <br>
       Find clinics near you: <br><br>
-      <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="13">
+      <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="7">
           <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
               Clinic id: {{ clinic.id }} <br>
@@ -61,7 +61,7 @@ import { defineComponent } from 'vue';
 import { GoogleMap, Marker, InfoWindow } from "vue3-google-map";
 import HeaderBar from '@/components/HeaderBar.vue'
 import ContactInfoItem from '@/components/ContactInfoItem.vue'
-import BookingButton from '../components/BookingButton.vue';
+import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
   components: {
@@ -76,7 +76,7 @@ export default defineComponent ({
   data() {
     return {
       API_KEY: import.meta.env.VITE_API_KEY,
-      center: {lat: 57.709182620250374, lng: 11.973550969507114},
+      center: {lat: 58.572053, lng: 14.702880},
       clinics: [
         {id: "1", name: "Folktandvården Järntorget", location: {lat: 57.70052343850043, lng: 11.946638869202163}},
         {id: "2", name: "Folktandvården Sannegården", location: {lat: 57.711070430807794, lng: 11.926897811890154}},
