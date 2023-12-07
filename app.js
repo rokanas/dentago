@@ -9,6 +9,7 @@ const mqtt = require('mqtt');
 // Import schemas
 const Clinic = require('./models/clinic');
 const Timeslot = require('./models/timeslot');
+const Dentist = require('./models/dentist');
 
 // Variables
 require('dotenv').config();
@@ -58,15 +59,15 @@ client.on('message', async (topic, message) => {
         const clinicId = payload.clinicID;
         const responseTopic = topic + reqID; // Append recipient address
 
-        const clinic = await Clinic.findOne({ clinicId: clinicId });
+        const clinic = await Clinic.findOne({ id: clinicId });
         
         if (!clinic) {
             client.publish(responseTopic);
             throw new Error('Clinic not found');
         }
 
-        const timeslots = await Timeslot.find({ timeslotClinic: clinic._id })
-            .populate('timeslotDentist', 'dentistName').exec();
+        const timeslots = await Timeslot.find({ clinic: clinic._id })
+            .populate('dentist', 'name').exec();
 
         client.publish(responseTopic, JSON.stringify(timeslots));
     } catch (error) {
