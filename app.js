@@ -4,12 +4,12 @@
 //TODO: refactor and modularise the functionality into multiple components
 
 const mongoose = require('mongoose');
-const mqtt = require('mqtt');
+const mqtt     = require('mqtt');
 
 // Import schemas
-const Clinic = require('./models/clinic');
+const Clinic   = require('./models/clinic');
 const Timeslot = require('./models/timeslot');
-const Dentist = require('./models/dentist');
+const Dentist  = require('./models/dentist');
 
 // Variables
 require('dotenv').config();
@@ -17,9 +17,16 @@ const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTe
 
 // TODO: change to the non-public mosquitto broker once implemented
 const broker = 'mqtt://test.mosquitto.org/:1883';
-const topic = 'dentago/availability/'
 const client = mqtt.connect(broker);
 
+// MQTT subscriber-topics
+const MQTT_SUB_TOPICS = {
+    AVAILABILITY: 'dentago/availability/',
+    MONITOR_SUB:  'dentago/availability/monitor/ping'
+};
+
+// MQTT publisher-topics
+const MONITOR_PUB = 'dentago/availability/monitor/echo';
 
 /**
  * Connect to MongoDB
@@ -37,14 +44,16 @@ mongoose.connect(mongoUri).then(() => {
 
 
 /**
- * Connect to MQTT broker and subscribe the general Availability service topic
+ * Connect to MQTT broker and subscribe to the topics
  */
 client.on('connect', () => {
-    console.log("Connected to MQTT broker");
+    console.log('Connected to MQTT broker');
 
-    client.subscribe(topic, (error) => {
-        if (!error) {
-            console.log("Subscribed to messages on: " + topic);
+    client.subscribe(Object.values(MQTT_SUB_TOPICS), (error, granted) => {
+        if(!error) {
+            granted.forEach(key => {
+                console.log(`Subscribed to messages on: ${key.topic}`);
+            });
         }
     });
 });
@@ -53,25 +62,40 @@ client.on('connect', () => {
  * Handle incoming messages asynchronously
  */
 client.on('message', async (topic, message) => {
-    try {
-        const payload = JSON.parse(message);
-        const reqID = payload.reqID;
-        const clinicId = payload.clinicID;
-        const responseTopic = topic + reqID; // Append recipient address
-
-        const clinic = await Clinic.findOne({ id: clinicId });
+    switch (topic) {
+        // Incoming request for Timeslot data
+        case MQTT_SUB_TOPICS['AVAILABILITY']:
+            try {
+                const payload = JSON.parse(message);
+                const reqID = payload.reqID;
+                const clinicId = payload.clinicID;
+                const responseTopic = topic + reqID; // Append recipient address
         
-        if (!clinic) {
-            client.publish(responseTopic);
-            throw new Error('Clinic not found');
-        }
+                const clinic = await Clinic.findOne({ id: clinicId });
+                
+                if (!clinic) {
+                    client.publish(responseTopic);
+                    throw new Error('Clinic not found');
+                }
+        
+                const timeslots = await Timeslot.find({ clinic: clinic._id })
+                    .populate('dentist', 'name').exec();
+        
+                client.publish(responseTopic, JSON.stringify(timeslots));
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
+            break;
 
-        const timeslots = await Timeslot.find({ clinic: clinic._id })
-            .populate('dentist', 'name').exec();
+        // Received ping from Monitor-service
+        case MQTT_SUB_TOPICS['MONITOR_SUB']:
+            client.publish(MONITOR_PUB);
+            console.log('Pong!');
+            break;
 
-        client.publish(responseTopic, JSON.stringify(timeslots));
-    } catch (error) {
-        console.log("Error when processing MQTT message: ", error);
+        // Show error in case of unhandled topic
+        default:
+            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
     }
 });
 
@@ -100,8 +124,8 @@ client.on('reconnect', () => {
 /**
  * Handle application shutdown 
  * SIGINT is the signal sent when terminating the process by pressing 'ctrl+c'
+ * // TODO: Can we remove the "Terminate batch job y/n?" prompt?
  */
-// TODO: Can we remove the "Terminate batch job y/n?" prompt?
 process.on('SIGINT', () => {
     console.log('Closing MQTT connection...');
     // End MQTT connection and exit process using success codes for both
