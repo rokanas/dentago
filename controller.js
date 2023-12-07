@@ -20,6 +20,58 @@ function generateRefreshToken(user) {
     return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
 }
 
+// register new patient
+async function register(patient) {
+
+    // declare response attributes
+    const status = "";
+    const message = "";
+    const data = "";
+
+    try {
+        const existingPatient = await Patient.findOne({ id: patient.id });
+        // if patient doesn't already exist, proceed
+        if (!existingPatient) { 
+            const newPatient = new Patient(patient);
+
+            // hash password using salt for greater security
+            const salt = await bcrypt.genSalt(); // default parameter 10
+            const hashedPassword = await bcrypt.hash(patient.password, salt);
+            newPatient.password = hashedPassword;
+
+            // call functions to generate access and refresh tokens using user object
+            const accessToken = generateAccessToken({ id: newPatient.id });
+            const refreshToken = generateRefreshToken({ id: newPatient.id });
+
+            // store refresh token in user object
+            newPatient.refreshToken = refreshToken;
+
+            // save the user to the DB
+            await newPatient.save();
+
+            // create response object payload
+            status = 201;
+            message = "Patient created successfully"
+            data = ({ patient: newPatient, accessToken: accessToken});
+
+        } else {
+            // if patient already exists in the database
+            status = 409;
+            message = "Error: Patient already exists";
+        }
+    } catch (err) {
+        status = 500;
+        message = err.message;
+    } finally {
+        const response = `{
+                           "Status": "${status}",
+                           "Message": "${message}",
+                           "Data": "${data}",
+                           }`;
+        return response;
+    }
+}
+
 // log in user by providing access and refresh tokens
 router.patch('/login', async (req, res) => {
     try {
