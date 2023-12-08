@@ -65,6 +65,8 @@ client.on('message', async (topic, message) => {
     // call function corresponding to request type (register, login, logout or refresh)
     if(reqType === 'register') {
         payload = await controller.register(parsedMessage);
+    } else if (reqType === 'refresh') {
+        payload = await controller.refresh(parsedMessage);
     }
 
     // append request id to the publishing topic

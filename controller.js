@@ -23,7 +23,7 @@ function generateRefreshToken(user) {
 // register new patient
 async function register(message) {
 
-    // declare response attributes
+    // declare response data
     const statusData = ({ code: "", message: "" });
     let patientData = "";
     let accessTokenData = "";
@@ -136,13 +136,22 @@ router.delete('/logout', async(req, res) => {
 });
 
 // generate new access token using refresh token 
-router.post('/token', async(req, res) => {
+async function refresh (message) {
+    // declare response data
+    const statusData = ({ code: "", message: ""});
+    let accessTokenData = "";
+
+    // parse received MQTT payload to JSON
+    const parsedMessage = JSON.parse(message);
+    
     try {
-        const refreshToken = req.body.token;
+        // extract refresh token from parsed message
+        const refreshToken = parsedMessage.refreshToken;
 
         // if token is undefined, return 401 unauthorized
         if(refreshToken == null) {
-            return res.status(401).json({ Error: "Access unauthorized: no valid authentication credentials" })
+            statusData.code = 401;
+            statusData.message = "Access unauthorized: no valid authentication credentials";
         }
         // decode refresh token to extract userId
         const userId = jwt.decode(refreshToken).id;
@@ -151,31 +160,49 @@ router.post('/token', async(req, res) => {
         const patient = await Patient.findOne({ id: userId });
 
         if(!patient) {
-            return res.status(404).json({ Error: 'Patient not found' }); // resource not found
+            // if patient is not found, return 404
+            statusData.code = 404;
+            statusData.message = "Patient not found";
         }
 
-        // check if refresh token matches the token stored in patient resource
+        // check if refresh token matches the token stored in patient resource in the DB
         if(patient.refreshToken !== refreshToken) {
             // if refresh token doesn't match, return 403 forbidden
-            return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid"});
+            statusData.code = 403;
+            statusData.message = "Access forbidden: authentication credentials invalid";
         }
+
         // if refresh token matches, verify its validity
-        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err) => {
+        jwt.verify(refreshToken, accessTokenData, process.env.REFRESH_TOKEN_SECRET, (err) => {
             // if token is invalid, return 403 forbidden
             if(err) {
-                return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
+                statusData.code = 403;
+                statusData.message = "Access forbidden: authentication credentials invalid";
             }
             // generate new access token using user object
             const accessToken = generateAccessToken({id: userId });
-            res.json({ accessToken: accessToken });
+            statusData.code = 201;
+            statusData.message = "Access token refreshed successfully ";
+            accessTokenData = accessToken;
         });
-    } catch(err) {
-        res.status(500).json({ Error: err.message });
+    } catch (err) {
+        // if there is an internal error
+        statusData.code = 500;
+        statusData.message = err.message;
+    } finally {
+        // return finalized response object as JSON string
+        const response = (`{
+                            "status": ${JSON.stringify(statusData)},
+                            "accessToken": "${accessTokenData}",
+                            "reqId": "${parsedMessage.reqId}"
+                           }`);
+        return response;
     }
-});
+}
 
 // export the router
 module.exports = {
     router,
-    register
+    register,
+    refresh
 };
