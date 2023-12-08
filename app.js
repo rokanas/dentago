@@ -1,19 +1,24 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const morgan = require('morgan');
-const path = require('path');
-const cors = require('cors');
-const history = require('connect-history-api-fallback');
-const controller = require('./controller');
+const express = require('express');         // web app framework
+const mongoose = require('mongoose');       // mongoDB data structuring and schema validation
+const morgan = require('morgan');           // logs HTTP requests in the terminal
+const path = require('path');               // handles file paths
+const cors = require('cors');               // handles cross-origin requests (relevant for production)
+const history = require('connect-history-api-fallback'); // enables error-free client-side routing
 
-// Variables
+// import controller files containing endpoints
+const apiController = require('./controllers/apiController');
+const availabilityController = require('./controllers/availabilityController');
+const bookingController = require('./controllers/bookingController');
+const authController = require('./controllers/authController');
+
+// import environmental variables
 require('dotenv').config();
 
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 const host = process.env.HOST || process.env.CI_HOST;
 const port = process.env.PORT || process.env.CI_PORT;
 
-// Connect to MongoDB
+// connect to MongoDB
 mongoose.connect(mongoURI)
   .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
@@ -36,7 +41,10 @@ app.options('*', cors());
 app.use(cors());
 
 // import routes
-app.use('/api', controller);
+app.use('/api', apiController);
+app.use('/api', authController.router);
+app.use('/api', availabilityController);
+app.use('/api', bookingController);
 
 // catch all non-error handler for api (i.e., 404 Not Found)
 app.use('/api/*', function (_, res) {
