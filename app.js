@@ -1,7 +1,6 @@
 /**
  * The Availability Service is a Node.js application designed for the Dentago distributed system. 
  */
-//TODO: refactor and modularise the functionality into multiple components
 
 const mongoose = require('mongoose');
 const mqtt     = require('mqtt');
@@ -71,17 +70,22 @@ client.on('message', async (topic, message) => {
                 const clinicId = payload.clinicID;
                 const responseTopic = topic + reqID; // Append recipient address
         
-                const clinic = await Clinic.findOne({ id: clinicId });
+                // Fetch the desired Clinics
+                const clinic = await Clinic.find({ id: {$in: clinicId} });
                 
-                if (!clinic) {
+                if (clinic.length === 0) {
                     client.publish(responseTopic);
                     throw new Error('Clinic not found');
                 }
-        
-                const timeslots = await Timeslot.find({ clinic: clinic._id })
-                    .populate('dentist', 'name').exec();
-        
+
+                // Fetch all the Timeslots for the Clinics
+                const timeslots = await Timeslot.find({ clinic: {$in: clinic} })
+                    .populate('dentist', 'name').populate('clinic', 'name').exec();
+
+                // Publish the Timeslots
                 client.publish(responseTopic, JSON.stringify(timeslots));
+                console.log(timeslots);
+
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
