@@ -37,12 +37,14 @@ function sendHeartbeat() {
 function checkServiceStatus() {
     setTimeout(() => {
         Object.values(PUB_MQTT_TOPICS).forEach(topic => {
+            // Since we want to extract the service name from the topic dentago/service/monitor/ping
+            // We can topic.split('/')[1] which will always gives us 'service'
             const service = topic.split('/')[1];
             if (!isServiceOnline[service]) {
-                console.log(`Service for ${service} is offline :(`);
+                console.log(`Service for ${service} is offline 🤡`);
             }
             else {
-                console.log(`Service for ${service} is online :)`);
+                console.log(`Service for ${service} is online 😎`);
             }
             isServiceOnline[service] = false;
         });
@@ -62,12 +64,17 @@ client.on('connect', () => {
         if (err) console.log('MQTT connection error: ' + err);
     });
 
+    // Initialize isServiceOnline object
+    Object.values(PUB_MQTT_TOPICS).forEach(topic => {
+        isServiceOnline[topic] = false;
+    });
+
     sendHeartbeat();
     checkServiceStatus();
 });
 
 client.on('message', (topic, payload) => {
-    const service = topic.split('/')[1]; // Even if it is hardcoded, we can be sure that this is always the case
+    const service = topic.split('/')[1]; // Same thing as explained before
     isServiceOnline[service] = true;
 });
 
