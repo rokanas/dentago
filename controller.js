@@ -245,7 +245,7 @@ async function refresh (message) {
             // if token is invalid, return 403 forbidden
             if(err) {
                 response.status.code = 403;
-                response.status.message = "Access forbidden: authentication credentials invalid";
+                response.status.message = "Access forbidden: authentication credentials expired";
             }
             
             // generate new access token using user object and return it
