@@ -75,17 +75,7 @@ client.on('message', async (topic, message) => {
             break;
         case 'refresh':
             payload = await controller.refersh(parsedMessage);
-    }
-    /*
-    if(reqType === 'register') {
-        payload = await controller.register(parsedMessage);
-    } else if (reqType === 'login') {
-        payload = await controller.login(parsedMessage);
-    } else if (reqType === 'logout') {
-        payload = await controller.logout(parsedMessage);
-    } else if (reqType === 'refresh') {
-        payload = await controller.refresh(parsedMessage);
-    } */
+    };
 
     // append request id to the publishing topic
     pubTopic += reqType + "/" + JSON.parse(payload).reqId;
