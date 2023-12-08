@@ -16,6 +16,7 @@ const port = process.env.PORT || process.env.CI_PORT;
 
 // subscribe to authentiation mqtt topics
 mqtt.subscribe("dentago/authentication/register");
+mqtt.subscribe("dentago/authentication/login");
 mqtt.subscribe("dentago/authentication/refresh");
 
 // Connect to MongoDB

@@ -22,18 +22,27 @@ function generateRefreshToken(user) {
 
 // register new patient
 async function register(message) {
+    // parse received MQTT payload to JSON
+    const parsedMessage = JSON.parse(message);        
 
     // declare response data
-    const statusData = ({ code: "", message: "" });
-    let patientData = "";
-    let accessTokenData = "";
-
-    // parse received MQTT payload to JSON
-    const parsedMessage = JSON.parse(message);
-
+    const response = {
+        status: {
+            code: "",
+            message: ""
+        },
+        patient: "",
+        accessToken: "",
+        reqId: parsedMessage.reqId
+    };
+    
     try {
+        // extract user id from parsed message
+        const reqUserId = parsedMessage.patient.id;
+
         // check if patient already exists
-        const existingPatient = await Patient.findOne({ id: parsedMessage.patient.id });
+        const existingPatient = await Patient.findOne({ id: reqUserId });
+        
         // if patient doesn't already exist, create one 
         if (!existingPatient) { 
             const newPatient = new Patient(parsedMessage.patient);
@@ -53,66 +62,90 @@ async function register(message) {
             // save the user to the DB
             await newPatient.save();
 
-            // update response object attributes
-            statusData.code = 201;
-            statusData.message = "Patient created successfully"
-            patientData = newPatient;
-            accessTokenData = accessToken;
+            // update attributes and return object
+            response.status.code = 201;
+            response.status.message = "Patient created successfully"
+            response.patient = newPatient;
+            response.accessToken = accessToken;
+            return JSON.stringify(response);
 
         } else {
             // if patient already exists in the database
-            statusData.code = 409;
-            statusData.message = "Error: Patient already exists";
+            response.status.code = 409;
+            response.status.message = "Error: Patient already exists";
+            return JSON.stringify(response);
         }
+
     } catch (err) {
         // if there is an internal error
-        statusData.code = 500;
-        statusData.message = err.message;
-    } finally {
-        // return finalized response object as JSON string
-        const response = (`{
-                            "status": ${JSON.stringify(statusData)},
-                            "patient": ${JSON.stringify(patientData)},
-                            "accessToken": "${accessTokenData}",
-                            "reqId": "${parsedMessage.reqId}"
-                           }`);
-        return response;
+        response.status.code = 500;
+        response.status.message = err.message;
+        return JSON.stringify(response);
     }
 }
 
 // log in user by providing access and refresh tokens
-router.patch('/login', async (req, res) => {
+async function login(message) {
+    // parse received MQTT payload to JSON
+    const parsedMessage = JSON.parse(message);
+
+    // declare response data
+    const response = {
+        status: {
+            code: "",
+            message: ""
+        },
+        patient: "",
+        accessToken: "",
+        reqId: parsedMessage.reqId
+    };
+
     try {
-        // extract user id and password from request body
-        const userId = req.body.id;
-        const userPassword = req.body.password;
+        // extract user id and password from parsed message
+        const reqUserId = parsedMessage.id;
+        const reqPassword = parsedMessage.password;
 
-        const patient = await Patient.findOne({ id: userId });
+        // find patient in DB using provided id
+        const patient = await Patient.findOne({ id: reqUserId });
 
-        if (!patient) {
-            return res.status(404).json({ Error: 'Access forbidden: invalid patient ID' }); // resource not found
+        // if patient is not found in database, return 403
+        if(!patient) {
+            response.status.code = 404;
+            response.status.message = 'Access forbidden: invalid patient ID';
+            return JSON.stringify(response);
         }
-
+        
         // compare hashed password in DB with hashed password provided by login request
-        if(await bcrypt.compare(patient.password, userPassword)) {
-            return res.status(403).json({ Error: "Access forbidden: invalid password"});
+        if(await bcrypt.compare(reqPassword, patient.password)) {
+            // call functions to generate access and refresh tokens using user object
+            const accessToken = generateAccessToken({ id: patient.id });
+            const refreshToken = generateRefreshToken({ id: patient.id });
+
+            // patch patient with valid refresh token
+            patient.refreshToken = refreshToken;
+            await patient.save()
+                
+            // update attributes and return response object
+            response.status.code = 200;
+            response.status.message = 'User logged in successfully';
+            response.patient = patient;
+            response.accessToken = accessToken;
+            return JSON.stringify(response);
+
+        } else {
+            // if password in DB doesn't match password provided by login request
+            response.status.code = 403;
+            response.status.message = "Access forbidden: invalid password";
+            return JSON.stringify(response);
         }
 
-        // call functions to generate access and refresh tokens using user object
-        const accessToken = generateAccessToken({ id: userId });
-        const refreshToken = generateRefreshToken({ id: userId });
-
-        // patch patient with valid refresh token
-        patient.refreshToken = refreshToken;
-        await patient.save();
-  
-        // respond with access token
-        res.json({ accessToken: accessToken});
-
-    } catch(err) {
-        res.status(500).json({Error: err.message});
+    } catch (err) {
+        // if there is an internal error
+        response.status.code = 500;
+        response.status.message = err.message;
+        return JSON.stringify(response);
     }
-});
+}
 
 // log out user by deleting refresh token
 router.delete('/logout', async(req, res) => {
@@ -137,12 +170,19 @@ router.delete('/logout', async(req, res) => {
 
 // generate new access token using refresh token 
 async function refresh (message) {
-    // declare response data
-    const statusData = ({ code: "", message: ""});
-    let accessTokenData = "";
 
     // parse received MQTT payload to JSON
     const parsedMessage = JSON.parse(message);
+
+    // declare response data
+    const response = {
+        status: {
+            code: "",
+            message: ""
+        },
+        accessToken: "",
+        reqId: parsedMessage.reqId
+    };
     
     try {
         // extract refresh token from parsed message
@@ -150,9 +190,11 @@ async function refresh (message) {
 
         // if token is undefined, return 401 unauthorized
         if(refreshToken == null) {
-            statusData.code = 401;
-            statusData.message = "Access unauthorized: no valid authentication credentials";
+            response.status.code = 401;
+            response.status.message = "Access unauthorized: no valid authentication credentials";
+            return JSON.stringify(response);
         }
+        
         // decode refresh token to extract userId
         const userId = jwt.decode(refreshToken).id;
 
@@ -161,42 +203,42 @@ async function refresh (message) {
 
         if(!patient) {
             // if patient is not found, return 404
-            statusData.code = 404;
-            statusData.message = "Patient not found";
+            response.status.code = 404;
+            response.status.message = "Patient not found";
+            return JSON.stringify(response);
         }
 
         // check if refresh token matches the token stored in patient resource in the DB
         if(patient.refreshToken !== refreshToken) {
             // if refresh token doesn't match, return 403 forbidden
-            statusData.code = 403;
-            statusData.message = "Access forbidden: authentication credentials invalid";
+            response.status.code = 403;
+            response.status.message = "Access forbidden: authentication credentials invalid";
+            return JSON.stringify(response);
         }
-
+        
         // if refresh token matches, verify its validity
-        jwt.verify(refreshToken, accessTokenData, process.env.REFRESH_TOKEN_SECRET, (err) => {
+        jwt.verify(refreshToken, response, process.env.REFRESH_TOKEN_SECRET, (err) => {
             // if token is invalid, return 403 forbidden
             if(err) {
-                statusData.code = 403;
-                statusData.message = "Access forbidden: authentication credentials invalid";
+                response.status.code = 403;
+                response.status.message = "Access forbidden: authentication credentials invalid";
             }
-            // generate new access token using user object
+            
+            // generate new access token using user object and return it
             const accessToken = generateAccessToken({id: userId });
-            statusData.code = 201;
-            statusData.message = "Access token refreshed successfully ";
-            accessTokenData = accessToken;
+            response.status.code = 201;
+            response.status.message = "Access token refreshed successfully ";
+            response.accessToken = accessToken;
         });
+        
+        // return the result of verification (new access token or 403)
+        return JSON.stringify(response);
+
     } catch (err) {
         // if there is an internal error
-        statusData.code = 500;
-        statusData.message = err.message;
-    } finally {
-        // return finalized response object as JSON string
-        const response = (`{
-                            "status": ${JSON.stringify(statusData)},
-                            "accessToken": "${accessTokenData}",
-                            "reqId": "${parsedMessage.reqId}"
-                           }`);
-        return response;
+        response.status.code = 500;
+        response.status.message = err.message;
+        return JSON.stringify(response);
     }
 }
 
@@ -204,5 +246,6 @@ async function refresh (message) {
 module.exports = {
     router,
     register,
+    login,
     refresh
 };
