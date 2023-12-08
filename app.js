@@ -40,16 +40,16 @@ app.use(morgan('dev'));
 app.options('*', cors());
 app.use(cors());
 
-// import routes
-app.use('/api', apiController);
-app.use('/api', authController.router);
-app.use('/api', availabilityController);
-app.use('/api', bookingController);
+  // import routes
+  app.use('/api', apiController);
+  app.use('/api', authController.router);
+  app.use('/api', availabilityController);
+  app.use('/api', bookingController);
 
-// catch all non-error handler for api (i.e., 404 Not Found)
-app.use('/api/*', function (_, res) {
-    res.status(404).json({ 'message': 'Not Found' });
-});
+  // catch all non-error handler for api (i.e., 404 Not Found)
+  app.use('/api/*', function (_, res) {
+      res.status(404).json({ 'message': 'Not Found' });
+  });
 
 // configuration for serving frontend in production mode
 // support Vuejs HTML 5 history mode

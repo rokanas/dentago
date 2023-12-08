@@ -1,6 +1,7 @@
 const express = require('express');
 const Clinic = require('../models/clinic.js');
 const Dentist = require('../models/dentist.js');
+const authController = require('./authController.js')
 const router = express.Router();
 
 router.use(express.json());
@@ -10,11 +11,14 @@ router.use(express.json());
 // define correct length for mongo object IDs
 const OBJ_ID_LENGTH = 24;
 
+// extract token authentication method from authController file
+const authenticateToken = authController.authenticateToken
+
 /*====================  ROUTE HANDLERS  ==================== */
 /*==================  CLINICS & DENTISTS  ================== */
 
 // get all clinics
-router.get('/clinics', async (_, res) => {
+router.get('/clinics', authenticateToken, async (_, res) => {
     try {
         const clinics = await Clinic.find();
         res.status(200).json(clinics);               // request successful
@@ -24,7 +28,7 @@ router.get('/clinics', async (_, res) => {
 });
 
 // get specific clinic by id
-router.get('/clinics/:clinic_id', async (req, res) => {
+router.get('/clinics/:clinic_id', authenticateToken, async (req, res) => {
     try {
         const clinicId = req.params.clinic_id;
         if(clinicId.length !== OBJ_ID_LENGTH) {
@@ -47,7 +51,7 @@ Clinic schema doesn't currently include dentists attribute
 */
 
 // get all dentists
-router.get('/dentists', async (_, res) => {
+router.get('/dentists', authenticateToken, async (_, res) => {
     try {
         const dentists = await Dentist.find();
         res.status(200).json(dentists);               // request successful
@@ -57,7 +61,7 @@ router.get('/dentists', async (_, res) => {
 });
 
 //get specific dentist
-router.get('/dentists/:dentist_id', async (req, res) => {
+router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
     try {
         const dentistId = req.params.dentist_id;
         if(dentistId.length !== OBJ_ID_LENGTH) {
