@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const mqtt = require('./mqtt.js');
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt");
 const Patient = require('./patient');
@@ -22,17 +21,22 @@ function generateRefreshToken(user) {
 }
 
 // register new patient
-async function register(patient) {
+async function register(message) {
 
     // declare response attributes
-    const status = ({ code: "", message: "" });
-    const data = ({ patient: "", accessToken: "" });
+    const statusData = ({ code: "", message: "" });
+    let patientData = "";
+    let accessTokenData = "";
+
+    // parse received MQTT payload to JSON
+    const parsedMessage = JSON.parse(message);
 
     try {
-        const existingPatient = await Patient.findOne({ id: patient.id });
+        // check if patient already exists
+        const existingPatient = await Patient.findOne({ id: parsedMessage.patient.id });
         // if patient doesn't already exist, create one 
         if (!existingPatient) { 
-            const newPatient = new Patient(patient);
+            const newPatient = new Patient(parsedMessage.patient);
 
             // hash password using salt for greater security and update patient object
             const salt = await bcrypt.genSalt(); // default parameter 10
@@ -50,24 +54,28 @@ async function register(patient) {
             await newPatient.save();
 
             // update response object attributes
-            status.code = 201;
-            status.message = "Patient created successfully"
-            data.patient = newPatient;
-            data.accessToken = accessToken;
+            statusData.code = 201;
+            statusData.message = "Patient created successfully"
+            patientData = newPatient;
+            accessTokenData = accessToken;
 
         } else {
             // if patient already exists in the database
-            status.code = 409;
-            status.message = "Error: Patient already exists";
+            statusData.code = 409;
+            statusData.message = "Error: Patient already exists";
         }
     } catch (err) {
-        status.code = 500;
-        status.message = err.message;
+        // if there is an internal error
+        statusData.code = 500;
+        statusData.message = err.message;
     } finally {
-        const response = `{
-                           "Status": "${status}",
-                           "Data": "${data}",
-                          }`;
+        // return finalized response object as JSON string
+        const response = (`{
+                            "status": ${JSON.stringify(statusData)},
+                            "patient": ${JSON.stringify(patientData)},
+                            "accessToken": "${accessTokenData}",
+                            "reqId": "${parsedMessage.reqId}"
+                           }`);
         return response;
     }
 }
@@ -167,4 +175,7 @@ router.post('/token', async(req, res) => {
 });
 
 // export the router
-module.exports = router;
+module.exports = {
+    router,
+    register
+};

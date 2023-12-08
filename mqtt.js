@@ -1,4 +1,5 @@
 const mqtt = require('mqtt');
+const controller = require('./controller');
 require('dotenv').config();
 
 /*====================  MQTT SETUP  ==================== */
@@ -29,35 +30,50 @@ client.on('error', (err) => {
 });
   
 // publish a message to the MQTT broker
-const publish = (topic, payload) => {
+const publish = async (topic, payload) => {
     client.publish(topic, payload);
 };
   
 // subscribe to a topic and return the message in the form of a Promise
 function subscribe(topic) {
-    return new Promise((resolve, reject) => {
-        client.subscribe(topic, (err) => {
-            if (!err) {
-                console.log(`Subscribed to topic: ${topic}`);
-            } else {
-                console.error('Subscription to topic failed', err);
-                reject(err);
-            }
-        });
-              
-        // subscribe to the message event
-        client.on('message', (receivedTopic, message) => {
-            console.log(`Received message on topic ${topic}: ${message.toString()}`);
-            
-            // unsubscribe from the topic after receiving the message
-            unsubscribe(topic);
-           
-            // resolve the Promise with the received message
-            resolve(message.toString());
-            
-        });
+    client.subscribe(topic, (err) => {
+        if (!err) {
+            console.log(`Subscribed to topic: ${topic}`);
+        } else {
+            console.error('Subscription to topic failed', err);
+        }        
     });
 }
+              
+// event handler for receiving messages
+client.on('message', async (topic, message) => {
+    // print the received message
+    console.log(`Received message on topic ${topic}: ${message.toString()}`);
+
+    // declare payload object and initialize first part of mqtt publishing topic 
+    let payload;
+    let pubTopic = "dentago/authentication/"
+    
+    // parse message to String and 
+    let parsedMessage = message.toString();
+    
+
+    // isolate the topic suffix to extract the request type
+    const topicParts = topic.split('/');
+    const reqType = topicParts[topicParts.length - 1];
+    
+    // call function corresponding to request type (register, login, logout or refresh)
+    if(reqType === 'register') {
+        payload = await controller.register(parsedMessage);
+    }
+
+    // append request id to the publishing topic
+    pubTopic += reqType + "/" + JSON.parse(payload).reqId;
+
+    // publish to patient API via mqtt broker
+    await publish(pubTopic, payload);
+});
+
 
 // unsubscribe from a topic
 const unsubscribe = (topic) => {
@@ -83,4 +99,4 @@ process.on('SIGINT', () => {
 module.exports = {
     publish,
     subscribe
-  };
+};
