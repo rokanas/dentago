@@ -110,6 +110,9 @@ router.get('/dentists/:dentist_id', async (req, res) => {
     }
 });
 
+/*====================  ROUTE HANDLERS  ==================== */
+/*=================  AVAILABILITY SERVICE ================== */
+
 // get all timeslots
 router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
     try {
@@ -139,6 +142,9 @@ router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO:
         res.status(500).json({ Error: err.message });  // internal server error
     }
 });
+
+/*====================  ROUTE HANDLERS  ==================== */
+/*===================  BOOKING SERVICE ===================== */
 
 // book / cancel timeslot
 router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
@@ -182,20 +188,14 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
-/*
-        // respond according to instruction
-        if(payload.instruction === "BOOK") {
-            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
-        } else if (payload.instruction === "CANCEL") {
-            res.status(payload.status.code).json({ Message: payload.status.message, Data: payload });
-        }  */
+
 /*==================  ROUTE HANDLERS ================== */
 /*====================  USER AUTH  ==================== */
 
-/*
-**** unnecessary for now, but commented out for potential future use ****
 
-// get all patients
+//**** unnecessary for now, but commented out for potential future use ****
+
+// get all patients (FOR TESTING)
 router.get('/allpatients', async (_, res) => {
     try {
         const patients = await Patient.find();
@@ -204,8 +204,8 @@ router.get('/allpatients', async (_, res) => {
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
-
-router.delete('/patients', async (_, res) => {
+// delete all patients (FOR TESTING)
+router.delete('/allpatients', async (_, res) => {
     try {
         await Patient.deleteMany();
         res.status(200);             // request successful
@@ -213,7 +213,6 @@ router.delete('/patients', async (_, res) => {
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
-*/
 
 // TODO: discuss endpoint name
 // get specific patient by authenticated userID
@@ -240,7 +239,7 @@ router.post('/register', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-                             "patient": "${patient}",
+                             "patient": ${JSON.stringify(patient)},
                              "reqId": "${reqId}"
                             }`;
 
@@ -255,11 +254,11 @@ router.post('/register', async (req, res) => {
         // parse MQTT message to JSON
         subPayload = JSON.parse(subPayload);
 
-        // respond with relevant status code and message
+        // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
             Message: subPayload.status.message, 
-            Patient: subPayload.data.patient,
-            AccessToken: subPayload.data.accessToken
+            Patient: subPayload.patient,
+            AccessToken: subPayload.accessToken
         });
 
     } catch(err) {
