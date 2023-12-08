@@ -29,6 +29,9 @@ const mqttInit = async () => {
 
       const { instruction, slotId, clinicId, patientId, reqId } = JSON.parse(payload);
 
+      // The service expects to be instructed with either a "book" or "cancel" operation request.
+      // The operation object contains important attributes resulting from this operation ({timeslot, code, message}).
+
       let operation;
       if (instruction === "BOOK") {
         operation = await bookTimeslot(slotId, patientId);
