@@ -21,10 +21,11 @@ const MQTT_OPTIONS = {
     keepalive: 0
 }
 
-const HEARTBEAT_INTERVAL = 5000; // 5 seconds
+const HEARTBEAT_INTERVAL = 1000; // 1 second
 
 let isServiceOnline = {};
 
+// Ping to each service
 function sendHeartbeat() {
     Object.values(PUB_MQTT_TOPICS).forEach(topic => {
         client.publish(topic, `pinging ${topic} :)`);
@@ -32,6 +33,7 @@ function sendHeartbeat() {
     console.log('\n');
 }
 
+// Repeat every HEARTBEAT_INTERVAL
 function checkServiceStatus() {
     setTimeout(() => {
         Object.values(PUB_MQTT_TOPICS).forEach(topic => {
@@ -65,10 +67,8 @@ client.on('connect', () => {
 });
 
 client.on('message', (topic, payload) => {
-    // console.log(topic);
     const service = topic.split('/')[1]; // Even if it is hardcoded, we can be sure that this is always the case
     isServiceOnline[service] = true;
-    // console.log(isServiceOnline);
 });
 
 client.on('error', (err) => {
