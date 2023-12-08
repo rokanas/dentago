@@ -1,13 +1,17 @@
 const express = require('express');
 const mqtt = require('../mqtt.js');
 const utils = require('../utils');
+const authController = require('./authController.js');
 const router = express.Router();
+
+// extract token authentication method from authController file
+const authenticateToken = authController.authenticateToken
 
 /*====================  ROUTE HANDLERS  ==================== */
 /*=================  AVAILABILITY SERVICE ================== */
 
 // get all timeslots
-router.get('/clinics/:clinic_id/timeslots', async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
+router.get('/clinics/:clinic_id/timeslots', authenticateToken, async (req, res) => {       // TODO: add time frame in request parameters (and in function body)
     try {
         // extract clinic ID from request parameter     
         const clinicId = req.params.clinic_id;

@@ -11,7 +11,7 @@ const availabilityController = require('./controllers/availabilityController');
 const bookingController = require('./controllers/bookingController');
 const authController = require('./controllers/authController');
 
-// import environmental variables
+// load environmental variables from .env file to process.env object
 require('dotenv').config();
 
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;

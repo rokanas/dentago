@@ -1,13 +1,17 @@
 const express = require('express');
 const mqtt = require('../mqtt.js');
 const utils = require('../utils');
+const authController = require('./authController.js');
 const router = express.Router();
+
+// extract token authentication method from authController file
+const authenticateToken = authController.authenticateToken
 
 /*====================  ROUTE HANDLERS  ==================== */
 /*===================  BOOKING SERVICE ===================== */
 
 // book / cancel timeslot
-router.patch('/clinics/:clinic_id/timeslots/:slot_id', async (req, res) => {
+router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async (req, res) => {
     try {
         // extract clinic and slot IDs from request parameter     
         const slotId = req.params.slot_id;

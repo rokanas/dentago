@@ -2,7 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken')
 const mqtt = require('../mqtt.js');
 const utils = require('../utils');
-const Patient = require('../models/patient.js');
 const router = express.Router();
 
 // middleware for jwt token authentication
@@ -32,42 +31,6 @@ function authenticateToken(req, res, next) {
 
 /*==================  ROUTE HANDLERS ================== */
 /*====================  USER AUTH  ==================== */
-
-
-//**** unnecessary for now, but commented out for potential future use ****
-
-// get all patients (FOR TESTING)
-router.get('/allpatients', async (_, res) => {
-    try {
-        const patients = await Patient.find();
-        res.status(200).json(patients);              // request successful
-    } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-// delete all patients (FOR TESTING)
-router.delete('/allpatients', async (_, res) => {
-    try {
-        await Patient.deleteMany();
-        res.status(200);             // request successful
-    } catch(err) {
-        res.status(500).json({Error: err.message});  // internal server error
-    }
-});
-
-// TODO: discuss endpoint name
-// get specific patient by authenticated userID
-router.get('/patients/', authenticateToken, async (req, res) => {
-    try {
-        const patient = await Patient.findOne({ id: req.body.user.id });
-        if(!patient) {
-            return res.status(404).json({ Message: "Patient not found" });
-        }
-        res.status(200).json(patient);               // request successful
-    } catch(err) {
-        res.status(500).json({ Error: err.message });  // internal server error
-    }
-});
 
 // register new patient
 router.post('/register', async (req, res) => {
@@ -111,7 +74,7 @@ router.post('/register', async (req, res) => {
 router.patch('/login', async (req, res) => {
     try {
         // extract id and password from request body
-        const id = req.body.id;
+        const userId = req.body.id;
         const password = req.body.password;
 
         // generate random request ID
@@ -119,7 +82,7 @@ router.patch('/login', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-                             "id": "${id}",
+                             "id": "${userId}",
                              "password": "${password}",
                              "reqId": "${reqId}"
                             }`;
@@ -180,7 +143,43 @@ router.post('/refresh', async (req, res) => {
         });
     } catch(err) {
         // internal server error
-        res.status(500).json({Error: err.message});  
+        res.status(500).json({ Error: err.message });  
+    }
+});
+
+router.delete('/logout', async (req, res) => {
+    try {
+        // extract user id from request body
+        const userId = req.body.id;
+    
+        // generate random request ID
+        const reqId = utils.generateId();
+
+        // create payload as JSON string
+        const pubPayload = `{
+            "userId": "${userId}",
+            "reqId": "${reqId}"
+           }`;       
+
+        // publish payload to authentication service
+        const pubTopic = 'dentago/authentication/logout';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to access token payload
+        const subTopic = 'dentago/authentication/logout/' + reqId;
+        let subPayload = await mqtt.subscribe(subTopic);
+
+        // parse MQTT message to JSON
+        subPayload = JSON.parse(subPayload);
+
+        // respond with relevant status code and message, patient data and access token
+        res.status(subPayload.status.code).json({ 
+            Message: subPayload.status.message
+        });
+
+    } catch(err) {
+        // internal server error
+        res.status(500).json({ Error: err.message });
     }
 });
 

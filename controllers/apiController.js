@@ -1,10 +1,9 @@
 const express = require('express');
+const authController = require('./authController.js');
 const Clinic = require('../models/clinic.js');
 const Dentist = require('../models/dentist.js');
-const authController = require('./authController.js')
+const Patient = require('../models/patient.js');
 const router = express.Router();
-
-router.use(express.json());
 
 // TODO: Response from server timeouts
 
@@ -45,11 +44,6 @@ router.get('/clinics/:clinic_id', authenticateToken, async (req, res) => {
     }
 });
 
-/* TODO:
-//get all dentists in clinic
-Clinic schema doesn't currently include dentists attribute
-*/
-
 // get all dentists
 router.get('/dentists', authenticateToken, async (_, res) => {
     try {
@@ -75,6 +69,41 @@ router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
         res.status(200).json(dentist);                // request successful
     } catch (err) {
         res.status(500).json({Error: err.message});   // internal server error
+    }
+});
+
+/*====================  ROUTE HANDLERS  ==================== */
+/*================  PATIENTS (TESTING ONLY)  =============== */
+
+// get all patients
+router.get('/allpatients', async (_, res) => {
+    try {
+        const patients = await Patient.find();
+        res.status(200).json(patients);              // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+// delete all patients
+router.delete('/allpatients', async (_, res) => {
+    try {
+        await Patient.deleteMany();
+        res.status(200);             // request successful
+    } catch(err) {
+        res.status(500).json({Error: err.message});  // internal server error
+    }
+});
+
+// get specific patient by authenticated userID
+router.get('/patients/', authenticateToken, async (req, res) => {
+    try {
+        const patient = await Patient.findOne({ id: req.body.user.id });
+        if(!patient) {
+            return res.status(404).json({ Message: "Patient not found" });
+        }
+        res.status(200).json(patient);                 // request successful
+    } catch(err) {
+        res.status(500).json({ Error: err.message });  // internal server error
     }
 });
 
