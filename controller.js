@@ -165,7 +165,7 @@ async function logout (message) {
 
     try {
         // extract user id from request body and find the resource from the DB
-        const userId = parsedMessage.userId;
+        const userId = parsedMessage.id;
         const patient = await Patient.findOne({ id: userId });
 
         if(!patient) {
