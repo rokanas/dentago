@@ -157,7 +157,7 @@ router.delete('/logout', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "userId": "${userId}",
+            "id": "${userId}",
             "reqId": "${reqId}"
            }`;       
 
