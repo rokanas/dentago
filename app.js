@@ -21,11 +21,11 @@ const client = mqtt.connect(broker);
 // MQTT subscriber-topics
 const MQTT_SUB_TOPICS = {
     AVAILABILITY: 'dentago/availability/',
-    MONITOR_SUB:  'dentago/availability/monitor/ping'
+    MONITOR_SUB:  'dentago/monitor/availability/ping'
 };
 
 // MQTT publisher-topics
-const MONITOR_PUB = 'dentago/availability/monitor/echo';
+const MONITOR_PUB = 'dentago/monitor/availability/echo';
 
 /**
  * Connect to MongoDB
