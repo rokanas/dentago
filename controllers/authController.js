@@ -108,6 +108,46 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.patch('/login', async (req, res) => {
+    try {
+        // extract id and password from request body
+        const id = req.body.id;
+        const password = req.body.password;
+
+        // generate random request ID
+        const reqId = utils.generateId();
+
+        // create payload as JSON string
+        const pubPayload = `{
+                             "id": "${id}",
+                             "password": "${password}",
+                             "reqId": "${reqId}"
+                            }`;
+
+        // publish payload to authentication service
+        const pubTopic = 'dentago/authentication/login';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to access token payload
+        const subTopic = 'dentago/authentication/login/' + reqId;
+        let subPayload = await mqtt.subscribe(subTopic);
+        
+        // parse MQTT message to JSON
+        subPayload = JSON.parse(subPayload);
+
+        // respond with relevant status code and message, patient data and access token
+        res.status(subPayload.status.code).json({ 
+            Message: subPayload.status.message, 
+            Patient: subPayload.patient,
+            AccessToken: subPayload.accessToken
+        });
+
+    } catch (err) {
+        // internal server error
+        res.status(500).json({Error: err.message});  
+    }
+});
+
 router.post('/refresh', async (req, res) => {
     try {
         // extract refresh token from request body
@@ -118,7 +158,7 @@ router.post('/refresh', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "refreshToken": ${JSON.stringify(refreshToken)},
+            "refreshToken": "${refreshToken}",
             "reqId": "${reqId}"
            }`;       
 
