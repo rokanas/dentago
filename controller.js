@@ -6,12 +6,13 @@ const Patient = require('./patient');
 
 router.use(express.json());
 
-require('dotenv').config();                 // load environmental variables from .env file to process.env object
+// load environmental variables from .env file to process.env object
+require('dotenv').config();                 
 
 // generate jwt access token
 function generateAccessToken(user) {
     // serialize user objecct into jwt using secret key and set expiration time
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20s'});
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10s'});
 }
 
 // generate jwt refresh token
@@ -148,25 +149,48 @@ async function login(message) {
 }
 
 // log out user by deleting refresh token
-router.delete('/logout', async(req, res) => {
+async function logout (message) {
+
+    // parse received MQTT payload to JSON
+    const parsedMessage = JSON.parse(message);
+
+    // declare resposne data
+    const response = {
+        status: {
+            code: "",
+            message: ""
+        },
+        reqId: parsedMessage.reqId
+    };
+
     try {
         // extract user id from request body and find the resource from the DB
-        const userId = req.body.id;
+        const userId = parsedMessage.userId;
         const patient = await Patient.findOne({ id: userId });
 
-        if (!patient) {
-            return res.status(404).json({ Error: 'Access forbidden: invalid patient ID' }); // resource not found
+        if(!patient) {
+            // if patient is not found, return 404
+            response.status.code = 404;
+            response.status.message = "'Access forbidden: invalid patient ID'";
+            return JSON.stringify(response);
         }
+
         // clear the refresh token
         patient.refreshToken = "";
         patient.save();
 
-        res.status(204).json({ Message: 'Logged out successfully'});
+        // return success message
+        response.status.code = 204;
+        response.status.message = 'Logged out successfully';
+        return JSON.stringify(response);
 
-    } catch(err) {
-        res.status(500).json({ Error: err.message });
+    } catch (err) {
+        // if there is an internal error
+        response.status.code = 500;
+        response.status.message = err.message;
+        return JSON.stringify(response);
     }
-});
+}
 
 // generate new access token using refresh token 
 async function refresh (message) {
@@ -230,7 +254,7 @@ async function refresh (message) {
             response.status.message = "Access token refreshed successfully ";
             response.accessToken = accessToken;
         });
-        
+
         // return the result of verification (new access token or 403)
         return JSON.stringify(response);
 
@@ -247,5 +271,6 @@ module.exports = {
     router,
     register,
     login,
+    logout,
     refresh
 };

@@ -5,8 +5,6 @@ const path = require('path');               // handles file paths
 const cors = require('cors');               // handles cross-origin requests (relevant for production)
 const mqtt = require('./mqtt.js');          // contains mqtt functions
 
-const controller = require('./controller');
-
 // import environmental variables
 require('dotenv').config();                 // load environmental variables from .env file to process.env object
 
@@ -17,6 +15,7 @@ const port = process.env.PORT || process.env.CI_PORT;
 // subscribe to authentiation mqtt topics
 mqtt.subscribe("dentago/authentication/register");
 mqtt.subscribe("dentago/authentication/login");
+mqtt.subscribe("dentago/authentication/logout");
 mqtt.subscribe("dentago/authentication/refresh");
 
 // Connect to MongoDB
@@ -40,14 +39,6 @@ app.use(morgan('dev'));
 // enable cross-origin resource sharing for frontend must be registered before api
 app.options('*', cors());
 app.use(cors());
-
-// import routes
-app.use('/api', controller.router);
-
-// catch all non-error handler for api (i.e., 404 Not Found)
-app.use('/api/*', function (_, res) {
-    res.status(404).json({ 'message': 'Not Found' });
-});
 
 // serve static assets
 let root = path.normalize(__dirname + '/..');
