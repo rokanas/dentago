@@ -1,5 +1,6 @@
 /**
- * The Availability Service is a Node.js application designed for the Dentago distributed system. 
+ * The Availability Service is a Node.js application designed for the Dentago distributed system,
+ * responsible for retrieving and publishing available Timeslots from the MongoDB.
  */
 
 const mongoose = require('mongoose');
@@ -27,9 +28,7 @@ const MQTT_SUB_TOPICS = {
 // MQTT publisher-topics
 const MONITOR_PUB = 'dentago/monitor/availability/echo';
 
-/**
- * Connect to MongoDB
- */
+// Connect to MongoDB
 mongoose.connect(mongoUri).then(() => {
     //console.log(`Connected to MongoDB with URI: ${mongoUri}`);
     console.log('Connected to MongoDB');
@@ -42,9 +41,7 @@ mongoose.connect(mongoUri).then(() => {
 });
 
 
-/**
- * Connect to MQTT broker and subscribe to the topics
- */
+// Connect to MQTT broker and subscribe to the topics
 client.on('connect', () => {
     console.log('Connected to MQTT broker');
 
@@ -57,9 +54,7 @@ client.on('connect', () => {
     });
 });
 
-/**
- * Handle incoming messages asynchronously
- */
+// Handle incoming messages asynchronously
 client.on('message', async (topic, message) => {
     switch (topic) {
         // Incoming request for Timeslot data
@@ -81,7 +76,7 @@ client.on('message', async (topic, message) => {
                 const timeslots = await Timeslot.find({ clinic: {$in: clinic} })
                     .populate('dentist', 'name').populate('clinic', 'name').exec();
 
-                // Publish the unordered Timeslots
+                // Publish the unordered Timeslots (unused)
                 //client.publish(responseTopic, JSON.stringify(timeslots));
                 
                 // Order the Timelots by Clinic
@@ -114,33 +109,23 @@ client.on('message', async (topic, message) => {
     }
 });
 
-/**
- * Handle errors
- */
+// Handle uncaught MQTT errors
 client.on('error', (error) => {
     console.error('MQTT connection error: ', error);
 });
 
-/**
- * Handle unexpected disconnections
- */
+// Handle unexpected disconnections
 client.on('close', () => {
-    // "\n" due to Windows cmd prompt
-    console.log('\nClient disconnected from MQTT broker');
+    console.log('\nClient disconnected from MQTT broker'); // "\n" due to Windows cmd prompt
 });
 
-/**
- * Handle reconnection to broker
- */
+// Handle reconnection to broker
 client.on('reconnect', () => {
     console.log('Reconnected to MQTT broker');
 }); 
 
-/**
- * Handle application shutdown 
- * SIGINT is the signal sent when terminating the process by pressing 'ctrl+c'
- * // TODO: Can we remove the "Terminate batch job y/n?" prompt?
- */
+// Handle application shutdown gracefully
+// SIGINT is the signal sent when terminating the process by pressing 'ctrl+c'
 process.on('SIGINT', () => {
     console.log('Closing MQTT connection...');
     // End MQTT connection and exit process using success codes for both
