@@ -34,43 +34,38 @@ const HEARTBEAT_INTERVAL = 1000; // 1 second
 const LOAD_CHECK_MINUTE = 10000; // 60 seconds
 const LOAD_CHECK_SECOND = 1000; // 1 seconds
 const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
+const DISPLAY_EVERY_SEC = 5000;
 
 // Services' Data
 let isServiceOnline = {};
-let requestsForAvailabilityPerSecond = 0;
-let requestsForAvailabilityPerMinute = 0;
-
-let availabilityQueue = [];
+let requestsPerSecond = {};
+let requestsPerMinute = {};
 
 // Ping to each service
 function sendHeartbeat() {
     SERVICES.forEach(service => {
-        const topic = formatPubTopic(service);
-        client.publish(topic, `pinging ${topic} :)`);
+        client.publish(formatPubTopic(service), `pinging ${service} :)`);
     });
-    console.log('\n');
+    // console.log('\n');
 }
 
 function updateQueue(queue) {
-
-    const extraItems = Math.max(queue.length - QUEUE_MAX_LENGTH, 0);
-
-    queue.splice(0, extraItems);
-    // Define array
-    // When length greater than 60 --> shifty();
-    // Or only update the queue once every X seconds and at that point we split() the array and remove all the 
+    const spliceSize = Math.max(queue.length - QUEUE_MAX_LENGTH, 0);
+    queue.splice(0, spliceSize);
 }
 
 // Repeat every HEARTBEAT_INTERVAL
 function checkServiceStatus() {
     setTimeout(() => {
         SERVICES.forEach(service => {
-            if (!isServiceOnline[service]) {
-                console.log(`Service for ${service} is offline 🤡`);
-            }
-            else {
-                console.log(`Service for ${service} is online 😎`);
-            }
+            // if (!isServiceOnline[service]) {
+            //     console.log(`Service for ${service} is offline 🤡`);
+            // }
+            // else {
+            //     console.log(`Service for ${service} is online 😎`);
+            // }
+
+            // Reset status
             isServiceOnline[service] = false;
         });
 
@@ -83,17 +78,13 @@ function checkServiceStatus() {
 function checkLoadPerSecond() {
     setTimeout(() => {
 
-        /**
-         * Listen to all the requests for all the services in 1 second
-         */
-
-        console.log(`Massive load in availability service ${requestsForAvailabilityPerSecond}`);
-        // push the load to the queue
-        availabilityQueue.push(requestsForAvailabilityPerSecond);
-
-        // Reset requests for all services
-        requestsForAvailabilityPerSecond = 0;
-
+        // Listen to all the requests for all the services in 1 second
+        SERVICES.forEach(service => {
+            // console.log(`Load in ${service} service: ${requestsPerSecond[service]} requests per second`);
+            requestsPerMinute[service].push(requestsPerSecond[service]);
+            // Reset counter
+            requestsPerSecond[service] = 0;
+        });
 
         checkLoadPerSecond();
     }, LOAD_CHECK_SECOND);
@@ -101,13 +92,38 @@ function checkLoadPerSecond() {
 
 function checkLoadPerMinute() {
     setTimeout(() => {
-        updateQueue(availabilityQueue);
-        let sum = availabilityQueue.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-        console.log(`QUEUE: ${availabilityQueue}`);
-        console.log(`SUM: ${sum}`);
-        console.log(`Load in the availability service during the last minute ${requestsForAvailabilityPerMinute}`);
+        SERVICES.forEach(service => {
+            // Update the queue size so it only stores the data from the past 60 seconds
+            updateQueue(requestsPerMinute[service]);
+            let sum = requestsPerMinute[service].reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+            // console.log(`Load in the ${service} service during the last minute: ${sum} requests per minute`);
+
+        });
         checkLoadPerMinute();
     }, LOAD_CHECK_MINUTE);
+}
+
+function displayInfo() {
+    setTimeout(() => {
+        console.log('--------------------------------------');
+        SERVICES.forEach(service => {
+            const status = isServiceOnline[service] ? 'online 😎' : 'offline 🤡';
+
+            console.log(`Service ${service} status:`);
+            console.log(`\t${status}`);
+
+            let totalReqPerMin = requestsPerMinute[service].reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+            let averageReqPerSec = totalReqPerMin/QUEUE_MAX_LENGTH;
+            
+            console.log(`\t${averageReqPerSec} average requests per second`);
+            
+            console.log(`\t${totalReqPerMin} total requests per minute`);
+
+        });
+        console.log('');
+
+        displayInfo();
+    }, DISPLAY_EVERY_SEC);
 }
 
 const client = mqtt.connect('mqtt://test.mosquitto.org', MQTT_OPTIONS);
@@ -115,7 +131,7 @@ const client = mqtt.connect('mqtt://test.mosquitto.org', MQTT_OPTIONS);
 client.on('connect', () => {
     console.log('MQTT successfully connected!');
 
-    // Subscribe to topic 'dentago/+/monitor/echo'
+    // Subscribe to topic 'dentago/#'
     client.subscribe(SUB_MQTT_TOPIC, (err) => {
         if (err) console.log('MQTT connection error: ' + err);
     });
@@ -123,39 +139,29 @@ client.on('connect', () => {
     // Initialize isServiceOnline object
     SERVICES.forEach(service => {
         isServiceOnline[service] = false;
+        requestsPerSecond[service] = 0;
+        requestsPerMinute[service] = []; // Initialize queues
     });
 
     sendHeartbeat();
     checkServiceStatus();
     checkLoadPerSecond();
     checkLoadPerMinute();
+    displayInfo();
 });
 
 client.on('message', (topic, _) => {
 
     const match = topic.match(subEchoRegex);
 
-    // If the topic matches dentago/monitoring/+service/echo
+    // If topic matches dentago/monitoring/+service/echo or dentago/service, extract the service
+    const service = match ? match[1] : topic.split('/')[1];
+
     if (match) {
-        const service = match[1]; // Get the capturing group
         isServiceOnline[service] = true;
     }
-    else {
-        const service = topic.split('/')[1]; // dentago/+service/#
-
-        // If the topic matches one of the services
-        if (SERVICES.includes(service)) {
-            console.log(service);
-            switch (service) {
-                case 'availability':
-                    requestsForAvailabilityPerSecond += 1;
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
+    else if (SERVICES.includes(service)) {
+        requestsPerSecond[service] += 1;
     }
 });
 
