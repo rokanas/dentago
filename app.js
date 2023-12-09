@@ -1,23 +1,29 @@
 /**
- * Basic ping/echo monitor for the dentago system
+ * Basic ping/echo monitor for the dentago system.
+ * The app publishes messages with the topic dentago/monitor/+service/ping
+ * and receives messages with the topic dentago/monitor/+service/echo
+ * 
+ * It also listens to all the services (dentago/#) to calculate their current load
  */
 
 // TODO: Maybe make a simple graphic interface, just boxes and text
-// Dependencies
 const mqtt = require('mqtt');
 
-// MQTT
-// TODO: define QOS here
-// TODO: These topics could be defined as just the service instead of the whole thing
-const PUB_MQTT_TOPICS = {
-    monitorBooking: 'dentago/monitor/booking/ping',
-    monitorDentagoAPI: 'dentago/monitor/dentago/ping',
-    monitorDentistAPI: 'dentago/monitor/dentist/ping',
-    monitorAvailability: 'dentago/monitor/availability/ping',
-}
+// MQTT Components
+const SERVICES = [
+    'booking',
+    'dentago', // TODO: Maybe the dentago-api needs a different name
+    'dentist',
+    'availability'
+];
 
-const SUB_MQTT_TOPIC = 'dentago/monitor/+/echo';
-const SUB_MQTT_TOPIC_2 = 'dentago/availability/#'
+const SUB_MQTT_TOPIC = 'dentago/#';
+
+const formatPubTopic = (service) => `dentago/monitor/${service}/ping`;
+
+// Regex for matching dentago/monitor/+service/echo
+// ([^/]+) denotes a capturing group that matches any character but '/'
+const subEchoRegex = /^dentago\/monitor\/([^/]+)\/echo$/;
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -29,6 +35,7 @@ const LOAD_CHECK_MINUTE = 10000; // 60 seconds
 const LOAD_CHECK_SECOND = 1000; // 1 seconds
 const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
 
+// Services' Data
 let isServiceOnline = {};
 let requestsForAvailabilityPerSecond = 0;
 let requestsForAvailabilityPerMinute = 0;
@@ -37,7 +44,8 @@ let availabilityQueue = [];
 
 // Ping to each service
 function sendHeartbeat() {
-    Object.values(PUB_MQTT_TOPICS).forEach(topic => {
+    SERVICES.forEach(service => {
+        const topic = formatPubTopic(service);
         client.publish(topic, `pinging ${topic} :)`);
     });
     console.log('\n');
@@ -45,7 +53,6 @@ function sendHeartbeat() {
 
 function updateQueue(queue) {
 
-    // TODO: this is wrong
     const extraItems = Math.max(queue.length - QUEUE_MAX_LENGTH, 0);
 
     queue.splice(0, extraItems);
@@ -57,10 +64,7 @@ function updateQueue(queue) {
 // Repeat every HEARTBEAT_INTERVAL
 function checkServiceStatus() {
     setTimeout(() => {
-        Object.values(PUB_MQTT_TOPICS).forEach(topic => {
-            // Since we want to extract the service name from the topic dentago/service/monitor/ping
-            // We can topic.split('/')[1] which will always gives us 'service'
-            const service = topic.split('/')[2];
+        SERVICES.forEach(service => {
             if (!isServiceOnline[service]) {
                 console.log(`Service for ${service} is offline 🤡`);
             }
@@ -116,13 +120,9 @@ client.on('connect', () => {
         if (err) console.log('MQTT connection error: ' + err);
     });
 
-    client.subscribe(SUB_MQTT_TOPIC_2, (err) => {
-        if (err) console.log('MQTT connection error: ' + err);
-    });
-
     // Initialize isServiceOnline object
-    Object.values(PUB_MQTT_TOPICS).forEach(topic => {
-        isServiceOnline[topic] = false;
+    SERVICES.forEach(service => {
+        isServiceOnline[service] = false;
     });
 
     sendHeartbeat();
@@ -131,23 +131,31 @@ client.on('connect', () => {
     checkLoadPerMinute();
 });
 
-client.on('message', (topic, payload) => {
+client.on('message', (topic, _) => {
 
-    if (topic.startsWith('dentago/monitor')) {
-        // TODO: define as a constant
-        console.log('monitor');
-        const service = topic.split('/')[2]; // Same thing as explained before
+    const match = topic.match(subEchoRegex);
+
+    // If the topic matches dentago/monitoring/+service/echo
+    if (match) {
+        const service = match[1]; // Get the capturing group
         isServiceOnline[service] = true;
     }
     else {
-        console.log(topic);
-        // topic: dentago/+service/#
-        const service = topic.split('/')[1];
-        // TODO: do a switch case like with the other service
+        const service = topic.split('/')[1]; // dentago/+service/#
 
-        if (service === 'availability') {
-            requestsForAvailabilityPerSecond += 1;
+        // If the topic matches one of the services
+        if (SERVICES.includes(service)) {
+            console.log(service);
+            switch (service) {
+                case 'availability':
+                    requestsForAvailabilityPerSecond += 1;
+                    break;
+
+                default:
+                    break;
+            }
         }
+
     }
 });
 
