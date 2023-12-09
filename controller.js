@@ -1,10 +1,6 @@
-const express = require("express");
-const router = express.Router();
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt");
 const Patient = require('./patient');
-
-router.use(express.json());
 
 // load environmental variables from .env file to process.env object
 require('dotenv').config();                 
@@ -268,7 +264,6 @@ async function refresh (message) {
 
 // export the router
 module.exports = {
-    router,
     register,
     login,
     logout,
