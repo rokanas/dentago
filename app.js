@@ -31,10 +31,10 @@ const MQTT_OPTIONS = {
 }
 
 const HEARTBEAT_INTERVAL = 1000; // 1 second
-const LOAD_CHECK_MINUTE = 10000; // 60 seconds
+const LOAD_CHECK_MINUTE = 60000; // 60 seconds
 const LOAD_CHECK_SECOND = 1000; // 1 seconds
-const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
 const DISPLAY_EVERY_SEC = 5000;
+const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
 
 // Services' Data
 let isServiceOnline = {};
@@ -46,7 +46,6 @@ function sendHeartbeat() {
     SERVICES.forEach(service => {
         client.publish(formatPubTopic(service), `pinging ${service} :)`);
     });
-    // console.log('\n');
 }
 
 function updateQueue(queue) {
@@ -58,13 +57,6 @@ function updateQueue(queue) {
 function checkServiceStatus() {
     setTimeout(() => {
         SERVICES.forEach(service => {
-            // if (!isServiceOnline[service]) {
-            //     console.log(`Service for ${service} is offline 🤡`);
-            // }
-            // else {
-            //     console.log(`Service for ${service} is online 😎`);
-            // }
-
             // Reset status
             isServiceOnline[service] = false;
         });
@@ -77,30 +69,19 @@ function checkServiceStatus() {
 // Repeat every LOAD_CHECK_SECOND
 function checkLoadPerSecond() {
     setTimeout(() => {
-
-        // Listen to all the requests for all the services in 1 second
         SERVICES.forEach(service => {
-            // console.log(`Load in ${service} service: ${requestsPerSecond[service]} requests per second`);
+            // Push the current requests per second to the queue
             requestsPerMinute[service].push(requestsPerSecond[service]);
-            // Reset counter
+
+            // Update the queue size so it only stores the data from the past 60 seconds
+            updateQueue(requestsPerMinute[service]);
+
+            // Once the requests per second are store in the queue, we reset it for the next time
             requestsPerSecond[service] = 0;
         });
 
         checkLoadPerSecond();
     }, LOAD_CHECK_SECOND);
-}
-
-function checkLoadPerMinute() {
-    setTimeout(() => {
-        SERVICES.forEach(service => {
-            // Update the queue size so it only stores the data from the past 60 seconds
-            updateQueue(requestsPerMinute[service]);
-            let sum = requestsPerMinute[service].reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-            // console.log(`Load in the ${service} service during the last minute: ${sum} requests per minute`);
-
-        });
-        checkLoadPerMinute();
-    }, LOAD_CHECK_MINUTE);
 }
 
 function displayInfo() {
@@ -115,8 +96,8 @@ function displayInfo() {
             let totalReqPerMin = requestsPerMinute[service].reduce((accumulator, currentValue) => accumulator + currentValue, 0);
             let averageReqPerSec = totalReqPerMin/QUEUE_MAX_LENGTH;
             
+            console.log(`\t${requestsPerSecond[service]} requests per second`);
             console.log(`\t${averageReqPerSec} average requests per second`);
-            
             console.log(`\t${totalReqPerMin} total requests per minute`);
 
         });
@@ -146,7 +127,6 @@ client.on('connect', () => {
     sendHeartbeat();
     checkServiceStatus();
     checkLoadPerSecond();
-    checkLoadPerMinute();
     displayInfo();
 });
 
