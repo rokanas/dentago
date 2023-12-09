@@ -40,6 +40,19 @@ mongoose.connect(mongoUri).then(() => {
     process.exit(1);
 });
 
+// Order Timelots by Clinic in key-value pairs
+function orderByClinic(timeslots) {
+    const timeslotsByClinic = {};
+    timeslots.forEach((timeslot) => {
+        const clinicName = timeslot.clinic.name;
+        if (!timeslotsByClinic[clinicName]) {
+            timeslotsByClinic[clinicName] = [];
+        }
+        timeslotsByClinic[clinicName].push(JSON.stringify(timeslot));
+    });
+    return timeslotsByClinic;
+};
+
 
 // Connect to MQTT broker and subscribe to the topics
 client.on('connect', () => {
@@ -75,19 +88,9 @@ client.on('message', async (topic, message) => {
                 // Fetch all the Timeslots for the Clinics
                 const timeslots = await Timeslot.find({ clinic: {$in: clinic} })
                     .populate('dentist', 'name').populate('clinic', 'name').exec();
-
-                // Publish the unordered Timeslots (unused)
-                //client.publish(responseTopic, JSON.stringify(timeslots));
                 
                 // Order the Timelots by Clinic
-                const timeslotsByClinic = {};
-                timeslots.forEach((timeslot) => {
-                    const clinicName = timeslot.clinic.name;
-                    if (!timeslotsByClinic[clinicName]) {
-                        timeslotsByClinic[clinicName] = [];
-                    }
-                    timeslotsByClinic[clinicName].push(JSON.stringify(timeslot));
-                });
+                const timeslotsByClinic = orderByClinic(timeslots);
 
                 // Publish the ordered Timeslots
                 client.publish(responseTopic, JSON.stringify(timeslotsByClinic));
