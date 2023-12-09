@@ -48,13 +48,13 @@ function sendHeartbeat() {
     });
 }
 
-function updateQueue(queue) {
+function trimQueue(queue) {
     const spliceSize = Math.max(queue.length - QUEUE_MAX_LENGTH, 0);
     queue.splice(0, spliceSize);
 }
 
 // Repeat every HEARTBEAT_INTERVAL
-function checkServiceStatus() {
+function monitorServices() {
     setTimeout(() => {
         SERVICES.forEach(service => {
             // Reset status
@@ -62,25 +62,25 @@ function checkServiceStatus() {
         });
 
         sendHeartbeat();
-        checkServiceStatus();
+        monitorServices();
     }, HEARTBEAT_INTERVAL);
 }
 
 // Repeat every LOAD_CHECK_SECOND
-function checkLoadPerSecond() {
+function monitorLoad() {
     setTimeout(() => {
         SERVICES.forEach(service => {
             // Push the current requests per second to the queue
             requestsPerMinute[service].push(requestsPerSecond[service]);
 
             // Update the queue size so it only stores the data from the past 60 seconds
-            updateQueue(requestsPerMinute[service]);
+            trimQueue(requestsPerMinute[service]);
 
             // Once the requests per second are store in the queue, we reset it for the next time
             requestsPerSecond[service] = 0;
         });
 
-        checkLoadPerSecond();
+        monitorLoad();
     }, LOAD_CHECK_SECOND);
 }
 
@@ -125,8 +125,8 @@ client.on('connect', () => {
     });
 
     sendHeartbeat();
-    checkServiceStatus();
-    checkLoadPerSecond();
+    monitorServices();
+    monitorLoad();
     displayInfo();
 });
 
