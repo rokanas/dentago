@@ -1,6 +1,6 @@
 <template>
     <div id="navbar">
-        <p id="title"> Header Bar </p>
+        <router-link id="title" to="/"> Header Bar </router-link>
         <button> Notifications </button>
         <button> Profile </button>
     </div>
@@ -12,6 +12,7 @@
     background-color: #FFA686;
     filter: drop-shadow(0px 2px 2px #000000);
     justify-content: space-evenly;
+    padding: 1%;
 }
 
 #title{
