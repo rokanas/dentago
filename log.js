@@ -1,8 +1,24 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+// define schema for status subresource
+const statusSchema = new Schema({
+    code: {
+        type: Number,
+        required: true
+    },
+    message: {
+        type: String,
+        required: true
+    }
+});
+
 // define schema for log resource
 const logSchema = new Schema({
+    topic: {
+        type: String,
+        required: true
+    },
     service: {
         type: String,
         required: true
@@ -14,16 +30,8 @@ const logSchema = new Schema({
     status: {
         type: statusSchema,
         required: true
-    }
-});
-
-// define schema for status subresource
-const statusSchema = new Schema({
-    code: {
-        type: Number,
-        required: true
     },
-    message: {
+    reqId: {
         type: String,
         required: true
     }
