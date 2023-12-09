@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import BookingView from '../views/BookingView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,6 +15,12 @@ const router = createRouter({
       path: '/book/:clinicId',
       name: 'book-appointments',
       component: BookingView,
+      props: true
+    },
+    {
+      path: '/user/:username',
+      name: 'profile',
+      component: ProfileView,
       props: true
     }
   ]
