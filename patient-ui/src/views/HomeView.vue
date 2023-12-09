@@ -13,7 +13,7 @@
 
       <button @click="getClinics()"> GET </button>
 
-      <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="13">
+      <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
         <!--- TODO: change "clinic.clinicLocation" back to "clinic.location" when appropriate changes are made in backend-->
         <!-- same goes for "clinicName" and "clinicId"-->
           <Marker v-for="clinic in clinics" :key="clinic.clinicId" :options="{ position: clinic.clinicLocation }">
@@ -67,9 +67,12 @@ import { GoogleMap, Marker, InfoWindow } from "vue3-google-map";
 import { Api } from '@/Api.js';
 import HeaderBar from '@/components/HeaderBar.vue'
 import ContactInfoItem from '@/components/ContactInfoItem.vue'
-import BookingButton from '../components/BookingButton.vue';
+import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
+  created() {
+    this.findUserLocation()
+  },
   components: {
     GoogleMap,
     // eslint-disable-next-line vue/no-reserved-component-names
@@ -82,7 +85,8 @@ export default defineComponent ({
   data() {
     return {
       API_KEY: import.meta.env.VITE_API_KEY,
-      center: {lat: 57.709182620250374, lng: 11.973550969507114},
+      center: {lat: 58.572053, lng: 14.702880},
+      zoom: 7,
       clinics: [
         {clinicId: "1", clinicName: "Folktandvården Järntorget", clinicLocation: {lat: 57.70052343850043, lng: 11.946638869202163}},
         {clinicId: "2", clinicName: "Folktandvården Sannegården", clinicLocation: {lat: 57.711070430807794, lng: 11.926897811890154}},
@@ -105,6 +109,33 @@ export default defineComponent ({
         }).catch(error => {
           console.log(error);
         })
+    },
+    /*
+    This is taken and adapted from https://developers.google.com/maps/documentation/javascript/geolocation#maps_map_geolocation-javascript
+    It uses the HTML5 Geolocation to find the user's position (if they allow it and the browser supports it), so that the map centers at their location.
+    Otherwise, it centers at roughly the middle point between Gothenburg and Stockholm.
+    */ 
+    findUserLocation() {
+      // if browser supports HTML5 Geolocation
+      if (navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          // Success case
+          (position) => {
+            this.center = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            this.zoom = 13;
+          },
+          // If user does not approve location services
+          () => {
+            alert("Permission to access location not approved.")
+          }
+        );
+      } else {
+        // if browser does not support HTML5 Geolocation
+        alert("Browser does not support Geolocation tools used.")
+      }
     }
   }
 });
