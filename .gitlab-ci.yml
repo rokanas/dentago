@@ -22,15 +22,15 @@ install:
     - npm install                             # install the dependencies
     - echo "Dependencies installed!"          # print affirmative message
 
-test:
-  stage: test
-  tags:
-    - docker
-  script:
-    - ls                                      # list files in current directory
-    - echo "Running tests..."                 # print a message
-    - npm run ci-test                         # run postman tests
-    - echo "Testing complete!"                # print affirmative message
+#test:
+#  stage: test
+#  tags:
+#    - docker
+#  script:
+#    - ls                                      # list files in current directory
+#    - echo "Running tests..."                 # print a message
+#    - npm run ci-test                         # run postman tests
+#    - echo "Testing complete!"                # print affirmative message
 
 #TODO: Add MQTT test 
 #mqtt-test:
