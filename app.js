@@ -72,7 +72,6 @@ client.on('message', async (topic, message) => {
         
                 // Fetch the desired Clinics
                 const clinic = await Clinic.find({ id: {$in: clinicId} });
-                
                 if (clinic.length === 0) {
                     client.publish(responseTopic);
                     throw new Error('Clinic not found');
@@ -82,9 +81,21 @@ client.on('message', async (topic, message) => {
                 const timeslots = await Timeslot.find({ clinic: {$in: clinic} })
                     .populate('dentist', 'name').populate('clinic', 'name').exec();
 
-                // Publish the Timeslots
-                client.publish(responseTopic, JSON.stringify(timeslots));
-                console.log(timeslots);
+                // Publish the unordered Timeslots
+                //client.publish(responseTopic, JSON.stringify(timeslots));
+                
+                // Order the Timelots by Clinic
+                const timeslotsByClinic = {};
+                timeslots.forEach((timeslot) => {
+                    const clinicName = timeslot.clinic.name;
+                    if (!timeslotsByClinic[clinicName]) {
+                        timeslotsByClinic[clinicName] = [];
+                    }
+                    timeslotsByClinic[clinicName].push(JSON.stringify(timeslot));
+                });
+
+                // Publish the ordered Timeslots
+                client.publish(responseTopic, JSON.stringify(timeslotsByClinic));
 
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
