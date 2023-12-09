@@ -74,7 +74,7 @@ client.on('message', async (topic, message) => {
             payload = await controller.logout(parsedMessage);
             break;
         case 'refresh':
-            payload = await controller.refersh(parsedMessage);
+            payload = await controller.refresh(parsedMessage);
     };
 
     // append request id to the publishing topic
