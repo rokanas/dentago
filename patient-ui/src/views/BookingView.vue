@@ -11,50 +11,44 @@
             <button @click="cancel()"> Cancel </button>
 
             <table>
-                <tr>
-                    <th> Times </th>
-                    <th> Sunday </th>
-                    <th> Monday </th>
-                    <th> Tuesday </th>
-                    <th> Wednesday </th>
-                    <th> Thursday </th>
-                    <th> Friday </th>
-                    <th> Saturday </th>
-                </tr>
-                <tr>
-                    <td> 8:00 </td>
-                </tr>
-                <tr>
-                    <td> 9:00 </td>
-                </tr>
-                <tr>
+                <tr v-for="day in days" :key="day">
+                    <th> {{ day }} </th>
+                    <td> 08:00 </td>
+                    <td> 09:00 </td>
                     <td> 10:00 </td>
-                </tr>
-                <tr>
                     <td> 11:00 </td>
-                </tr>
-                <tr>
                     <td> 12:00 </td>
-                </tr>
-                <tr>
                     <td> 13:00 </td>
-                </tr>
-                <tr>
                     <td> 14:00 </td>
-                </tr>
-                <tr>
                     <td> 15:00 </td>
-                </tr>
-                <tr>
                     <td> 16:00 </td>
-                </tr>
-                <tr>
                     <td> 17:00 </td>
                 </tr>
             </table>
         </div>
     </div>
 </template>
+
+<style scoped>
+table {
+    border: 2px solid;
+    border-collapse: collapse;
+    width: 100%;
+    height: 75vh;
+}
+
+th {
+    background-color: aquamarine;
+    border: 3px solid;
+    width: 10%;
+}
+
+td {
+    background-color: azure;
+    border: 2px solid;
+    text-align: center;
+}
+</style>
 
 <script>
 import { Api } from '@/Api.js';
@@ -63,10 +57,9 @@ import HeaderBar from '@/components/HeaderBar.vue'
 export default {
     data() {
         return {
-            days: 7,
+            days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
             clinic: {},
             time_slots: [],
-            bookingObj: {}
         }
     },
     components: {
