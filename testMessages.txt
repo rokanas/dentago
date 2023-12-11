@@ -19,3 +19,7 @@ mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\":
 mqtt pub -t dentago/booking/clinic1/user1/approved -h test.mosquitto.org -m 'test'
 mqtt sub -t dentago/booking/clinic1/+ -h test.mosquitto.org
 mqtt sub -t dentago/+ -h test.mosquitto.org
+
+
+mqtt pub -t dentago/availability/ -h test.mosquitto.org -m '{\"reqID\": \"request123\", \"clinicID\": [\"crisisCityClinic\", \"greenHillZoneClinic\"]}'
+
