@@ -7,11 +7,12 @@ require('dotenv').config();                 // load environmental variables from
 
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 
-// subscribe to authentiation mqtt topics
+// subscribe to authentiation mqtt topics and to monitoring service ping topic
 mqtt.subscribe("dentago/authentication/register");
 mqtt.subscribe("dentago/authentication/login");
 mqtt.subscribe("dentago/authentication/logout");
 mqtt.subscribe("dentago/authentication/refresh");
+mqtt.subscribe("dentago/monitor/authentication/ping");
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)

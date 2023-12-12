@@ -50,39 +50,46 @@ client.on('message', async (topic, message) => {
     // print the received message
     console.log(`Received message on topic ${topic}: ${message.toString()}`);
 
-    // declare payload object and initialize first part of mqtt publishing topic 
+    // declare payload object
     let payload;
-    let pubTopic = "dentago/authentication/"
     
-    // parse message to String and 
+    // parse message to String
     let parsedMessage = message.toString();
     
-
     // isolate the topic suffix to extract the request type
     const topicParts = topic.split('/');
     const reqType = topicParts[topicParts.length - 1];
-    
-    // call function corresponding to request type (register, login, logout or refresh)
-    switch (reqType) {
-        case 'register':
-            payload = await controller.register(parsedMessage);
-            break;
-        case 'login':
-            payload = await controller.login(parsedMessage);
-            break;
-        case 'logout':
-            payload = await controller.logout(parsedMessage);
-            break;
-        case 'refresh':
-            payload = await controller.refresh(parsedMessage);
-    };
 
-    // append request id to the publishing topic
-    pubTopic += reqType + "/" + JSON.parse(payload).reqId;
+    // if receiving a ping from the monitoring service
+    if(reqType === 'ping') {
+        payload = "";
+        // publish an empty echo response back to monitoring service
+        await publish("dentago/monitor/authentication/echo", payload);
+    } else {
+        // call function corresponding to request type (register, login, logout, refresh)
+        switch (reqType) {
+            case 'register':
+                payload = await controller.register(parsedMessage);
+                break;
+            case 'login':
+                payload = await controller.login(parsedMessage);
+                break;
+            case 'logout':
+                payload = await controller.logout(parsedMessage);
+                break;
+            case 'refresh':
+                payload = await controller.refresh(parsedMessage);
+                break;
+        };
 
-    // publish to patient API via mqtt broker
-    await publish(pubTopic, payload);
+        // construct publishing topic by appending request id to the end
+        const pubTopic = "dentago/authentication/" + reqType + "/" + JSON.parse(payload).reqId;
+
+        // publish to patient API via mqtt broker
+        await publish(pubTopic, payload);
+    }
 });
+
 
 
 // unsubscribe from a topic
