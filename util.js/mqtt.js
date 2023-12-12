@@ -1,61 +1,114 @@
 import mqtt from "mqtt";
+import "dotenv/config";
+
 import bookTimeslot from "../functionalities/bookTimeslot.js";
 import cancelTimeslot from "../functionalities/cancelTimeslot.js";
 
-const brokerUrl = "mqtt://test.mosquitto.org";
-const subscribeTopic = "dentago/booking/";
-const publishTopic = "dentago/booking/";
+if (process.argv.length > 2) {
+  process.env.MQTT_CLIENT_ID = process.argv[2];
+}
 
+const clientId = process.env.MQTT_CLIENT_ID;
+
+const brokerUrl = process.env.MOSQUITTO_URI || process.env.CI_MOSQUITTO_URI;
 const options = {
-  clientId: "OopsPulledWrongTooth",
-  clean: true,
+  clientId,
+  clean: true, //changed to false
 };
 
 const client = mqtt.connect(brokerUrl, options);
 
-const mqttInit = async () => {
-  client.on("connect", () => {
-    console.log(`Connected to the MQTT broker: ${brokerUrl}`);
-    client.subscribe(subscribeTopic, (err) => {
-      if (err) {
-        console.error(`Error subscribing to: ${subscribeTopic}`, err);
-      }
-    });
+const sharedSubscriptionPrefix = "$share/bookers/";
+const subscribeTopic = `dentago/booking/`;
+const sharedSubscribeTopic = `${sharedSubscriptionPrefix}dentago/booking/`;
+const publishTopic = "dentago/booking/";
+
+client.on("connect", () => {
+  console.log(`Connected to the MQTT broker: ${brokerUrl}`);
+  client.subscribe(sharedSubscribeTopic, (err) => {
+    if (err) {
+      console.error(`Error subscribing to: ${subscribeTopic}`, err);
+    }
   });
+});
 
-  client.on("message", async (topic, mqttMessage) => {
-    if (topic === subscribeTopic) {
-      const payload = mqttMessage.toString();
+client.on("reconnect", () => {
+  console.log("Reconnected to MQTT broker");
+});
 
-      const { instruction, slotId, clinicId, patientId, reqId } = JSON.parse(payload);
+client.on("close", (err) => {
+  console.error(err);
+  console.log("Connection closed unexpectedly");
+});
 
-      // The service expects to be instructed with either a "book" or "cancel" operation request.
-      // The operation object contains important attributes resulting from this operation ({timeslot, code, message}).
+client.on("error", (err) => {
+  console.error("MQTT error:", err);
+});
 
-      let operation;
-      if (instruction === "BOOK") {
-        operation = await bookTimeslot(slotId, patientId);
-      } else if (instruction === "CANCEL") {
-        operation = await cancelTimeslot(slotId, patientId);
-      }
+client.on("message", async (topic, mqttMessage) => {
+  console.log(topic);
+  console.log("hey");
 
-      let { timeslot, code, message } = operation;
+  const payload = mqttMessage.toString();
 
-      let response;
-      code === "200" ? (response = "SUCCESS") : (response = "FAILURE");
+  try {
+    JSON.parse(payload);
+  } catch (e) {
+    console.error(`The incoming message is not processable: ${payload}`);
+    return;
+  }
+  if (topic === subscribeTopic) {
+    const payload = mqttMessage.toString();
 
-      const status = { code, message };
+    const { instruction, slotId, clinicId, patientId, reqId } =
+      JSON.parse(payload);
 
-      const customRequestTopic = `${reqId}/${clinicId}/${response}`;
-      client.publish(
-        `${publishTopic}${customRequestTopic}`,
-        JSON.stringify({ timeslot, instruction, status })
-      );
-      console.log(`Published message to ${publishTopic}${customRequestTopic}`);
+    let operation;
+    // The service expects to be instructed with either a "book" or "cancel" operation request.
+    // The operation object contains important attributes resulting from this operation ({timeslot, code, message}).
+    if (instruction === "BOOK") {
+      operation = await bookTimeslot(slotId, patientId);
+    } else if (instruction === "CANCEL") {
+      operation = await cancelTimeslot(slotId, patientId);
+    }
+
+    let { timeslot, code, message } = operation;
+
+    let response;
+    code === "200" ? (response = "SUCCESS") : (response = "FAILURE");
+
+    const status = { code, message };
+
+    const customRequestTopic = `${reqId}/${clinicId}/${response}`;
+    client.publish(
+      `${publishTopic}${customRequestTopic}`,
+      JSON.stringify({ timeslot, instruction, status })
+    );
+    console.log(`Published message to ${publishTopic}${customRequestTopic}`);
+  }
+});
+
+export const publish = (topic, payload) => {
+  //client.publish(topic, payload);
+};
+
+const unsubscribe = (topic) => {
+  client.unsubscribe(topic, function (err) {
+    if (!err) {
+      console.log(`Unsubscribed from topic: ${topic}`);
+    } else {
+      console.log(err);
     }
   });
 };
 
-export default mqttInit;
-
-//instruction ==="ERROR_OVERBOOK";
+// close connection to MQTT broker gracefully when app is manually terminated
+process.on("SIGINT", () => {
+  console.log("Closing MQTT connection on SIGINT event...");
+  unsubscribe(sharedSubscribeTopic);
+  console.log(`Topic ${sharedSubscribeTopic} unsubscribed`);
+  client.end({ reasonCode: 0x00 }, () => {
+    console.log("MQTT connection closed");
+    process.exit();
+  });
+});
