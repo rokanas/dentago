@@ -111,14 +111,17 @@ async function handleBookingNotification(topic, payload) {
             throw new Error('Invalid topic data');
         }
 
-        let resTopic = `dentago/booking/${clinicId}/`;
+        let resTopic = `dentago/booking/${clinicId}`;
         resTopic += status;
         
         let instruction = JSON.parse(payload.toString())['instruction'];
+        let timeslot = JSON.parse(payload.timeslot);
+        
+        const dentistNotification = { timeslot: timeslot, instruction: instruction };
 
         console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
 
-        client.publish(resTopic, `Booking ${status}`);
+        client.publish(resTopic, dentistNotification);
 
     } catch (error) {
         console.log(error);
