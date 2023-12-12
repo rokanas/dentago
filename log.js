@@ -15,6 +15,10 @@ const statusSchema = new Schema({
 
 // define schema for log resource
 const logSchema = new Schema({
+    timeStamp: {
+        type: String,
+        required: true
+    },
     topic: {
         type: String,
         required: true
@@ -37,4 +41,16 @@ const logSchema = new Schema({
     }
 });
 
-module.exports = mongoose.model("Log", logSchema);
+// define schema for log collection
+const logCollectionSchema = new Schema({
+    timeStamp: {
+        type: String,
+        required: true
+    },
+    logCollection: {
+        type: [logSchema],
+        required: true
+    }
+});
+
+module.exports = mongoose.model("LogCollection", logCollectionSchema);
