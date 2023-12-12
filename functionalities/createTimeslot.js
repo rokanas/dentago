@@ -1,11 +1,11 @@
 import Timeslot from "../models/timeslot.js";
 
 const newSlot = new Timeslot({
-  timeslotName: "Teeth Cleaning",
-  timeslotDentist: "6565b5ec19071a95c1d03886",
-  timeslotClinic: "6565b5e519071a95c1d03883",
-  timeslotStartTime: new Date("2023-12-05T10:00:00"),
-  timeslotEndTime: new Date("2023-12-05T11:00:00"),
+  name: "Teeth Cleaning",
+  dentist: "6565b5ec19071a95c1d03886",
+  clinic: "6565b5e519071a95c1d03883",
+  startTime: new Date("2023-12-05T10:00:00"),
+  endTime: new Date("2023-12-05T11:00:00"),
 });
 
 async function doesSlotExist(timeslot_id) {

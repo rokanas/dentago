@@ -5,8 +5,16 @@
   "main": "start",
   "type": "module",
   "scripts": {
-    "start": "node ./bookingService.js",
-    "dev": "nodemon ./bookingService.js",
+    "start": "node ./bookingService.js service1",
+    "start1": "node ./bookingService.js service1",
+    "start2": "node ./bookingService.js service2",
+    "start3": "node ./bookingService.js service3",
+    "start4": "node ./bookingService.js service4",
+    "dev": "nodemon ./bookingService.js service1",
+    "dev1": "nodemon ./bookingService.js service1",
+    "dev2": "nodemon ./bookingService.js service2",
+    "dev3": "nodemon ./bookingService.js service3",
+    "dev4": "nodemon ./bookingService.js service4",
     "eslint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -31,7 +39,6 @@
     "nodemon": "^3.0.1"
   },
   "eslintConfig": {
-    "extends": "eslint:recommended",
-    "rules": {}
+    "extends": "eslint:recommended"
   }
 }

@@ -2,32 +2,32 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
-const slotSchema = new Schema({
-  timeslotDentist: {
+const timeslotSchema = new Schema({
+  dentist: {
     type: Schema.Types.ObjectId,
     ref: "Dentist",
     required: false,
   },
-  timeslotClinic: {
+  clinic: {
     type: Schema.Types.ObjectId,
     ref: "Clinic",
     required: true,
   },
-  timeslotPatient: {
+  patient: {
     type: Schema.Types.ObjectId,
     ref: "Patient",
     required: false,
   },
-  timeslotStartTime: {
+  startTime: {
     type: Date,
     required: true,
   },
-  timeslotEndTime: {
+  endTime: {
     type: Date,
     required: true,
   },
 });
 
-const Timeslot = mongoose.model("Timeslot", slotSchema);
+const Timeslot = mongoose.model("Timeslot", timeslotSchema);
 
 export default Timeslot;

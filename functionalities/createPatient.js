@@ -1,13 +1,13 @@
 import Patient from "../models/patient.js";
 
 const newPatient = new Patient({
-  patientId: "P001",
-  patientName: "John Doe",
-  patientContactInfo: "john.doe@email.com",
+  id: "P001",
+  name: "John Doe",
+  contactInfo: "john.doe@email.com",
 });
 
 async function doesPatientExist(patient_id) {
-  const patient = await Patient.findOne({ 'patientId': patient_id });
+  const patient = await Patient.findOne({ 'id': patient_id });
   console.log(patient);
   return patient;
 }
