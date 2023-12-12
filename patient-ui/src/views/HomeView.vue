@@ -71,6 +71,7 @@ export default defineComponent ({
   created() {
     this.getClinics(),
     this.findUserLocation()
+    this.getClinics()
   },
   components: {
     GoogleMap,
