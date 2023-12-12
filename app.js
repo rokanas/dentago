@@ -5,6 +5,7 @@
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
+const Clinic = require('./models/clinic');
 require('dotenv').config();
 
 const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
@@ -23,15 +24,17 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/creation/clinics',
-    createDentist: 'dentago/creation/dentists',
-    createTimeslot: 'dentago/creation/timeslot',
-    assignDentist: 'dentago/assignment/timeslot',
+    createClinic: 'dentago/dentist/creation/clinics',
+    createDentist: 'dentago/dentist/creation/dentists',
+    createTimeslot: 'dentago/dentist/creation/timeslot',
+    assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
-    dentistMonitor: 'dentago/monitor/dentist/ping'
+    dentistMonitor: 'dentago/monitor/dentist/ping',
+    getClinics: 'dentago/dentist/clinics'
 }
 
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
+const PUB_CLINICS= 'dentago/dentist/clinics/result';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -73,6 +76,9 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['dentistMonitor']:
             handlePing(topic);
             break;
+        case MQTT_TOPICS['getClinics']:
+            getAllClinics(topic);
+            break;
         default:
             handleBookingNotification(topic, payload);
             break;
@@ -105,14 +111,17 @@ async function handleBookingNotification(topic, payload) {
             throw new Error('Invalid topic data');
         }
 
-        let resTopic = `dentago/booking/${clinicId}/`;
+        let resTopic = `dentago/booking/${clinicId}`;
         resTopic += status;
         
         let instruction = JSON.parse(payload.toString())['instruction'];
+        let timeslot = JSON.parse(payload.timeslot);
+        
+        const dentistNotification = { timeslot: timeslot, instruction: instruction };
 
         console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
 
-        client.publish(resTopic, `Booking ${status}`);
+        client.publish(resTopic, dentistNotification);
 
     } catch (error) {
         console.log(error);
@@ -123,6 +132,19 @@ async function handlePing(topic) {
     try {
         // TODO: Make this a variable maybe
         client.publish(ECHO_TOPIC, `echo echo echo`);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function getAllClinics(topic) {
+    console.log('Get all clinics');
+
+    try {
+        const clinics = await Clinic.find().exec();
+        console.log(clinics);
+        client.publish(PUB_CLINICS, JSON.stringify(clinics))
+        
     } catch (error) {
         console.log(error);
     }
