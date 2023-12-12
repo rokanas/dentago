@@ -27,8 +27,11 @@ const MQTT_TOPICS = {
     createDentist: 'dentago/creation/dentists',
     createTimeslot: 'dentago/creation/timeslot',
     assignDentist: 'dentago/assignment/timeslot',
-    bookingNotification: 'dentago/booking/+/+/SUCCESS' //+reqId/+clinicId/+status
+    bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
+    dentistMonitor: 'dentago/monitor/dentist/ping'
 }
+
+const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -66,6 +69,9 @@ client.on('message', (topic, payload) => {
             break;
         case MQTT_TOPICS['assignDentist']:
             assignDentist(payload);
+            break;
+        case MQTT_TOPICS['dentistMonitor']:
+            handlePing(topic);
             break;
         default:
             handleBookingNotification(topic, payload);
@@ -108,6 +114,15 @@ async function handleBookingNotification(topic, payload) {
 
         client.publish(resTopic, `Booking ${status}`);
 
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function handlePing(topic) {
+    try {
+        // TODO: Make this a variable maybe
+        client.publish(ECHO_TOPIC, `echo echo echo`);
     } catch (error) {
         console.log(error);
     }
