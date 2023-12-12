@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');       // mongoDB data structuring and schema validation
 const path = require('path');               // handles file paths
 const mqtt = require('./mqtt.js');          // contains mqtt functions
+const controller = require('./controller');
 
 // import environmental variables
 require('dotenv').config();                 // load environmental variables from .env file to process.env object
@@ -24,3 +25,5 @@ mongoose.connect(mongoURI)
     console.error(err.stack);
     process.exit(1);
   });
+
+  setInterval(controller.saveLogs, 10000);
