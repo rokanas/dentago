@@ -1,8 +1,8 @@
 import Timeslot from "../models/timeslot.js";
 
-async function cancelTimeslot(timeslot_id, patientId) {
-  const timeslot = await Timeslot.findById(timeslot_id);
-  // const timeslot = await Timeslot.findOne({ _id: timeslot_id }).exec(); // alternate snippet, will keep for now
+async function cancelTimeslot(timeslotId, patientId) {
+  const timeslot = await Timeslot.findById(timeslotId);
+  // const timeslot = await Timeslot.findOne({ _id: timeslotId }).exec(); // alternate snippet, will keep for now
 
   if (
     timeslot &&
@@ -14,7 +14,7 @@ async function cancelTimeslot(timeslot_id, patientId) {
     try {
       // Attempt to update the timeslot with the correct version
       const updated = await Timeslot.findOneAndUpdate(
-        { _id: timeslot_id, __v: timeslot.__v }, // Includes version in the query for optimistic concurrency control
+        { _id: timeslotId, __v: timeslot.__v }, // Includes version in the query for optimistic concurrency control
         { patient: null, $inc: { __v: 1 } }, // Atomically increments the version
         { new: true } // newly updated timeslot is returned
       );
