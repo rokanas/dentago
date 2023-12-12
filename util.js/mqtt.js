@@ -47,7 +47,6 @@ client.on("error", (err) => {
 
 client.on("message", async (topic, mqttMessage) => {
   console.log(topic);
-  console.log("hey");
 
   const payload = mqttMessage.toString();
 
@@ -71,8 +70,8 @@ client.on("message", async (topic, mqttMessage) => {
     } else if (instruction === "CANCEL") {
       operation = await cancelTimeslot(slotId, patientId);
     }
-
-    let { timeslot, code, message } = operation;
+    console.log("Current operation to send back: " + operation)
+    let { timeslotJSON, code, message } = operation;
 
     let response;
     code === "200" ? (response = "SUCCESS") : (response = "FAILURE");
@@ -82,7 +81,7 @@ client.on("message", async (topic, mqttMessage) => {
     const customRequestTopic = `${reqId}/${clinicId}/${response}`;
     client.publish(
       `${publishTopic}${customRequestTopic}`,
-      JSON.stringify({ timeslot, instruction, status })
+      JSON.stringify({ timeslotJSON, instruction, status })
     );
     console.log(`Published message to ${publishTopic}${customRequestTopic}`);
   }
