@@ -5,14 +5,13 @@ async function cancelTimeslot(timeslot_id, patientId) {
 
   if (
     timeslot &&
-    timeslot.timeslotPatient &&
-    timeslot.timeslotPatient.toString() === patientId
+    timeslot.patient &&
+    timeslot.patient.toString() === patientId
   ) {
-    
     //Timeslot has been found, is booked, and the patient who booked it is cancelling it.
 
     try {
-      timeslot.timeslotPatient = null;
+      timeslot.patient = null;
       await timeslot.save();
     } catch (error) {
       const errorMessage = `Error cancelling timeslot for patient ${patientId}: ${error.message}`;
@@ -33,10 +32,9 @@ async function cancelTimeslot(timeslot_id, patientId) {
     }
   } else if (
     timeslot &&
-    timeslot.timeslotPatient &&
-    timeslot.timeslotPatient.toString() !== patientId
+    timeslot.patient &&
+    timeslot.patient.toString() !== patientId
   ) {
-
     //Timeslot has been found, is booked, but the patient attempting to cancel it is not the patient who booked it.
 
     const errorMessage = `Error cancelling timeslot for patient ${patientId}. The timeslot was indeed booked, but not for this patient.`;
@@ -46,8 +44,7 @@ async function cancelTimeslot(timeslot_id, patientId) {
       code: "403",
       message: errorMessage,
     };
-  } else if (timeslot && !timeslot.timeslotPatient) {
-
+  } else if (timeslot && !timeslot.patient) {
     //Timeslot has been found, but isn't booked.
 
     const errorMessage = `Error cancelling timeslot for patient ${patientId}. The timeslot was not booked.`;
@@ -58,7 +55,6 @@ async function cancelTimeslot(timeslot_id, patientId) {
       message: errorMessage,
     };
   } else {
-
     //Timeslot has not been found.
 
     const errorMessage = `Timeslot was not found in the database`;

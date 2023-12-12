@@ -3,16 +3,16 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const patientSchema = new Schema({
-  patientId: {
+  id: {
     type: String,
     unique: true,
     required: true,
   },
-  patientName: {
+  name: {
     type: String,
     required: true,
   },
-  patientContactInfo: {
+  contactInfo: {
     type: String,
     required: false,
   },

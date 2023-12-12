@@ -2,13 +2,12 @@ import Timeslot from "../models/timeslot.js";
 
 async function bookTimeslot(timeslot_id, patientId) {
   const timeslot = await Timeslot.findById(timeslot_id);
-  
-  if (timeslot && !timeslot.timeslotPatient) {
 
+  if (timeslot && !timeslot.patient) {
     //Timeslot has been found and is available.
-    
+
     try {
-      timeslot.timeslotPatient = patientId;
+      timeslot.patient = patientId;
       await timeslot.save();
     } catch (error) {
       const errorMessage = `Error booking timeslot for patient ${patientId}: ${error.message}`;
@@ -27,11 +26,10 @@ async function bookTimeslot(timeslot_id, patientId) {
         message: successMessage,
       };
     }
-  } 
-  else if (
+  } else if (
     timeslot &&
-    timeslot.timeslotPatient &&
-    timeslot.timeslotPatient.toString() === patientId
+    timeslot.patient &&
+    timeslot.patient.toString() === patientId
   ) {
     // Timeslot has been found, but is booked. The patient who booked it is the patient trying to book it again.
 
@@ -44,10 +42,9 @@ async function bookTimeslot(timeslot_id, patientId) {
     };
   } else if (
     timeslot &&
-    timeslot.timeslotPatient &&
-    timeslot.timeslotPatient.toString() !== patientId
+    timeslot.patient &&
+    timeslot.patient.toString() !== patientId
   ) {
-
     // Timeslot has been found, but is booked. The patient who booked it isn't the patient trying to book it now
 
     const errorMessage = `Error booking timeslot for patient ${patientId}. Timeslot was already booked by another patient before.`;
