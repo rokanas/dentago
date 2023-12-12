@@ -23,10 +23,10 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/creation/clinics',
-    createDentist: 'dentago/creation/dentists',
-    createTimeslot: 'dentago/creation/timeslot',
-    assignDentist: 'dentago/assignment/timeslot',
+    createClinic: 'dentago/dentist/creation/clinics',
+    createDentist: 'dentago/dentist/creation/dentists',
+    createTimeslot: 'dentago/dentist/creation/timeslot',
+    assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
     dentistMonitor: 'dentago/monitor/dentist/ping'
 }
