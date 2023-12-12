@@ -5,6 +5,7 @@
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
+const Clinic = require('./models/clinic');
 require('dotenv').config();
 
 const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
@@ -28,10 +29,12 @@ const MQTT_TOPICS = {
     createTimeslot: 'dentago/dentist/creation/timeslot',
     assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
-    dentistMonitor: 'dentago/monitor/dentist/ping'
+    dentistMonitor: 'dentago/monitor/dentist/ping',
+    getClinics: 'dentago/dentist/clinics'
 }
 
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
+const PUB_CLINICS= 'dentago/dentist/clinics/result';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -72,6 +75,9 @@ client.on('message', (topic, payload) => {
             break;
         case MQTT_TOPICS['dentistMonitor']:
             handlePing(topic);
+            break;
+        case MQTT_TOPICS['getClinics']:
+            getAllClinics(topic);
             break;
         default:
             handleBookingNotification(topic, payload);
@@ -123,6 +129,19 @@ async function handlePing(topic) {
     try {
         // TODO: Make this a variable maybe
         client.publish(ECHO_TOPIC, `echo echo echo`);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function getAllClinics(topic) {
+    console.log('Get all clinics');
+
+    try {
+        const clinics = await Clinic.find().exec();
+        console.log(clinics);
+        client.publish(PUB_CLINICS, JSON.stringify(clinics))
+        
     } catch (error) {
         console.log(error);
     }
