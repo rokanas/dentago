@@ -6,25 +6,28 @@ const SERVICES = ['availability', 'booking', 'authentication', 'creation', 'assi
 
 // declare file path for saved logs file
 const FILE_PATH = 'savedLogs.json'
-let fileIsEmpty = true;
 
 // extract service type from topic name
 async function parseService(topic) {
-    // declare variable to store the service type
-    let service = "";
+    try {
+        // declare variable to store the service type
+        let service = "";
 
-    // divide the topic into an array of words
-    const topicParts = topic.split('/');
+        // divide the topic into an array of words
+        const topicParts = topic.split('/');
 
-    // check which service type by iterating through array of words
-    for (const part of topicParts) {
-        if(SERVICES.includes(part)) {
-            service = part;
-            break;
+        // check which service type by iterating through array of words
+        for (const part of topicParts) {
+            if(SERVICES.includes(part)) {
+                service = part;
+                break;
+            }
         }
-    }
+        return service
 
-    return service
+    } catch(err) {
+        console.log('Error parsing service: ' + err.message)
+    }
 }
 
 // determine direction of MQTT message
@@ -40,52 +43,64 @@ async function parseDirection(message) {
 
 // call function to extract status info from message, if available
 async function parseStatus(message, direction) {
-    // declare object to store status data
-    let status = {
-        code: "",
-        message: ""
-    };
+    try {
+        // declare object to store status data
+        let status = {
+            code: "",
+            message: ""
+        };
 
-    // if message is outgoing from service to API, it contains status data
-    if(direction === 'outgoing') {
-        status = message.status;
+        // if message is outgoing from service to API, it contains status data
+        if(direction === 'outgoing') {
+            status.code = message.status.code;
+            status.message = message.status.message;
+        }
+
+        // convert object to String (necessary since mongoose doesn't support sub-subresources)
+        status = JSON.stringify(status);
+
+        return status
+    } catch(err) {
+        console.log('Error parsing status: ' + err.message)
     }
-
-    return status;
 }
 
 async function parseMessage(topic, message) {
-    // establish timestamp
-    const timeStamp = new Date().toLocaleString();
+    try {
+        // establish timestamp
+        const timeStamp = new Date().toLocaleString();
 
-    // parse message to String
-    const parsedMessage = JSON.parse(message);
+        // parse message to String
+        const parsedMessage = JSON.parse(message);
 
-    // call function to extract service type from topic name
-    const service = await parseService(topic);
+        // call function to extract service type from topic name
+        const service = await parseService(topic);
 
-    // call function to determine direction of MQTT message
-    const direction = await parseDirection(parsedMessage);
+        // call function to determine direction of MQTT message
+        const direction = await parseDirection(parsedMessage);
 
-    // call function to extract status info from message, if available
-    const status = await parseStatus(parsedMessage, direction);
+        // call function to extract status info from message, if available
+        const status = await parseStatus(parsedMessage, direction);
 
-    // extract request Id of MQTT message
-    const reqId = parsedMessage.reqId;
+        // extract request Id of MQTT message
+        const reqId = parsedMessage.reqId;
 
-    const log = {
-        timeStamp: timeStamp,
-        topic: topic,
-        service: service,
-        direction: direction,
-        status: status,
-        reqId: reqId,
-    };
+        const log = {
+            timeStamp: timeStamp,
+            topic: topic,
+            service: service,
+            direction: direction,
+            status: status,
+            reqId: reqId,
+        };
 
-    console.log(log);
-    await logMessage(log);
-    await incrementCounter();
-    
+        console.log(log);
+        await logMessage(log);
+        await incrementCounter();
+
+    } catch(err) {
+        console.log('Error parsing message: ' + err.message);
+    }
 };
 
 async function logMessage(log) {
@@ -130,7 +145,9 @@ async function saveLogs() {
 
         const logCollection = new LogCollection({ timeStamp: timeStamp, logCollection: logs });
         console.log(logCollection)
-        //await logCollection.save();
+
+        // validate the collection so it doesn't brick every time
+        await logCollection.save();
 
         fs.writeFileSync(FILE_PATH, '');
 
