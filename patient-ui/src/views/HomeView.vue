@@ -14,13 +14,11 @@
       <button @click="getClinics()"> GET </button>
 
       <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
-        <!--- TODO: change "clinic.clinicLocation" back to "clinic.location" when appropriate changes are made in backend-->
-        <!-- same goes for "clinicName" and "clinicId"-->
-          <Marker v-for="clinic in clinics" :key="clinic.clinicId" :options="{ position: clinic.clinicLocation }">
+          <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
-              Clinic name: {{ clinic.clinicName }} <br>
+              Clinic name: {{ clinic.name }} <br>
               Clinic booking page
-              <BookingButton :clinicId="clinic.clinicId"></BookingButton>
+              <BookingButton :clinicId="clinic.id"></BookingButton>
             </InfoWindow>
           </Marker>
       </GoogleMap>
