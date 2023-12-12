@@ -71,6 +71,7 @@ import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
   created() {
+    this.getClinics(),
     this.findUserLocation()
   },
   components: {
@@ -87,16 +88,9 @@ export default defineComponent ({
       API_KEY: import.meta.env.VITE_API_KEY,
       center: {lat: 58.572053, lng: 14.702880},
       zoom: 7,
-      clinics: [
-        {clinicId: "1", clinicName: "Folktandvården Järntorget", clinicLocation: {lat: 57.70052343850043, lng: 11.946638869202163}},
-        {clinicId: "2", clinicName: "Folktandvården Sannegården", clinicLocation: {lat: 57.711070430807794, lng: 11.926897811890154}},
-        {clinicId: "3", clinicName: "Skansen Kronan", clinicLocation: {lat: 57.696894257429264, lng: 11.956279286523937}}
-      ],
+      clinics: [],
       fillertext: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     }
-  },
-  created() {
-    this.getClinics
   },
   methods: {
     async getClinics() {
