@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');       // mongoDB data structuring and schema validation
 const path = require('path');               // handles file paths
 const mqtt = require('./mqtt.js');          // contains mqtt functions
+const controller = require('./controller'); // contains message parsing and logging functions
 
 // import environmental variables
 require('dotenv').config();                 // load environmental variables from .env file to process.env object
@@ -10,10 +11,8 @@ const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 // subscribe to mqtt topics
 mqtt.subscribe("dentago/authentication/#"); 
 mqtt.subscribe("dentago/availability/#");   
-mqtt.subscribe("dentago/booking/#");        
-mqtt.subscribe("dentago/monitor/#");        
-mqtt.subscribe("dentago/creation/#");
-mqtt.subscribe("dentago/assignment/#");
+mqtt.subscribe("dentago/booking/#");               
+mqtt.subscribe("dentago/dentist/#");
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
@@ -25,3 +24,6 @@ mongoose.connect(mongoURI)
     console.error(err.stack);
     process.exit(1);
   });
+
+  // periodically call function to save logs stored in JSON file to database
+  setInterval(controller.saveLogs, 600000); // every 10 minutes
