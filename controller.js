@@ -29,8 +29,7 @@ async function register(message) {
             message: ""
         },
         patient: "",
-        accessToken: "",
-        reqId: parsedMessage.reqId
+        accessToken: ""
     };
     
     try {
@@ -93,8 +92,7 @@ async function login(message) {
             message: ""
         },
         patient: "",
-        accessToken: "",
-        reqId: parsedMessage.reqId
+        accessToken: ""
     };
 
     try {
@@ -155,8 +153,7 @@ async function logout (message) {
         status: {
             code: "",
             message: ""
-        },
-        reqId: parsedMessage.reqId
+        }
     };
 
     try {
@@ -200,8 +197,7 @@ async function refresh (message) {
             code: "",
             message: ""
         },
-        accessToken: "",
-        reqId: parsedMessage.reqId
+        accessToken: ""
     };
     
     try {

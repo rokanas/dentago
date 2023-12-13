@@ -83,7 +83,7 @@ client.on('message', async (topic, message) => {
         };
 
         // construct publishing topic by appending request id to the end
-        const pubTopic = "dentago/authentication/" + reqType + "/" + JSON.parse(payload).reqId;
+        const pubTopic = "dentago/authentication/" + reqType + "/" + JSON.parse(parsedMessage).reqId;
 
         // publish to patient API via mqtt broker
         await publish(pubTopic, payload);
