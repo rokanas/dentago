@@ -6,6 +6,7 @@
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
 const Clinic = require('./models/clinic');
+const Timeslot = require('./models/timeslot');
 require('dotenv').config();
 
 const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
@@ -30,11 +31,11 @@ const MQTT_TOPICS = {
     assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
     dentistMonitor: 'dentago/monitor/dentist/ping',
-    getClinics: 'dentago/dentist/clinics'
+    getClinics: 'dentago/dentist/clinics/',
+    getTimeslots: 'dentago/dentist/timeslot/'
 }
 
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
-const PUB_CLINICS= 'dentago/dentist/clinics/result';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -77,7 +78,10 @@ client.on('message', (topic, payload) => {
             handlePing(topic);
             break;
         case MQTT_TOPICS['getClinics']:
-            getAllClinics(topic);
+            getAllClinics(topic, payload);
+            break;
+        case MQTT_TOPICS['getTimeslots']:
+            getAllTimeslots(topic, payload);
             break;
         default:
             handleBookingNotification(topic, payload);
@@ -137,14 +141,30 @@ async function handlePing(topic) {
     }
 }
 
-async function getAllClinics(topic) {
+async function getAllClinics(topic, message) {
     console.log('Get all clinics');
 
     try {
         const clinics = await Clinic.find().exec();
-        console.log(clinics);
-        client.publish(PUB_CLINICS, JSON.stringify(clinics))
-        
+        const payload = JSON.parse(message);
+        const reqId = payload.reqId;
+        const returnTopic = topic + reqId;
+        client.publish(returnTopic, JSON.stringify(clinics))
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function getAllTimeslots(topic, message) {
+    console.log('Get all Timeslots for a Clinic');
+
+    try {
+        const payload = JSON.parse(message);
+        const reqId = payload.reqId;
+        const clinicId = payload.clinicId;
+        const returnTopic = topic + reqId;
+        const timeslots = await Timeslot.find( {clinic: clinicId} );
+        client.publish(returnTopic, JSON.stringify(timeslots));
     } catch (error) {
         console.log(error);
     }
