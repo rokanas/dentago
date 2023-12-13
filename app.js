@@ -70,18 +70,47 @@ async function handleMenuInput(choice) {
 
         // Add new Timeslot
         case '2':
+            const newTimeslot = { clinic: clinicId, dentist: null, patient: null };
+            console.log("Please enter the necessary Timeslot information");
+            try {
+                await promptForTimeslotInfo(newTimeslot);
+                mqttClient.publish(MQTT_TOPICS['createTimeslot'], JSON.stringify(newTimeslot));
+                console.log(newTimeslot); // TODO: remove
+            } catch (error) {
+                console.log(error);
+            }
             break;
         
         // Get all Timeslots
         case '3':
+            // TODO: make this async with promise and set-timeout callback to continue execution if no timely response
+            fetchTimeslots();
             break;
 
         // Assign Dentist to Timeslot
         case '4':
+            const timeslotUpdate = {};
+            console.log("Please enter the necessary information");
+            try {
+                await assignDentist(timeslotUpdate);
+                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(timeslotUpdate));
+                console.log(timeslotUpdate);
+            } catch (error) {
+                console.log(error);
+            }
             break;
 
         // Cancel booked Timeslot
         case '5':
+            const timeslotCancellation = {};
+            console.log("Please enter the necessary information");
+            try {
+                await unassignDentist(timeslotCancellation);
+                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(timeslotCancellation));
+                console.log(timeslotCancellation);
+            } catch (error) {
+                console.log(error);
+            }
             break;
 
         // Exit the program
@@ -128,6 +157,88 @@ function promptForDentistInfo(newDentist) {
                     });
                 });
             });
+        });
+    });
+}
+
+// Read new Timeslot input from user
+function promptForTimeslotInfo(newTimeslot) {
+    return new Promise(async (resolve, reject) => {
+        rl.question('Enter start date (YYYY-MM-DD HH:mm): ', (startDateInput) => {
+            const startDate = new Date(startDateInput);
+            if (isNaN(startDate)) {
+                reject('Invalid date format. Please use YYYY-MM-DD HH:mm.');
+                return;
+            }
+            newTimeslot.startTime = startDate;
+
+            rl.question('Enter end time(YYYY-MM-DD HH:mm): ', (endDateInput) => {
+                const endDate = new Date(endDateInput);
+                if (isNaN(endDate)) {
+                    reject('Invalid date format. Please use YYYY-MM-DD HH:mm.');
+                    return;
+                }
+                if (endDate <= startDate) {
+                    reject('Invalid input. End time must be later than the start time.')
+                    return;
+                }
+                newTimeslot.endTime = endDate;
+
+                rl.question('Do you want to assign a Dentist? (Y/N): ', (answer) => {
+                    if (answer.toLowerCase() == 'y') {
+                        rl.question('Enter the Dentist ID: ', (SSN) => {
+                            const noWhitespaceSSN = SSN.trim();
+                            if (!digitRegex.test(noWhitespaceSSN)) {
+                                reject('Invalid input. Please enter only digits for SSN');
+                                return;                
+                            }
+                            newTimeslot.dentist = noWhitespaceSSN;
+                            resolve();
+                        });
+                    } else {
+                        resolve('Did not create new Timeslot');
+                    }
+                });
+            });
+        });
+    });
+}
+
+function fetchTimeslots() {
+    payload = {
+        reqId: clinicId,
+        clinicId: clinicId
+    }
+    mqttClient.publish(MQTT_TOPICS['getTimeslots'], JSON.stringify(payload));
+}
+
+function assignDentist(timeslotUpdate) {
+    return new Promise(async (resolve, reject) => {
+        rl.question('Enter the Timeslot id: ', (timeslotId) => {
+            timeslotUpdate.timeslot = timeslotId;
+
+            rl.question('Enter the Dentist id: ', (dentistId) => {
+                timeslotUpdate.dentist = dentistId;
+                // TODO: this just displays the ID's change to something more descriptive
+                rl.question(`Do you want to assign the following dentist ${dentistId} to this Timeslot ${timeslotId}? (Y/N): `, (answer) => {
+                    if (answer.toLowerCase() === 'y') {
+                        resolve();
+                    } else {
+                        timeslotUpdate = {};
+                        reject('Did not assign Dentist');
+                    }
+                });
+            })
+        });
+    });
+}
+
+function unassignDentist(timeslotCancellation) {
+    return new Promise(async (resolve) => {
+        rl.question('Enter the Timeslot id: ', (timeslotId) => {
+            timeslotCancellation.timeslot = timeslotId;
+            timeslotCancellation.dentist = null;
+            resolve();
         });
     });
 }
