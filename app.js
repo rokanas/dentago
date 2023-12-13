@@ -7,7 +7,8 @@ const rl = readline.createInterface({
 
 // Variables
 // const clinicId = '';                 // The corresponding Clinic ID --> //TODO: fetch after successful login
-const clinicId = 'greenHillZoneClinic'; // Placeholder hardcoded value - remove
+const clinicId = 'greenHillZoneClinic'; // Placeholder hardcoded value - remove 
+const clinidMongoId = '657304e661d1c9f248318306';
 const digitRegex = /^\d+$/;             // Checks that a String only contains digits
 
 // MQTT stuffs
@@ -22,7 +23,7 @@ const mockApiSubscribe = mockApiPublish + clinicId;
 
 // MQTT topics
 MQTT_TOPICS = {
-    getTimeslots: 'dentago/availability/',
+    getTimeslots: 'dentago/dentist/timeslot/',
     createClinic: 'dentago/dentist/creation/clinics',
     createDentist: 'dentago/dentist/creation/dentists',
     createTimeslot: 'dentago/dentist/creation/timeslot',
@@ -33,7 +34,7 @@ MQTT_TOPICS = {
 const authLogin = 'dentago/dentist/login/'; // TODO: implement this for the login functionality
 
 
-//================================= MENU FUNCTIONS =================================//
+//================================= PRINT MENU FUNCTIONS =================================//
 // Function to display the login menu
 function displayLoginMenu() {
     console.log('\n=== Login Menu ===');
@@ -273,9 +274,9 @@ function promptForTimeslotInfo(newTimeslot) {
 }
 
 function fetchTimeslots() {
-    payload = {
+    const payload = {
         reqId: clinicId,
-        clinicId: clinicId
+        clinicId: clinidMongoId
     }
     mqttClient.publish(MQTT_TOPICS['getTimeslots'], JSON.stringify(payload));
 }
@@ -330,7 +331,7 @@ mqttClient.on('connect', () => {
 
 mqttClient.on('message', (topic, message) => {
     switch (topic) {
-        case MQTT_TOPICS['getTimeslots']:
+        case MQTT_TOPICS['getTimeslots'] + clinicId:
             try {
                 const payload = JSON.parse(message);
                 console.log('\n' + topic);
