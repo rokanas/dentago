@@ -34,6 +34,18 @@ const authLogin = 'dentago/dentist/login/'; // TODO: implement this for the logi
 
 
 //================================= MENU FUNCTIONS =================================//
+// Function to display the login menu
+function displayLoginMenu() {
+    console.log('\n=== Login Menu ===');
+    console.log('1. Login Dentist'); 
+    console.log('2. Register Dentist');
+    console.log('3. Create new Clinic');
+    console.log('0. Exit');
+    rl.question('Enter your option: ', (input) => {
+        handleLoginMenuInput(input);
+    });
+}
+
 // Function to display the main menu
 function displayMainMenu() {
     console.log('\n=== Main Menu ===');
@@ -49,6 +61,62 @@ function displayMainMenu() {
 }
 
 //================================ HANDLE USER INPUT ================================//
+
+//================ LOGIN MENU FUNCTIONS ====================//
+async function handleLoginMenuInput(choice) {
+    switch (choice) {
+        // Login as Dentist
+        case '1':
+            const loginInfo = {};
+            console.log("Please enter your login information");
+            try {
+                await login(loginInfo);
+
+            } catch (error) {
+                console.log(error);
+            }
+            break;
+    
+        // Register new Dentist
+        case '2':
+            break;
+        
+        // Create new Clinic
+        case '3':
+            break;
+        
+        // Exit the program
+        case '0':
+            console.log('Exiting the program.');
+            rl.close();
+            mqttClient.end(); // Close MQTT connection
+            process.exit(0);
+
+        default:
+            // Invalid input
+            console.log('Invalid choice. Please try again.');
+            break;
+    }
+    // Display the login menu after processing the choice
+    if (!isLoggedIn) displayLoginMenu();
+}
+
+// Login function
+// When login successful --> fetch and assign clinicId
+function login(loginInfo) {
+    return new Promise(async (resolve, reject) => {
+        rl.question('Enter your ID: ', (dentistId) => {
+            loginInfo.id = dentistId;
+
+            rl.question('Enter your password: ', (dentistPassword) => {
+                loginInfo.password = dentistPassword;
+                
+                mqttClient.publish(authLogin, loginInfo);
+
+            });
+        });
+    });
+}
 
 //==================== MAIN MENU FUNCTIONS ====================//
 // Function to handle user input and execute corresponding actions
@@ -255,6 +323,8 @@ mqttClient.on('connect', () => {
                 console.log(`Subscribed to messages on: ${key.topic}`);
             });
         }
+        displayMainMenu();
+        //displayLoginMenu(); // TODO: display login instead
     });
 });
 
