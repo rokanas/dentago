@@ -56,6 +56,16 @@ async function handleMenuInput(choice) {
     switch (choice) {
         // Add new Dentist
         case '1':
+            const newDentist = {};
+            console.log("Please enter the Dentist's credentials");
+            try {
+                await promptForDentistInfo(newDentist);
+                newDentist.clinic = clinicId;
+                mqttClient.publish(MQTT_TOPICS['createDentist'], JSON.stringify(newDentist));
+                console.log(newDentist); // TODO: remove 
+            } catch (error) {
+                console.log(error);
+            }
             break;
 
         // Add new Timeslot
@@ -89,6 +99,37 @@ async function handleMenuInput(choice) {
   
     // Display the main menu after processing the choice
     displayMainMenu();
+}
+
+// Read new Dentist input from user
+function promptForDentistInfo(newDentist) {
+    return new Promise(async (resolve, reject) => {
+        rl.question('Enter the SSN: ', (SSN) => {
+            const noWhitespaceSSN = SSN.trim();
+            if (!digitRegex.test(noWhitespaceSSN)) {
+                reject('Invalid input. Please enter only digits for SSN');
+                return;                
+            }
+            newDentist.id = noWhitespaceSSN;
+
+            rl.question('Enter the name: ', (dentistName) =>{
+                newDentist.name = dentistName.trim();
+
+                rl.question('Enter a password: ', (password) => {
+                    newDentist.password = password;
+
+                    rl.question(`Do you want to save a new Dentist with the following information? (Y/N) \n${JSON.stringify(newDentist)}\n`, (answer) => {
+                        if (answer.toLowerCase() === 'y') {
+                            resolve();
+                        } else {
+                            newDentist = {};
+                            reject('Did not create new Dentist');
+                        }
+                    });
+                });
+            });
+        });
+    });
 }
 
 
