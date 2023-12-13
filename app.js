@@ -48,13 +48,40 @@ mqttClient.on('connect', () => {
 });
 
 mqttClient.on('message', (topic, message) => {
-    try {
-        const payload = JSON.parse(message);
-        console.log('\n' + topic);
-        console.log(payload);
-
-    } catch (error) {
-        console.log("Error when processing MQTT message: ", error);
+    switch (topic) {
+        case MQTT_TOPICS['getTimeslots']:
+            try {
+                const payload = JSON.parse(message);
+                console.log('\n' + topic);
+                console.log(payload);
+        
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
+            break;
+        case MQTT_TOPICS['createClinic']:
+            // No confirmation sent for now
+            break;
+        case MQTT_TOPICS['createDentist']:
+            // No confirmation sent for now
+            break;
+        case MQTT_TOPICS['createTimeslot']:
+            // No confirmation sent for now
+            break;
+        case MQTT_TOPICS['assignTimeslot']:
+            // No confirmation sent for now
+            break;
+        case MQTT_TOPICS['bookingNotifications']:
+            try {
+                const payload = JSON.parse(message);
+                const action = payload.status === 'BOOK' ? 'BOOKED' : 'CANCELLED';
+                console.log(`Timeslot with the id [${payload.timeslotId}] has been ${action}`);
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
+            break;
+        default:
+            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
     }
 });
 
