@@ -12,8 +12,7 @@ const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 mqtt.subscribe("dentago/authentication/#"); 
 mqtt.subscribe("dentago/availability/#");   
 mqtt.subscribe("dentago/booking/#");               
-mqtt.subscribe("dentago/creation/#");
-mqtt.subscribe("dentago/assignment/#");
+mqtt.subscribe("dentago/dentist/#");
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)

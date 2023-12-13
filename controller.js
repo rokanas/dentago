@@ -1,7 +1,7 @@
 const fs = require('fs');           // import node file system module (fs)
 const LogCollection = require('./logCollection');
 
-const SERVICES = ['availability', 'booking', 'authentication', 'creation', 'assignment'];
+const SERVICES = ['availability', 'booking', 'authentication', 'dentist'];
 
 
 // declare file path for saved logs file
@@ -25,7 +25,7 @@ async function parseMessage(topic, message) {
         const status = JSON.stringify(parsedMessage.status)
 
         // call function to extract request Id of MQTT message
-        const reqId = await parseReqId(parsedMessage, topic, direction)
+        const reqId = await parseReqId(parsedMessage, topic, service, direction)
 
         // create logo object
         const log = {
@@ -152,7 +152,7 @@ async function parseDirection(message) {
 }
 
 // extract request ID from message or topic
-async function parseReqId(message, topic, direction) {
+async function parseReqId(message, topic, service, direction) {
     try {
         let reqId;
         // if direction is incoming, request ID can be found in the payload body
@@ -162,7 +162,13 @@ async function parseReqId(message, topic, direction) {
         } else if (direction === 'outgoing') {
             // divide the topic into an array of words and isolate the suffix
             const topicParts = topic.split('/');
-            reqId = topicParts[topicParts.length - 1];
+            // if service is booking, request ID will be the 3rd part
+            if(service === 'booking') {
+                reqId = topicParts[2];
+            } else {
+                // for all other services, it will be at the end of the topic
+                reqId = topicParts[topicParts.length - 1];
+            }
         }
 
         return reqId;
