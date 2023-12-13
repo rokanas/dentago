@@ -61,6 +61,7 @@ function displayMainMenu() {
     });
 }
 
+
 //================================ HANDLE USER INPUT ================================//
 
 //================ LOGIN MENU FUNCTIONS ====================//
@@ -119,7 +120,8 @@ function login(loginInfo) {
     });
 }
 
-//==================== MAIN MENU FUNCTIONS ====================//
+
+//============================== MAIN MENU FUNCTIONS ==============================//
 // Function to handle user input and execute corresponding actions
 async function handleMenuInput(choice) {
     switch (choice) {
@@ -146,7 +148,7 @@ async function handleMenuInput(choice) {
             try {
                 await promptForTimeslotInfo(newTimeslot);
                 const statusObject = { message: 'Request to create new Timeslot resource in the database' };
-                const payload = { dentist: newTimeslot, reqId: clinicId, status: statusObject };
+                const payload = { timeslot: newTimeslot, reqId: clinicId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['createTimeslot'], JSON.stringify(payload));
                 console.log(newTimeslot); // TODO: remove
             } catch (error) {
@@ -317,7 +319,7 @@ function unassignDentist(timeslotCancellation) {
 }
 
 
-//========================== MQTT EVENT LISTENERS ==========================//
+//============================= MQTT EVENT LISTENERS =============================//
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
 
