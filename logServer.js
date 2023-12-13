@@ -27,4 +27,4 @@ mongoose.connect(mongoURI)
   });
 
   // periodically call function to save logs stored in JSON file to database
-  setInterval(controller.saveLogs, 18000);
+  setInterval(controller.saveLogs, 600000); // every 10 minutes
