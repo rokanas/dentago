@@ -24,10 +24,10 @@ const mockApiSubscribe = mockApiPublish + clinicId;
 // MQTT topics
 MQTT_TOPICS = {
     getTimeslots: 'dentago/dentist/timeslot/',
-    createClinic: 'dentago/dentist/creation/clinics',
-    createDentist: 'dentago/dentist/creation/dentists',
-    createTimeslot: 'dentago/dentist/creation/timeslot',
-    assignTimeslot: 'dentago/dentist/assignment/timeslot',
+    createClinic: 'dentago/dentist/creation/clinics/',
+    createDentist: 'dentago/dentist/creation/dentists/',
+    createTimeslot: 'dentago/dentist/creation/timeslots/',
+    assignTimeslot: 'dentago/dentist/assignment/timeslot/',
     bookingNotifications: 'dentago/booking/'
 }
 
@@ -130,8 +130,10 @@ async function handleMenuInput(choice) {
             try {
                 await promptForDentistInfo(newDentist);
                 newDentist.clinic = clinicId;
-                mqttClient.publish(MQTT_TOPICS['createDentist'], JSON.stringify(newDentist));
-                console.log(newDentist); // TODO: remove 
+                const statusObject = { message: 'Request to create new Dentist resource in database'};
+                const payload = { dentist: newDentist, reqId: clinicId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS['createDentist'], JSON.stringify(payload));
+                console.log(payload); // TODO: remove 
             } catch (error) {
                 console.log(error);
             }
@@ -202,15 +204,15 @@ async function handleMenuInput(choice) {
 // Read new Dentist input from user
 function promptForDentistInfo(newDentist) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter the SSN: ', (SSN) => {
-            const noWhitespaceSSN = SSN.trim();
-            if (!digitRegex.test(noWhitespaceSSN)) {
-                reject('Invalid input. Please enter only digits for SSN');
+        rl.question('Enter the ID: ', (id) => {
+            const noWhitespaceId = id.trim();
+            if (!digitRegex.test(noWhitespaceId)) {
+                reject('Invalid input. Please enter only digits for ID');
                 return;                
             }
-            newDentist.id = noWhitespaceSSN;
+            newDentist.id = noWhitespaceId;
 
-            rl.question('Enter the name: ', (dentistName) =>{
+            rl.question('Enter the name: ', (dentistName) => {
                 newDentist.name = dentistName.trim();
 
                 rl.question('Enter a password: ', (password) => {
@@ -255,13 +257,13 @@ function promptForTimeslotInfo(newTimeslot) {
 
                 rl.question('Do you want to assign a Dentist? (Y/N): ', (answer) => {
                     if (answer.toLowerCase() == 'y') {
-                        rl.question('Enter the Dentist ID: ', (SSN) => {
-                            const noWhitespaceSSN = SSN.trim();
-                            if (!digitRegex.test(noWhitespaceSSN)) {
-                                reject('Invalid input. Please enter only digits for SSN');
+                        rl.question('Enter the Dentist ID: ', (id) => {
+                            const noWhitespaceId = id.trim();
+                            if (!digitRegex.test(noWhitespaceId)) {
+                                reject('Invalid input. Please enter only digits for ID');
                                 return;                
                             }
-                            newTimeslot.dentist = noWhitespaceSSN;
+                            newTimeslot.dentist = noWhitespaceId;
                             resolve();
                         });
                     } else {
@@ -283,10 +285,10 @@ function fetchTimeslots() {
 
 function assignDentist(timeslotUpdate) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter the Timeslot id: ', (timeslotId) => {
+        rl.question('Enter the Timeslot ID: ', (timeslotId) => {
             timeslotUpdate.timeslot = timeslotId;
 
-            rl.question('Enter the Dentist id: ', (dentistId) => {
+            rl.question('Enter the Dentist ID: ', (dentistId) => {
                 timeslotUpdate.dentist = dentistId;
                 // TODO: this just displays the ID's change to something more descriptive
                 rl.question(`Do you want to assign the following dentist ${dentistId} to this Timeslot ${timeslotId}? (Y/N): `, (answer) => {
@@ -304,7 +306,7 @@ function assignDentist(timeslotUpdate) {
 
 function unassignDentist(timeslotCancellation) {
     return new Promise(async (resolve) => {
-        rl.question('Enter the Timeslot id: ', (timeslotId) => {
+        rl.question('Enter the Timeslot ID: ', (timeslotId) => {
             timeslotCancellation.timeslot = timeslotId;
             timeslotCancellation.dentist = null;
             resolve();
@@ -341,23 +343,30 @@ mqttClient.on('message', (topic, message) => {
                 console.log("Error when processing MQTT message: ", error);
             }
             break;
-        case MQTT_TOPICS['createClinic']:
+        case MQTT_TOPICS['createClinic'] + clinicId:
             // No confirmation sent for now
             break;
-        case MQTT_TOPICS['createDentist']:
+        case MQTT_TOPICS['createDentist'] + clinicId:
+            // Dentist creation confirmation/rejection
+        try {
+            const payload = JSON.parse(message);
+            console.log('\n' + topic);
+            console.log(payload);
+        } catch (error) {
+            console.log("Error when processing MQTT message: ", error);
+        }
+            break;
+        case MQTT_TOPICS['createTimeslot'] + clinicId:
             // No confirmation sent for now
             break;
-        case MQTT_TOPICS['createTimeslot']:
-            // No confirmation sent for now
-            break;
-        case MQTT_TOPICS['assignTimeslot']:
+        case MQTT_TOPICS['assignTimeslot'] + clinicId:
             // No confirmation sent for now
             break;
         case MQTT_TOPICS['bookingNotifications']:
             try {
                 const payload = JSON.parse(message);
                 const action = payload.status === 'BOOK' ? 'BOOKED' : 'CANCELLED';
-                console.log(`Timeslot with the id [${payload.timeslotId}] has been ${action}`);
+                console.log(`Timeslot with the ID [${payload.timeslotId}] has been ${action}`);
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
