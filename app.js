@@ -33,6 +33,65 @@ MQTT_TOPICS = {
 const authLogin = 'dentago/dentist/login/'; // TODO: implement this for the login functionality
 
 
+//================================= MENU FUNCTIONS =================================//
+// Function to display the main menu
+function displayMainMenu() {
+    console.log('\n=== Main Menu ===');
+    console.log('1. Add new Dentist to Database'); 
+    console.log('2. Add new Timeslot for appointment');
+    console.log('3. Get all Timeslots'); // TODO: prompt user if by Clinic or by Dentist
+    console.log('4. Assign Dentist to existing Timeslot');
+    console.log('5. Cancel booked appointment');
+    console.log('0. Exit');
+    rl.question('Enter your option: ', (input) => {
+        handleMenuInput(input);
+    });
+}
+
+//================================ HANDLE USER INPUT ================================//
+
+//==================== MAIN MENU FUNCTIONS ====================//
+// Function to handle user input and execute corresponding actions
+async function handleMenuInput(choice) {
+    switch (choice) {
+        // Add new Dentist
+        case '1':
+            break;
+
+        // Add new Timeslot
+        case '2':
+            break;
+        
+        // Get all Timeslots
+        case '3':
+            break;
+
+        // Assign Dentist to Timeslot
+        case '4':
+            break;
+
+        // Cancel booked Timeslot
+        case '5':
+            break;
+
+        // Exit the program
+        case '0':
+            console.log('Exiting the program.');
+            rl.close();
+            mqttClient.end(); // Close MQTT connection
+            process.exit(0);
+        
+        // Invalid input
+        default:
+            console.log('Invalid choice. Please try again.');
+            break;
+    }
+  
+    // Display the main menu after processing the choice
+    displayMainMenu();
+}
+
+
 //========================== MQTT EVENT LISTENERS ==========================//
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
