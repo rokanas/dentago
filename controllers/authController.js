@@ -18,13 +18,12 @@ function authenticateToken(req, res, next) {
     }
 
     // verify validity of access token
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
         // if request has access token but token is no longer valid, return 403 forbidden
         if(err) {
             return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
         }
-        // if access token is valid, proceed with valid user
-        req.body = ({ user: user });
+        // if access token is valid, proceed with request
         next();
     });
 }
