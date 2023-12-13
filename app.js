@@ -168,8 +168,10 @@ async function handleMenuInput(choice) {
             console.log("Please enter the necessary information");
             try {
                 await assignDentist(timeslotUpdate);
-                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(timeslotUpdate));
-                console.log(timeslotUpdate);
+                const statusObject = { message: 'Request to assign Dentist to Timeslot resource in the database' };
+                const payload = { timeslot: timeslotUpdate, reqId: clinicId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(payload));
+                console.log(timeslotUpdate); // TODO: remove
             } catch (error) {
                 console.log(error);
             }
@@ -181,8 +183,10 @@ async function handleMenuInput(choice) {
             console.log("Please enter the necessary information");
             try {
                 await unassignDentist(timeslotCancellation);
-                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(timeslotCancellation));
-                console.log(timeslotCancellation);
+                const statusObject = { message: 'Request to unassign Dentist from Timeslot resource in the database' };
+                const payload = { timeslot: timeslotCancellation, reqId: clinicId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(payload));
+                console.log(timeslotCancellation); // TODO: remove
             } catch (error) {
                 console.log(error);
             }
@@ -279,6 +283,7 @@ function promptForTimeslotInfo(newTimeslot) {
     });
 }
 
+// Send request to dentistAPI to fetch all Timeslots for a specific Clinic
 function fetchTimeslots() {
     const payload = {
         reqId: clinicId,
@@ -287,6 +292,7 @@ function fetchTimeslots() {
     mqttClient.publish(MQTT_TOPICS['getTimeslots'], JSON.stringify(payload));
 }
 
+// Assigning dentist makes Timeslot (appointment) bookable by "publishing" it
 function assignDentist(timeslotUpdate) {
     return new Promise(async (resolve, reject) => {
         rl.question('Enter the Timeslot ID: ', (timeslotId) => {
@@ -308,6 +314,8 @@ function assignDentist(timeslotUpdate) {
     });
 }
 
+// If Timeslot is not booked then unassigning the dentist makes the Timeslot unavailable to patients
+// If Timeslot is booked then unassigning the dentist will cancel the existing booking
 function unassignDentist(timeslotCancellation) {
     return new Promise(async (resolve) => {
         rl.question('Enter the Timeslot ID: ', (timeslotId) => {
@@ -371,7 +379,14 @@ mqttClient.on('message', (topic, message) => {
             }
             break;
         case MQTT_TOPICS['assignTimeslot'] + clinicId:
-            // No confirmation sent for now
+            // Confirmation for Assigning/Unassigning Dentist from Timeslot
+            try {
+                const payload = JSON.parse(message);
+                console.log('\n' + topic);
+                console.log(payload);
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
             break;
         case MQTT_TOPICS['bookingNotifications']:
             try {
