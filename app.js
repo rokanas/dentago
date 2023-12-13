@@ -130,7 +130,7 @@ async function handleMenuInput(choice) {
             try {
                 await promptForDentistInfo(newDentist);
                 newDentist.clinic = clinicId;
-                const statusObject = { message: 'Request to create new Dentist resource in database'};
+                const statusObject = { message: 'Request to create new Dentist resource in the database' };
                 const payload = { dentist: newDentist, reqId: clinicId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['createDentist'], JSON.stringify(payload));
                 console.log(payload); // TODO: remove 
@@ -145,7 +145,9 @@ async function handleMenuInput(choice) {
             console.log("Please enter the necessary Timeslot information");
             try {
                 await promptForTimeslotInfo(newTimeslot);
-                mqttClient.publish(MQTT_TOPICS['createTimeslot'], JSON.stringify(newTimeslot));
+                const statusObject = { message: 'Request to create new Timeslot resource in the database' };
+                const payload = { dentist: newTimeslot, reqId: clinicId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS['createTimeslot'], JSON.stringify(payload));
                 console.log(newTimeslot); // TODO: remove
             } catch (error) {
                 console.log(error);
@@ -357,7 +359,14 @@ mqttClient.on('message', (topic, message) => {
         }
             break;
         case MQTT_TOPICS['createTimeslot'] + clinicId:
-            // No confirmation sent for now
+            // Timeslot creation confirmation/rejection
+            try {
+                const payload = JSON.parse(message);
+                console.log('\n' + topic);
+                console.log(payload);
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
             break;
         case MQTT_TOPICS['assignTimeslot'] + clinicId:
             // No confirmation sent for now
