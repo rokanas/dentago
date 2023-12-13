@@ -40,8 +40,8 @@ async function parseMessage(topic, message) {
         // call function to record log in JSON file
         await logMessage(log);
 
-        // call function to incrememnt statistics counter
-        await incrementCounter();
+        // call function to incrememnt statistics counter (future feature)
+        // await incrementCounter();
 
     } catch(err) {
         console.log('Error parsing message: ' + err.message);
@@ -113,6 +113,7 @@ async function saveLogs() {
 };
 
 async function incrementCounter() {
+    // future feature
     // add logic
 }
 
