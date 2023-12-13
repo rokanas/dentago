@@ -11,18 +11,23 @@
       <br>
       Find clinics near you: <br><br>
 
-      <button @click="getClinics()"> GET </button>
-
+      <!-- Google Map
+        - shows all clinics at their location using markers.
+        - centers on the user's location if they enable that permission, and gives a different zoom level
+        - centers on a "middle point" between Gothenburg and Stockholm with the appropiate zoom level
+      -->
       <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
           <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
               Clinic name: {{ clinic.name }} <br>
               Clinic booking page
-              <BookingButton :clinicId="clinic.id"></BookingButton>
+              <BookingButton :clinicId="clinic._id"></BookingButton>
             </InfoWindow>
           </Marker>
       </GoogleMap>
     </div>
+
+    <!-- Footer with contact information (email, phone number, Twitter) -->
     <div id="footer" class="banner">
       <ContactInfoItem
       img_src = "src/assets/email_material_icon.png"
@@ -68,10 +73,10 @@ import ContactInfoItem from '@/components/ContactInfoItem.vue'
 import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
+  // When the page is created, it calls to get all clinics and tries to access the user's location
   created() {
     this.getClinics(),
     this.findUserLocation()
-    this.getClinics()
   },
   components: {
     GoogleMap,
@@ -98,7 +103,6 @@ export default defineComponent ({
           for(let i=0; i<response.data.length; i++){
             this.clinics.push(response.data[i]);
           }
-          console.log(this.clinics);
         }).catch(error => {
           console.log(error);
         })
