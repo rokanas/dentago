@@ -26,7 +26,7 @@ const logSchema = new Schema({
     reqId: {
         type: String,
         required: true
-    }
+    }   
 });
 
 // define schema for log collection
