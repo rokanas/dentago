@@ -1,11 +1,120 @@
 const fs = require('fs');           // import node file system module (fs)
-const LogCollection = require('./log');
+const LogCollection = require('./logCollection');
 
 const SERVICES = ['availability', 'booking', 'authentication', 'creation', 'assignment'];
 
 
 // declare file path for saved logs file
 const FILE_PATH = 'savedLogs.json'
+
+async function parseMessage(topic, message) {
+    try {
+        // establish timestamp
+        const timeStamp = new Date().toLocaleString();
+
+        // parse message to String
+        const parsedMessage = JSON.parse(message);
+
+        // call function to extract service type from topic name
+        const service = await parseService(topic);
+
+        // call function to determine direction of MQTT message
+        const direction = await parseDirection(parsedMessage);
+
+        // call function to extract status info from message
+        const status = JSON.stringify(parsedMessage.status)
+
+        // call function to extract request Id of MQTT message
+        const reqId = await parseReqId(parsedMessage, topic, direction)
+
+        // create logo object
+        const log = {
+            timeStamp: timeStamp,
+            topic: topic,
+            service: service,
+            direction: direction,
+            status: status,
+            reqId: reqId,
+        };
+
+        // call function to record log in JSON file
+        await logMessage(log);
+
+        // call function to incrememnt statistics counter
+        await incrementCounter();
+
+    } catch(err) {
+        console.log('Error parsing message: ' + err.message);
+    }
+};
+
+// record log by writing it a log object array in a JSON file 
+async function logMessage(log) {
+    try {
+        // convert JS log object into JSON object
+        const jsonLog = JSON.stringify(log, null, 2); // arguments null and 2 are formatting for readability
+
+        // read contents of JSON file containing stored logs
+        const logFile = fs.readFileSync(FILE_PATH, 'utf-8');
+        
+        // check if JSON log file is empty
+        if (logFile === '') {
+            // if empty, start the array and record the first log
+            fs.writeFile(FILE_PATH, '[' + jsonLog, (err) => {
+                if (err) {
+                    console.log('Error writing log.');
+                } else {
+                    console.log('Log written successfully.');
+                    fileIsEmpty = false;
+                }
+            });
+
+        } else {
+            // if not file not empty, record newline and the log
+            fs.appendFile(FILE_PATH, ',\n' + jsonLog, (err) => {
+                if (err) {
+                    console.log('Error writing log.');
+                } else {
+                    console.log('Log written successfully.');
+                }
+            });
+        }
+
+    } catch(err) {
+        console.log('Error logging message: ' + err.message)
+    }
+};
+
+// save array of stored logs in JSON object to database
+async function saveLogs() {
+    // Read the JSON file
+    const readLogs = fs.readFileSync(FILE_PATH, 'utf-8') + ']';
+
+    try {
+        // parse the logs in the JSON file to JSON object
+        const logs = JSON.parse(readLogs);
+
+        // create timestamp with time of first log in the log collection to the time of last log
+        timeStamp = `${logs[0].timeStamp} - ${logs[logs.length - 1].timeStamp}`;
+
+        // create a mongo logCollection resource using timeStamp and logCollection object
+        const logCollection = new LogCollection({ timeStamp: timeStamp, logCollection: logs });
+
+        // save logCollection to mongodb
+        await logCollection.save();
+        
+        // clear the JSON file for next round of recording
+        fs.writeFileSync(FILE_PATH, '');
+        console.log('Logs successuflly saved to database.')
+
+    } catch(err) {
+        console.log('No logs saved.');
+    }
+};
+
+async function incrementCounter() {
+    // add logic
+}
 
 // extract service type from topic name
 async function parseService(topic) {
@@ -30,134 +139,36 @@ async function parseService(topic) {
     }
 }
 
-// determine direction of MQTT message
+// determine direction of MQTT message (relative to the service component_)
 async function parseDirection(message) {
     // declare variable to store message direction
     let direction = "";
 
-    // if message contains a status, it is outgoing, otherwise it is incoming
-    direction = 'status' in message ? "outgoing" : "incoming";
-
+    // if message contains a request ID in the payload body, it is incoming 
+    direction = message.hasOwnProperty('reqId') ? "incoming" : "outgoing";
+    
     return direction;
 }
 
-// call function to extract status info from message, if available
-async function parseStatus(message, direction) {
+// extract request ID from message or topic
+async function parseReqId(message, topic, direction) {
     try {
-        // declare object to store status data
-        let status = {
-            code: "",
-            message: ""
-        };
-
-        // if message is outgoing from service to API, it contains status data
-        if(direction === 'outgoing') {
-            status.code = message.status.code;
-            status.message = message.status.message;
+        let reqId;
+        // if direction is incoming, request ID can be found in the payload body
+        if(direction === 'incoming') {
+            reqId = message.reqId
+        // if direction is outgoing, request ID can be found in the topic name
+        } else if (direction === 'outgoing') {
+            // divide the topic into an array of words and isolate the suffix
+            const topicParts = topic.split('/');
+            reqId = topicParts[topicParts.length - 1];
         }
 
-        // convert object to String (necessary since mongoose doesn't support sub-subresources)
-        status = JSON.stringify(status);
-
-        return status
-    } catch(err) {
-        console.log('Error parsing status: ' + err.message)
-    }
-}
-
-async function parseMessage(topic, message) {
-    try {
-        // establish timestamp
-        const timeStamp = new Date().toLocaleString();
-
-        // parse message to String
-        const parsedMessage = JSON.parse(message);
-
-        // call function to extract service type from topic name
-        const service = await parseService(topic);
-
-        // call function to determine direction of MQTT message
-        const direction = await parseDirection(parsedMessage);
-
-        // call function to extract status info from message, if available
-        const status = await parseStatus(parsedMessage, direction);
-
-        // extract request Id of MQTT message
-        const reqId = parsedMessage.reqId;
-
-        const log = {
-            timeStamp: timeStamp,
-            topic: topic,
-            service: service,
-            direction: direction,
-            status: status,
-            reqId: reqId,
-        };
-
-        console.log(log);
-        await logMessage(log);
-        await incrementCounter();
+        return reqId;
 
     } catch(err) {
-        console.log('Error parsing message: ' + err.message);
+        console.log('Error parsing request ID: ' + err.message)
     }
-};
-
-async function logMessage(log) {
-    // convert JS object into JSON object
-    const jsonLog = JSON.stringify(log, null, 2); // arguments null and 2 are formatting for readability
-
-    const logFile = fs.readFileSync(FILE_PATH, 'utf-8');
-    
-    // Check if the file is empty
-    if (logFile === '') {
-        fs.writeFile(FILE_PATH, '[' + jsonLog, (err) => {
-            if (err) {
-                console.log('Error writing log.');
-            } else {
-                console.log('Log written successfully.');
-                fileIsEmpty = false;
-            }
-        });
-
-    } else {
-        fs.appendFile(FILE_PATH, ',\n' + jsonLog, (err) => {
-            if (err) {
-                console.log('Error writing log.');
-            } else {
-                console.log('Log written successfully.');
-            }
-        });
-    }
-};
-
-async function saveLogs() {
-        
-    let logs;
-
-    // Read the JSON file
-    const readLogs = fs.readFileSync(FILE_PATH, 'utf-8') + ']';
-
-    try {
-        logs = JSON.parse(readLogs);
-
-        timeStamp = `${logs[0].timeStamp} - ${logs[logs.length - 1].timeStamp}`;
-
-        const logCollection = new LogCollection({ timeStamp: timeStamp, logCollection: logs });
-        console.log(logCollection)
-
-        // validate the collection so it doesn't brick every time
-        await logCollection.save();
-
-        fs.writeFileSync(FILE_PATH, '');
-
-    } catch(err) {
-        console.log('No logs saved: ' + err.message);
-    }
-};
-
-async function incrementCounter() {
-    // add logic
 }
 
 // export the router
