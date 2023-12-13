@@ -42,6 +42,7 @@ router.post('/register', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
+                             "status": { "message": "Request to register new patient" },
                              "patient": ${JSON.stringify(patient)},
                              "reqId": "${reqId}"
                             }`;
@@ -81,6 +82,7 @@ router.patch('/login', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
+                             "status": { "message": "Request to login patient" },
                              "id": "${userId}",
                              "password": "${password}",
                              "reqId": "${reqId}"
@@ -120,9 +122,10 @@ router.post('/refresh', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "refreshToken": "${refreshToken}",
-            "reqId": "${reqId}"
-           }`;       
+                             "status": { "message": "Request to refresh access token" },
+                             "refreshToken": "${refreshToken}",
+                             "reqId": "${reqId}"
+                            }`;       
 
         // publish payload to authentication service
         const pubTopic = 'dentago/authentication/refresh';
@@ -156,9 +159,10 @@ router.delete('/logout', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "id": "${userId}",
-            "reqId": "${reqId}"
-           }`;       
+                             "status": { "message": "Request to logout patient" },
+                             "id": "${userId}",
+                             "reqId": "${reqId}"
+                            }`;       
 
         // publish payload to authentication service
         const pubTopic = 'dentago/authentication/logout';

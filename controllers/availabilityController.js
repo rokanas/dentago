@@ -21,6 +21,7 @@ router.get('/clinics/:clinic_id/timeslots', authenticateToken, async (req, res) 
 
         // create payload as JSON string containing clinic and request IDs
         const pubPayload = `{
+                             "status": { "message": "Request for available timeslots" },
                              "clinicId": "${clinicId}", 
                              "reqId": "${reqId}"
                             }`;
