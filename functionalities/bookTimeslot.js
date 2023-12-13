@@ -1,5 +1,4 @@
 import Timeslot from "../models/timeslot.js";
-import CircuitBreaker from "opossum";
 
 // Options for the circuit breaker
 const options = {
@@ -8,31 +7,7 @@ const options = {
   resetTimeout: 10000, // After 10 seconds, try to reset the circuit
 };
 
-const breaker = new CircuitBreaker(bookTimeslot2, options);
-
-// This event listens for when the breaker opens
-breaker.on("open", () => console.log("Circuit breaker opened"));
-// This event listens for when the breaker closes
-breaker.on("close", () => console.log("Circuit breaker closed"));
-// This event listens for when the breaker is half open
-breaker.on("halfOpen", () => console.log("Circuit breaker is half-open"));
-
 async function bookTimeslot(timeslotId, patientId) {
-  // To book an appointment, invoking the circuit breaker instead of the function directly
-  return await breaker
-    .fire(timeslotId, patientId)
-    .then((result) => {
-      console.log("Result:", result);
-      return result;
-    })
-    .catch((error) => {
-      console.error("Booking failure:", error);
-      //todo Implement fallback strategy (queue request or inform the user to try again later) //////////////////////////////////////////////////////////////////////////
-    });
-}
-
-async function bookTimeslot2(timeslotId, patientId) {
-  throw new Error("BLOoDY FK");
   const timeslot = await Timeslot.findById(timeslotId);
   // const timeslot = await Timeslot.findOne({ _id: timeslotId }).exec(); // alternate snippet, will keep for now
 

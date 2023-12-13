@@ -1,8 +1,6 @@
 import mqtt from "mqtt";
 import "dotenv/config";
-
-import bookTimeslot from "../functionalities/bookTimeslot.js";
-import cancelTimeslot from "../functionalities/cancelTimeslot.js";
+import { fireBook, fireCancel } from "./circuitBreaker.js";
 
 if (process.argv.length > 2) {
   process.env.MQTT_CLIENT_ID = process.argv[2];
@@ -63,14 +61,25 @@ client.on("message", async (topic, mqttMessage) => {
       JSON.parse(payload);
 
     let operation;
+
     // The service expects to be instructed with either a "book" or "cancel" operation request.
     // The operation object contains important attributes resulting from this operation ({timeslot, code, message}).
     if (instruction === "BOOK") {
-      operation = await bookTimeslot(slotId, patientId);
+      // before there were circuit breakers: operation = await bookTimeslot(slotId, patientId);
+      operation = await fireBook(slotId, patientId);
     } else if (instruction === "CANCEL") {
-      operation = await cancelTimeslot(slotId, patientId);
+      // before there were circuit breakers: operation = await cancelTimeslot(slotId, patientId);
+      operation = await fireCancel(slotId, patientId);
     }
-    console.log("Current operation to send back: " + operation)
+
+    if (!operation) {
+      console.log(
+        "Circuit Breaker: Request not processed." // todo: transmit to the other parts of the system
+      );
+      return;
+    }
+
+    //console.log("Current operation to send back: " + JSON.stringify(operation));
     let { timeslotJSON, code, message } = operation;
 
     let response;
