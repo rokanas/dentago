@@ -27,33 +27,55 @@
             </button>
         </div>
 
+        <!-- SUB-SECTIONS -->
         <div class="sub-sections">
-            <!-- TODO: Use bootstrap to turn this into tabs -->
-            <div class="your-appointments">
-                <h2>Your upcoming appointments: </h2>
-                <!-- TODO: Bootstrap this too -->
-                <div v-for="(appointment, index) in userInfo['appointments']" :key="index">
-                    <AppointmentItem :timeslotId="appointment"></AppointmentItem>
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link active" id="nav-appointments-tab" data-bs-toggle="tab"
+                        data-bs-target="#nav-appointments" type="button" role="tab" aria-controls="nav-appointments"
+                        aria-selected="true">Your Appointments</button>
+                    <button class="nav-link" id="nav-preferences-tab" data-bs-toggle="tab" data-bs-target="#nav-preferences"
+                        type="button" role="tab" aria-controls="nav-preferences" aria-selected="false">Your
+                        Preferences</button>
                 </div>
-                <div class="your-preferences">
-                    <h2>Your preferences: </h2>
-                    <div class="schedule-container">
-                        <div v-for="(day, index) in preferredTimeWindow" :key="index" class="day">
-                            <h4>{{ day.name }}</h4>
-                            <div v-for="time in availableTimes" :key="time" class="time-checkbox">
-                                <input type="checkbox" :id="`${day.name}-${time}`" :value="time" v-model="day.times" />
-                                <label :for="`${day.name}-${time}`">{{ time }}</label>
+            </nav>
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane fade show active" id="nav-appointments" role="tabpanel"
+                    aria-labelledby="nav-appointments-tab" tabindex="0">
+                    <div class="your-appointments">
+                        <!-- EDIT PREFERENCES PAGE HERE -->
+                        <div class="container text-center">
+                            <div class="row">
+                                <div class="col" v-for="(appointment, index) in userInfo['appointments']" :key="index">
+                                    <AppointmentItem :timeslotId="appointment"></AppointmentItem>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <br>
-                    <input type="checkbox" id="checkbox" v-model="getNotifications" />
-                    <label for="checkbox"> Notify Me </label>
+                </div>
+                <div class="tab-pane fade" id="nav-preferences" role="tabpanel" aria-labelledby="nav-preferences-tab"
+                    tabindex="0">
+                    <div class="your-preferences">
+                        <!-- EDIT PREFERENCES PAGE HERE -->
+                        <div class="schedule-container">
+                            <div v-for="(day, index) in preferredTimeWindow" :key="index" class="day">
+                                <h4>{{ day.name }}</h4>
+                                <div v-for="time in availableTimes" :key="time" class="time-checkbox">
+                                    <input type="checkbox" :id="`${day.name}-${time}`" :value="time" v-model="day.times" />
+                                    <label :for="`${day.name}-${time}`">{{ time }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+                        <input type="checkbox" id="checkbox" v-model="getNotifications" />
+                        <label for="checkbox"> Notify Me </label>
 
-                    <button>Update preferences</button> <!--TODO: link this button to an API call -->
+                        <button>Update preferences</button> <!--TODO: link this button to an API call -->
+                    </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Display the selected data -->
         <!-- <div>
