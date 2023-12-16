@@ -78,6 +78,9 @@ app.use(function(err, req, res, next) {
 
 app.listen(port, function(err) {
     if (err) throw err;
+    // TODO: This formatting doesn't work due to the extra '/' after host.
+    // http://localhost/:3000/ -> http://localhost:3000/
+    // It is not important but it can be fixed later
     console.log(`Express server listening on port ${port}, in ${env} mode`);
     console.log(`Backend: ${host}:${port}/api/`);
     console.log(`Frontend (production): ${host}:${port}/`);
