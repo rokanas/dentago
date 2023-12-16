@@ -6,7 +6,7 @@
             <div class="card-header card-accent" :class="cardAccentClass">
                 {{ timeslotData.clinic }}
             </div>
-            <div class="card-body">{{ timeslotData.dentist }}</div>
+            <div class="card-body">{{ 'Dentist: ' + timeslotData.dentist }}</div>
         </div>
         <div class="card-footer card-accent" :class="cardAccentClass">
             {{ formattedTime }}
@@ -15,6 +15,7 @@
 </template>
 
 <script>
+
 // TODO: Fetch the timeslot data here
 export default {
     props: {
