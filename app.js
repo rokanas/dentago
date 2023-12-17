@@ -5,14 +5,17 @@
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
-const Clinic = require('./models/clinic');
-const Timeslot = require('./models/timeslot');
+
 require('dotenv').config();
 
-const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
+const Clinic = require('./models/clinic');
+const Timeslot = require('./models/timeslot');
+const Patient = require('./models/patient');
+const Dentist = require('./models/dentist');
+const Notification = require('./models/notification');
 
 // Connect to MongoDB
-const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
+const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_LOCAL_URI;
 
 mongoose.connect(mongoURI).then(() => {
     console.log(`Connected to MongoDB!\n`);
@@ -25,14 +28,18 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/dentist/creation/clinics',
-    createDentist: 'dentago/dentist/creation/dentists',
-    createTimeslot: 'dentago/dentist/creation/timeslot',
-    assignDentist: 'dentago/dentist/assignment/timeslot',
-    bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
-    dentistMonitor: 'dentago/monitor/dentist/ping',
-    getClinics: 'dentago/dentist/clinics/',
-    getTimeslots: 'dentago/dentist/timeslot/'
+    createClinic: 'dentago/dentist/creation/clinics', // Checked
+    createDentist: 'dentago/dentist/creation/dentists', // Checked 
+    createTimeslot: 'dentago/dentist/creation/timeslots', // Checked
+    assignDentist: 'dentago/dentist/assignment/timeslot', // Checked
+    bookingNotification: 'dentago/booking/+/+/SUCCESS', // TODO: Check this with david
+    dentistMonitor: 'dentago/monitor/dentist/ping', // Checked
+    getClinics: 'dentago/dentist/clinics/', // Checked
+    getTimeslots: 'dentago/dentist/timeslot/', // Checked
+
+
+    // TODO: Remove this
+    testPatients: 'dentago/test/patients'
 }
 
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
@@ -83,6 +90,9 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['getTimeslots']:
             getAllTimeslots(topic, payload);
             break;
+        case MQTT_TOPICS['testPatients']:
+            createPatient(payload);
+            break;
         default:
             handleBookingNotification(topic, payload);
             break;
@@ -94,14 +104,218 @@ client.on('error', (err) => {
     process.exit(1);
 });
 
+async function createClinic(payload) {
+    // Parse the payload
+    try {
+        const objClinic = JSON.parse(payload);
+        const newClinic = new Clinic(objClinic);
+
+        newClinic.save().then(() => {
+            console.log('Clinic created');
+        }).catch((err) => {
+            // Mongoose error code
+            if (err.code === 11000) console.error('ERROR! Clinic with this id already exists | ' + err);
+            else console.error(err);
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+async function createDentist(payload) {
+    // Parse the payload
+    try {
+        const objDentist = JSON.parse(payload);
+        // Find object ID
+        const test = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
+
+        const newDentist = new Dentist({
+            id: objDentist['id'],
+            name: objDentist['name'],
+            password: objDentist['password'],
+            clinic: test._id,
+        });
+
+        newDentist.save().then(() => {
+            console.log('Dentist created');
+        }).catch((err) => {
+            if (err.code === 11000) console.error('ERROR! Dentist with this id already exists | ' + err);
+            else console.error(err);
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+async function createTimeslot(payload) {
+
+    // Parse the payload
+    try {
+        const objTimeslot = JSON.parse(payload);
+
+        const clinic = await Clinic.findOne({ id: objTimeslot['clinic'] }).exec();
+        let clinicId = clinic._id;
+
+        // If a dentist is provided
+        let dentist = null;
+        if (objTimeslot['dentist'] != null) {
+            // Query the dentist
+            dentist = await Dentist.findOne({ id: objTimeslot['dentist'] }).exec();
+
+            // If a dentist was provided but the id was not found
+            if (dentist === null) {
+                throw new Error("ERROR: Dentist not found");
+            }
+        }
+
+        let dentistId = dentist === null ? null : dentist._id; // Get the dentist_id
+
+        // TODO: DELETE AFTER TESTING | CREATE ANOTHER ENDPOINT FOR TIMESLOTS WITH PATIENTS (TESTING)
+        // let patient = await Patient.findOne({ id: objTimeslot['patient'] }).exec();
+
+
+        const newTimeslot = new Timeslot({
+            clinic: clinicId,
+            dentist: dentistId,
+            // patient: patient._id,
+            patient: null,
+            startTime: objTimeslot['startTime'],
+            endTime: objTimeslot['endTime'],
+        });
+
+        newTimeslot.save().then(() => {
+            console.log('Timeslot created');
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+// TODO: Remove patient creation since it is just for testing
+
+async function createPatient(payload) {
+    console.log('Create patient');
+    // Parse the payload
+    try {
+        const objPatient = JSON.parse(payload);
+        const newPatient = new Patient(objPatient);
+
+        newPatient.save().then(() => {
+            console.log('Patient created');
+        }).catch((err) => {
+            // Mongoose error code
+            if (err.code === 11000) console.error('ERROR! Patient with this id already exists | ' + err);
+            else console.error(err);
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+async function assignDentist(payload) {
+
+    // The payload will consist of a Stringified Json in the form of {"timeslot": "123095124", "dentist": "dentistId"}
+    try {
+        const objPayload = JSON.parse(payload);
+        const timeslotId = objPayload.timeslot;
+        const dentistId = objPayload.dentist;
+
+        let dentistObjId = null;
+
+        // Check timeslot has a proper mongo_id
+        if (timeslotId.length !== 24)
+            throw new Error('Invalid timeslot format');
+
+        // Find the timeslot
+        const timeslot = await Timeslot.findById(timeslotId).exec();
+
+        if (!timeslot)
+            throw new Error('Timeslot not found');
+
+
+        // If a dentist is provided, assign the slot
+        if (dentistId !== null) {
+            // console.log('ASSIGN APPOINTMENT');
+
+            if (timeslot.dentist !== null)
+                throw new Error('Timeslot already assigned');
+
+            // Find the dentist
+            const dentist = await Dentist.findOne({ id: dentistId }).exec();
+
+            if (!dentist)
+                throw new Error('Dentist not found');
+
+            // Update the timeslot with the found dentist
+            dentistObjId = dentist['_id'];
+
+            timeslot.dentist = dentistObjId;
+
+            const result = await timeslot.save();
+
+            // Optional: log the updated slot
+            console.log(result);
+        }
+        // Otherwise, cancel the slot
+        else {
+            /**
+             * When canceling an appointment,
+             * if there is a patient assigned, the patient is removed
+             * and a notification is forwarded to the client API.
+            */
+            // console.log('CANCEL APPOINTMENT');
+
+            if (timeslot.dentist === null)
+                throw new Error('Timeslot already unassigned');
+
+            // Unassign the dentist
+            timeslot.dentist = null;
+
+            // If there is a patient assigned to it, remove it
+            let patient_id = timeslot.patient;
+
+            if (patient_id != null) {
+                timeslot.patient = null;
+
+                const patient = await Patient.findById(patient_id).exec();
+                let resTopic = `dentago/notifications/${patient.id}`;
+
+                // Forward cancel notification
+                const newNotification = new Notification({
+                    category: 'CANCEL',
+                    message: 'Sorry, your appointment was cancelled :(',
+                    timeslots: timeslotId,
+                });
+
+                client.publish(resTopic, JSON.stringify(newNotification));
+            }
+
+            const result = await timeslot.save();
+
+            // Optional: log the updated slot
+            console.log(result);
+        }
+    } catch (error) {
+        console.error(`ERROR: ${error.message}`);
+        // TODO: forward errors to the dentist CLI
+    }
+}
+
 async function handleBookingNotification(topic, payload) {
+    // TODO: Ask david how the notification works
 
     // Forwards the request to a specific client that subscribed to their respective topic
     try {
         const topicArray = topic.split('/');
 
         /**
-         * Example message: dentago/booking/reqId/clinicId/approved.
+         * Example message: dentago/booking/+/+/SUCCESS.
          *                     0  /   1   /   2   /  3  /    4
          * Since the subscribed topic uses + as a wildcard,
          * the size of the topicArray will always be correct
@@ -117,10 +331,10 @@ async function handleBookingNotification(topic, payload) {
 
         let resTopic = `dentago/booking/${clinicId}`;
         resTopic += status;
-        
+
         let instruction = JSON.parse(payload.toString())['instruction'];
         let timeslot = JSON.parse(payload.timeslot);
-        
+
         const dentistNotification = { timeslot: timeslot, instruction: instruction };
 
         console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
@@ -163,7 +377,7 @@ async function getAllTimeslots(topic, message) {
         const reqId = payload.reqId;
         const clinicId = payload.clinicId;
         const returnTopic = topic + reqId;
-        const timeslots = await Timeslot.find( {clinic: clinicId} );
+        const timeslots = await Timeslot.find({ clinic: clinicId });
         client.publish(returnTopic, JSON.stringify(timeslots));
     } catch (error) {
         console.log(error);
