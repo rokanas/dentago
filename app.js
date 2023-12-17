@@ -28,9 +28,9 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/dentist/creation/clinics',
-    createDentist: 'dentago/dentist/creation/dentists',
-    createTimeslot: 'dentago/dentist/creation/timeslots',
+    createClinic: 'dentago/dentist/creation/clinics/',
+    createDentist: 'dentago/dentist/creation/dentists/',
+    createTimeslot: 'dentago/dentist/creation/timeslots/',
     assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', // TODO: Check this with david
     dentistMonitor: 'dentago/monitor/dentist/ping',
@@ -80,7 +80,7 @@ client.on('message', (topic, payload) => {
 
     switch (topic) {
         case MQTT_TOPICS['createClinic']:
-            createClinic(payload);
+            createClinic(topic, payload);
             break;
         case MQTT_TOPICS['createDentist']:
             createDentist(payload);
@@ -115,27 +115,58 @@ client.on('error', (err) => {
 });
 
 async function createClinic(topic, payload) {
-    // Parse the payload
     try {
-        const objClinic = JSON.parse(payload);
+
+        const request = JSON.parse(payload);
+        const objClinic = request['clinic'];
+        const reqId = request['reqId'];
+
         const newClinic = new Clinic(objClinic);
 
         await newClinic.save();
 
         // Success message
         const successMessage = createCLIResponseMessage('Clinic created!', JSON.parse(JSON.stringify(newClinic)));
-        
+
         // TODO: Forward success message here
         console.log(successMessage);
-        // client.publish(resTopic, JSON.stringify(successMessage));
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     }
     catch (error) {
         if (error.code === 11000) {
             // TODO: Forward error here
+            const errorMessage = createCLIResponseMessage('Error: Clinic with this id already exists', []);
             console.error('Error: Clinic with this id already exists');
+
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if(reqId)
+            {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
         } else {
             // Forward error here too
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
             console.error('Error: ' + error.message);
+
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if(reqId)
+            {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+
         }
     }
 }
@@ -155,7 +186,7 @@ async function createDentist(payload) {
         });
 
         await newDentist.save();
-        
+
         // TODO: Forward success message here
         console.log('Dentist created');
     }

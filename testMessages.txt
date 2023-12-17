@@ -1,22 +1,23 @@
 Test messages for the MQTT CLI
 
 // CLINIC WITH NO OPENING HOURS
-mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}}'
 
 // CLINIC WITH THE SAME ID
-mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}}'
 
 // CLINIC WITH WRONG COORDINATES
-mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 420.69, \"lng\": 690.42}}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 420.69, \"lng\": 690.420}}}'
 
 // CLINIC WITH WRONG OPENING HOURS
-mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.1231}, \"hours\": [-12, 58]}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.230}, \"hours\": [-12, 58]}}'
 
 // CLINIC WITH VALID OPENING HOURS AND LOCATION
-mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.1231}, \"hours\": [0, 23]}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.230}, \"hours\": [0, 23]}}'
 
 // CLINIC WITH MISSING DATA
 mqtt pub -t dentago/dentist/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"testClinic3\"}'
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\"}}'
 
 
 // DENTIST
