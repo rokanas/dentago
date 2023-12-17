@@ -28,19 +28,29 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/dentist/creation/clinics', // Checked
-    createDentist: 'dentago/dentist/creation/dentists', // Checked 
-    createTimeslot: 'dentago/dentist/creation/timeslots', // Checked
-    assignDentist: 'dentago/dentist/assignment/timeslot', // Checked
+    createClinic: 'dentago/dentist/creation/clinics',
+    createDentist: 'dentago/dentist/creation/dentists',
+    createTimeslot: 'dentago/dentist/creation/timeslots',
+    assignDentist: 'dentago/dentist/assignment/timeslot',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', // TODO: Check this with david
-    dentistMonitor: 'dentago/monitor/dentist/ping', // Checked
-    getClinics: 'dentago/dentist/clinics/', // Checked
-    getTimeslots: 'dentago/dentist/timeslot/', // Checked
+    dentistMonitor: 'dentago/monitor/dentist/ping',
+    getClinics: 'dentago/dentist/clinics/',
+    getTimeslots: 'dentago/dentist/timeslot/',
 
 
     // TODO: Remove this
     testPatients: 'dentago/test/patients'
 }
+
+// Generalized mqtt message format for the CLI
+function createCLIResponseMessage(message, content) {
+    return {
+        message: message,
+        content: content
+    };
+}
+
+
 
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
 
@@ -82,7 +92,7 @@ client.on('message', (topic, payload) => {
             assignDentist(payload);
             break;
         case MQTT_TOPICS['dentistMonitor']:
-            handlePing(topic);
+            handlePing();
             break;
         case MQTT_TOPICS['getClinics']:
             getAllClinics(topic, payload);
@@ -104,22 +114,29 @@ client.on('error', (err) => {
     process.exit(1);
 });
 
-async function createClinic(payload) {
+async function createClinic(topic, payload) {
     // Parse the payload
     try {
         const objClinic = JSON.parse(payload);
         const newClinic = new Clinic(objClinic);
 
-        newClinic.save().then(() => {
-            console.log('Clinic created');
-        }).catch((err) => {
-            // Mongoose error code
-            if (err.code === 11000) console.error('ERROR! Clinic with this id already exists | ' + err);
-            else console.error(err);
-        });
+        await newClinic.save();
+
+        // Success message
+        const successMessage = createCLIResponseMessage('Clinic created!', JSON.parse(JSON.stringify(newClinic)));
+        
+        // TODO: Forward success message here
+        console.log(successMessage);
+        // client.publish(resTopic, JSON.stringify(successMessage));
     }
     catch (error) {
-        console.log(error);
+        if (error.code === 11000) {
+            // TODO: Forward error here
+            console.error('Error: Clinic with this id already exists');
+        } else {
+            // Forward error here too
+            console.error('Error: ' + error.message);
+        }
     }
 }
 
@@ -137,15 +154,19 @@ async function createDentist(payload) {
             clinic: test._id,
         });
 
-        newDentist.save().then(() => {
-            console.log('Dentist created');
-        }).catch((err) => {
-            if (err.code === 11000) console.error('ERROR! Dentist with this id already exists | ' + err);
-            else console.error(err);
-        });
+        await newDentist.save();
+        
+        // TODO: Forward success message here
+        console.log('Dentist created');
     }
     catch (error) {
-        console.log(error);
+        if (error.code === 11000) {
+            // TODO: Forward error here
+            console.error('Error: Dentist with this id already exists');
+        } else {
+            // Forward error here too
+            console.error('Error: ' + error.message);
+        }
     }
 }
 
@@ -166,7 +187,7 @@ async function createTimeslot(payload) {
 
             // If a dentist was provided but the id was not found
             if (dentist === null) {
-                throw new Error("ERROR: Dentist not found");
+                throw new Error("Dentist not found");
             }
         }
 
@@ -174,7 +195,6 @@ async function createTimeslot(payload) {
 
         // TODO: DELETE AFTER TESTING | CREATE ANOTHER ENDPOINT FOR TIMESLOTS WITH PATIENTS (TESTING)
         // let patient = await Patient.findOne({ id: objTimeslot['patient'] }).exec();
-
 
         const newTimeslot = new Timeslot({
             clinic: clinicId,
@@ -185,42 +205,18 @@ async function createTimeslot(payload) {
             endTime: objTimeslot['endTime'],
         });
 
-        newTimeslot.save().then(() => {
-            console.log('Timeslot created');
-        }).catch((err) => {
-            console.error(err);
-        });
+        await newTimeslot.save();
+
+        // TODO: Forward success message here
+        console.log('Timeslot created');
     }
     catch (error) {
-        console.log(error);
-    }
-}
-
-// TODO: Remove patient creation since it is just for testing
-
-async function createPatient(payload) {
-    console.log('Create patient');
-    // Parse the payload
-    try {
-        const objPatient = JSON.parse(payload);
-        const newPatient = new Patient(objPatient);
-
-        newPatient.save().then(() => {
-            console.log('Patient created');
-        }).catch((err) => {
-            // Mongoose error code
-            if (err.code === 11000) console.error('ERROR! Patient with this id already exists | ' + err);
-            else console.error(err);
-        });
-    }
-    catch (error) {
-        console.log(error);
+        // TODO: Forward error here
+        console.log('Error: ' + error.message);
     }
 }
 
 async function assignDentist(payload) {
-
-    // The payload will consist of a Stringified Json in the form of {"timeslot": "123095124", "dentist": "dentistId"}
     try {
         const objPayload = JSON.parse(payload);
         const timeslotId = objPayload.timeslot;
@@ -259,7 +255,7 @@ async function assignDentist(payload) {
 
             const result = await timeslot.save();
 
-            // Optional: log the updated slot
+            // TODO: Forward success message here
             console.log(result);
         }
         // Otherwise, cancel the slot
@@ -298,12 +294,12 @@ async function assignDentist(payload) {
 
             const result = await timeslot.save();
 
-            // Optional: log the updated slot
+            // TODO: Forward success message here
             console.log(result);
         }
     } catch (error) {
-        console.error(`ERROR: ${error.message}`);
-        // TODO: forward errors to the dentist CLI
+        // TODO: forward errors here
+        console.error(`Error: ${error.message}`);
     }
 }
 
@@ -342,44 +338,67 @@ async function handleBookingNotification(topic, payload) {
         client.publish(resTopic, dentistNotification);
 
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
     }
 }
 
-async function handlePing(topic) {
+async function handlePing() {
     try {
-        // TODO: Make this a variable maybe
         client.publish(ECHO_TOPIC, `echo echo echo`);
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
     }
 }
 
-async function getAllClinics(topic, message) {
+async function getAllClinics(topic, payload) {
     console.log('Get all clinics');
 
     try {
         const clinics = await Clinic.find().exec();
-        const payload = JSON.parse(message);
-        const reqId = payload.reqId;
+        const jsonPayload = JSON.parse(payload);
+        const reqId = jsonPayload.reqId;
         const returnTopic = topic + reqId;
         client.publish(returnTopic, JSON.stringify(clinics))
     } catch (error) {
-        console.log(error);
+        // TODO: forward error
+        console.log(error.message);
     }
 }
 
-async function getAllTimeslots(topic, message) {
+async function getAllTimeslots(topic, payload) {
     console.log('Get all Timeslots for a Clinic');
 
     try {
-        const payload = JSON.parse(message);
-        const reqId = payload.reqId;
-        const clinicId = payload.clinicId;
+        const jsonPayload = JSON.parse(payload);
+        const reqId = jsonPayload.reqId;
+        const clinicId = jsonPayload.clinicId;
         const returnTopic = topic + reqId;
         const timeslots = await Timeslot.find({ clinic: clinicId });
         client.publish(returnTopic, JSON.stringify(timeslots));
     } catch (error) {
+        // TODO: forward error
+        console.log(error.message);
+    }
+}
+
+// TODO: Remove patient creation since it is just for testing
+
+async function createPatient(payload) {
+    console.log('Create patient');
+    // Parse the payload
+    try {
+        const objPatient = JSON.parse(payload);
+        const newPatient = new Patient(objPatient);
+
+        newPatient.save().then(() => {
+            console.log('Patient created');
+        }).catch((err) => {
+            // Mongoose error code
+            if (err.code === 11000) console.error('ERROR! Patient with this id already exists | ' + err);
+            else console.error(err);
+        });
+    }
+    catch (error) {
         console.log(error);
     }
 }
