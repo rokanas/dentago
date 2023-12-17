@@ -2,6 +2,10 @@
  * Some of the mongodb setup was taken from https://git.chalmers.se/courses/dit342/2023/group-15-web
  */
 
+/**
+ * CONSTRAINTS: THE DENTIST CLI WILL HAVE TO TAKE CARE OF THE JSON VALIDATION
+ */
+
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
@@ -50,8 +54,6 @@ function createCLIResponseMessage(message, content) {
     };
 }
 
-
-
 const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
 
 const MQTT_OPTIONS = {
@@ -83,10 +85,10 @@ client.on('message', (topic, payload) => {
             createClinic(topic, payload);
             break;
         case MQTT_TOPICS['createDentist']:
-            createDentist(payload);
+            createDentist(topic, payload);
             break;
         case MQTT_TOPICS['createTimeslot']:
-            createTimeslot(payload);
+            createTimeslot(topic, payload);
             break;
         case MQTT_TOPICS['assignDentist']:
             assignDentist(payload);
@@ -116,7 +118,6 @@ client.on('error', (err) => {
 
 async function createClinic(topic, payload) {
     try {
-
         const request = JSON.parse(payload);
         const objClinic = request['clinic'];
         const reqId = request['reqId'];
@@ -128,53 +129,51 @@ async function createClinic(topic, payload) {
         // Success message
         const successMessage = createCLIResponseMessage('Clinic created!', JSON.parse(JSON.stringify(newClinic)));
 
-        // TODO: Forward success message here
         console.log(successMessage);
         let resTopic = `${topic}${reqId}`
         client.publish(resTopic, JSON.stringify(successMessage));
     }
     catch (error) {
+        // TODO: I don't like handling parsing in the catch block but I can't think of any other choice
         if (error.code === 11000) {
-            // TODO: Forward error here
-            const errorMessage = createCLIResponseMessage('Error: Clinic with this id already exists', []);
             console.error('Error: Clinic with this id already exists');
+            const errorMessage = createCLIResponseMessage('Error: Clinic with this id already exists', []);
 
             const request = JSON.parse(payload);
             const reqId = request['reqId'];
 
             let resTopic = topic;
 
-            if(reqId)
-            {
+            if (reqId) {
                 resTopic += reqId;
             }
 
             client.publish(resTopic, JSON.stringify(errorMessage));
         } else {
-            // Forward error here too
-            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
             console.error('Error: ' + error.message);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
 
             const request = JSON.parse(payload);
             const reqId = request['reqId'];
 
             let resTopic = topic;
 
-            if(reqId)
-            {
+            if (reqId) {
                 resTopic += reqId;
             }
 
             client.publish(resTopic, JSON.stringify(errorMessage));
-
         }
     }
 }
 
-async function createDentist(payload) {
+async function createDentist(topic, payload) {
     // Parse the payload
     try {
-        const objDentist = JSON.parse(payload);
+        const request = JSON.parse(payload);
+        const objDentist = request['dentist'];
+        const reqId = request['reqId'];
+
         // Find object ID
         const test = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
 
@@ -187,27 +186,62 @@ async function createDentist(payload) {
 
         await newDentist.save();
 
-        // TODO: Forward success message here
-        console.log('Dentist created');
+        // Success message
+        const successMessage = createCLIResponseMessage('Dentist created!', JSON.parse(JSON.stringify(newDentist)));
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     }
     catch (error) {
         if (error.code === 11000) {
-            // TODO: Forward error here
             console.error('Error: Dentist with this id already exists');
+            const errorMessage = createCLIResponseMessage('Error: Dentist with this id already exists', []);
+
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
         } else {
-            // Forward error here too
             console.error('Error: ' + error.message);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
         }
     }
 }
 
-async function createTimeslot(payload) {
+async function createTimeslot(topic, payload) {
 
     // Parse the payload
     try {
-        const objTimeslot = JSON.parse(payload);
+        const request = JSON.parse(payload);
+        const objTimeslot = request['timeslot'];
+        const reqId = request['reqId'];
+
+        // const objTimeslot = JSON.parse(payload);
 
         const clinic = await Clinic.findOne({ id: objTimeslot['clinic'] }).exec();
+
+        if (clinic === null) {
+            throw new Error("Clinic not found");
+        }
+
         let clinicId = clinic._id;
 
         // If a dentist is provided
@@ -238,12 +272,28 @@ async function createTimeslot(payload) {
 
         await newTimeslot.save();
 
-        // TODO: Forward success message here
-        console.log('Timeslot created');
+        // Success message
+        const successMessage = createCLIResponseMessage('Timeslot created!', JSON.parse(JSON.stringify(newTimeslot)));
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     }
     catch (error) {
-        // TODO: Forward error here
-        console.log('Error: ' + error.message);
+        // Forward error here
+        console.error('Error: ' + error.message);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+        const request = JSON.parse(payload);
+        const reqId = request['reqId'];
+
+        let resTopic = topic;
+
+        if (reqId) {
+            resTopic += reqId;
+        }
+
+        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
