@@ -27,6 +27,7 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async 
         
         // create payload as JSON string
         const pubPayload = `{
+                             "status": { "message": "Request to ${instruction} timeslot" },
                              "instruction": "${instruction}", 
                              "slotId": "${slotId}",  
                              "clinicId": "${clinicId}", 

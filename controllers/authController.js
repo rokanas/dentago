@@ -18,13 +18,12 @@ function authenticateToken(req, res, next) {
     }
 
     // verify validity of access token
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
         // if request has access token but token is no longer valid, return 403 forbidden
         if(err) {
             return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
         }
-        // if access token is valid, proceed with valid user
-        req.body = ({ user: user });
+        // if access token is valid, proceed with request
         next();
     });
 }
@@ -43,6 +42,7 @@ router.post('/register', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
+                             "status": { "message": "Request to register new patient" },
                              "patient": ${JSON.stringify(patient)},
                              "reqId": "${reqId}"
                             }`;
@@ -82,6 +82,7 @@ router.patch('/login', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
+                             "status": { "message": "Request to login patient" },
                              "id": "${userId}",
                              "password": "${password}",
                              "reqId": "${reqId}"
@@ -121,9 +122,10 @@ router.post('/refresh', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "refreshToken": "${refreshToken}",
-            "reqId": "${reqId}"
-           }`;       
+                             "status": { "message": "Request to refresh access token" },
+                             "refreshToken": "${refreshToken}",
+                             "reqId": "${reqId}"
+                            }`;       
 
         // publish payload to authentication service
         const pubTopic = 'dentago/authentication/refresh';
@@ -157,9 +159,10 @@ router.delete('/logout', async (req, res) => {
 
         // create payload as JSON string
         const pubPayload = `{
-            "id": "${userId}",
-            "reqId": "${reqId}"
-           }`;       
+                             "status": { "message": "Request to logout patient" },
+                             "id": "${userId}",
+                             "reqId": "${reqId}"
+                            }`;       
 
         // publish payload to authentication service
         const pubTopic = 'dentago/authentication/logout';

@@ -21,8 +21,9 @@ router.get('/clinics/:clinic_id/timeslots', authenticateToken, async (req, res) 
 
         // create payload as JSON string containing clinic and request IDs
         const pubPayload = `{
-                             "clinicID": "${clinicId}", 
-                             "reqID": "${reqId}"
+                             "status": { "message": "Request for available timeslots" },
+                             "clinicId": "${clinicId}", 
+                             "reqId": "${reqId}"
                             }`;
 
         // publish payload to availability service
@@ -33,7 +34,8 @@ router.get('/clinics/:clinic_id/timeslots', authenticateToken, async (req, res) 
         const subTopic = 'dentago/availability/' + reqId; // include reqID in topic to ensure correct incoming payload
         let subPayload = await mqtt.subscribe(subTopic);
         subPayload = JSON.parse(subPayload);
-        res.status(200).json({ Data: subPayload });
+
+        res.status(subPayload.status.code).json({ Message: subPayload.status.message, Timeslots: subPayload.timeslots });
 
     } catch(err) {
         res.status(500).json({ Error: err.message });  // internal server error
