@@ -4,6 +4,7 @@ const morgan = require('morgan');           // logs HTTP requests in the termina
 const path = require('path');               // handles file paths
 const cors = require('cors');               // handles cross-origin requests (relevant for production)
 const history = require('connect-history-api-fallback'); // enables error-free client-side routing
+const mqtt = require('./mqtt')
 
 // import controller files containing endpoints
 const apiController = require('./controllers/apiController');
@@ -22,6 +23,7 @@ const port = process.env.PORT || process.env.CI_PORT;
 mongoose.connect(mongoURI)
   .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
+    mqtt.subscribe('dentago/notifications/+');
   })
   .catch((err) => {
     console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
