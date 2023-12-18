@@ -98,7 +98,7 @@ router.delete('/allpatients', async (_, res) => {
 // get specific patient by authenticated userID
 router.get('/patients/', authenticateToken, async (req, res) => {
     try {
-        const patient = await Patient.findOne({ id: req.body.user.id });
+        const patient = await Patient.findOne({ _id: req.body.user.id });
         if(!patient) {
             return res.status(404).json({ Message: "Patient not found" });
         }
