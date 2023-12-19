@@ -32,6 +32,9 @@ mqtt pub -t dentago/dentist/creation/dentists/ -h test.mosquitto.org -m '{ \"req
 // TIMESLOT WITH A DENTIST
 mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"dentist\": \"testDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
 
+// TIMESLOT WITH PATIENT (ONLY TEST)
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"patient\": \"99\", \"dentist\": \"testDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
 // TIMESLOT WITH A WRONG DENTIST
 mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"dentist\": \"wrongDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
 
@@ -43,8 +46,10 @@ mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"re
 
 
 // TIMESLOT ASSIGNMENT + NOTIFICATIONS
-mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"657efbbed34f74e0150e0bba\", \"dentist\": \"testDentist\"}'
-mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"657efba4d34f74e0150e0bb7\", \"dentist\": null}'
+mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"65805c7c99d295eb1305e354\", \"dentist\": \"testDentist\"}'
+
+// TIMESLOT CANCEL + NOTIFICATIONS (Look for timeslot id)
+mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"658067ed38b1247ceeb2d93a\", \"dentist\": null}'
 
 
 // BOOKING NOTIFICATIONS
@@ -63,7 +68,7 @@ mqtt pub -t dentago/dentist/clinics/ -h test.mosquitto.org -m '{sdas}'
 
 
 // GET ALL TIMESLOTS FOR A CLINIC
-mqtt pub -t dentago/dentist/timeslot/ -h test.mosquitto.org -m '{\"reqId\": \"req123\", \"clinicId\": \"657f0956f490cf985be0da0f\"}'
+mqtt pub -t dentago/dentist/timeslot/ -h test.mosquitto.org -m '{\"reqId\": \"req123\", \"clinicId\": \"65805c5299d295eb1305e342\"}'
 // GET ALL TIMESLOTS FOR A CLINIC NOT FOUND
 mqtt pub -t dentago/dentist/timeslot/ -h test.mosquitto.org -m '{\"reqId\": \"req123\", \"clinicId\": \"657f0956f490df985be0da0f\"}'
 

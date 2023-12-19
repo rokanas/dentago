@@ -35,17 +35,19 @@ const MQTT_TOPICS = {
     createClinic: 'dentago/dentist/creation/clinics/',
     createDentist: 'dentago/dentist/creation/dentists/',
     createTimeslot: 'dentago/dentist/creation/timeslots/',
-    assignDentist: 'dentago/dentist/assignment/timeslot',
+    assignDentist: 'dentago/dentist/assignment/timeslot/',
     bookingNotification: 'dentago/booking/+/+/SUCCESS', // TODO: Check this with david
     dentistMonitor: 'dentago/monitor/dentist/ping',
     getClinics: 'dentago/dentist/clinics/',
     getTimeslots: 'dentago/dentist/timeslot/',
+    getTimeslotsDentist: 'dentago/dentist/timeslots/dentist',
 
 
     // TODO: Remove this
     testPatients: 'dentago/test/patients'
 }
 
+// TODO: Add status for logging
 // Generalized mqtt message format for the CLI
 function createCLIResponseMessage(message, content) {
     return {
@@ -91,7 +93,7 @@ client.on('message', (topic, payload) => {
             createTimeslot(topic, payload);
             break;
         case MQTT_TOPICS['assignDentist']:
-            assignDentist(payload);
+            assignDentist(topic, payload);
             break;
         case MQTT_TOPICS['dentistMonitor']:
             handlePing();
@@ -105,6 +107,8 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['testPatients']:
             createPatient(payload);
             break;
+        case MQTT_TOPICS['getTimeslotsDentist']:
+            getAllTimeslotsDentist(topic, payload);
         default:
             handleBookingNotification(topic, payload);
             break;
@@ -175,13 +179,17 @@ async function createDentist(topic, payload) {
         const reqId = request['reqId'];
 
         // Find object ID
-        const test = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
+        const clinic = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
+
+        if (clinic === null) {
+            throw new Error('Clinic not found');
+        }
 
         const newDentist = new Dentist({
             id: objDentist['id'],
             name: objDentist['name'],
             password: objDentist['password'],
-            clinic: test._id,
+            clinic: clinic._id,
         });
 
         await newDentist.save();
@@ -207,6 +215,8 @@ async function createDentist(topic, payload) {
                 resTopic += reqId;
             }
 
+            console.log(resTopic);
+
             client.publish(resTopic, JSON.stringify(errorMessage));
         } else {
             console.error('Error: ' + error.message);
@@ -220,6 +230,8 @@ async function createDentist(topic, payload) {
             if (reqId) {
                 resTopic += reqId;
             }
+
+            console.log(resTopic);
 
             client.publish(resTopic, JSON.stringify(errorMessage));
         }
@@ -297,11 +309,16 @@ async function createTimeslot(topic, payload) {
     }
 }
 
-async function assignDentist(payload) {
+async function assignDentist(topic, payload) {
+    console.log('assign dentist');
     try {
         const objPayload = JSON.parse(payload);
-        const timeslotId = objPayload.timeslot;
-        const dentistId = objPayload.dentist;
+
+        const reqId = objPayload['reqId'];
+        const objTimeslot = objPayload['timeslotUpdate'];
+
+        const timeslotId = objTimeslot.timeslot;
+        const dentistId = objTimeslot.dentist;
 
         let dentistObjId = null;
 
@@ -338,6 +355,13 @@ async function assignDentist(payload) {
 
             // TODO: Forward success message here
             console.log(result);
+
+            // Success message
+            const successMessage = createCLIResponseMessage('Dentist assigned!', JSON.parse(JSON.stringify(result)));
+
+            console.log(successMessage);
+            let resTopic = `${topic}${reqId}`
+            client.publish(resTopic, JSON.stringify(successMessage));
         }
         // Otherwise, cancel the slot
         else {
@@ -377,10 +401,32 @@ async function assignDentist(payload) {
 
             // TODO: Forward success message here
             console.log(result);
+
+            // Success message
+            const successMessage = createCLIResponseMessage('Dentist unassigned!', JSON.parse(JSON.stringify(result)));
+
+            console.log(successMessage);
+            let resTopic = `${topic}${reqId}`
+            client.publish(resTopic, JSON.stringify(successMessage));
         }
     } catch (error) {
         // TODO: forward errors here
         console.error(`Error: ${error.message}`);
+
+        // Forward error here
+        // console.error('Error: ' + error.message);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+        const request = JSON.parse(payload);
+        const reqId = request['reqId'];
+
+        let resTopic = topic;
+
+        if (reqId) {
+            resTopic += reqId;
+        }
+
+        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
@@ -431,6 +477,7 @@ async function handlePing() {
     }
 }
 
+// TODO: test
 async function getAllClinics(topic, payload) {
     console.log('Get all clinics');
 
@@ -438,14 +485,35 @@ async function getAllClinics(topic, payload) {
         const clinics = await Clinic.find().exec();
         const jsonPayload = JSON.parse(payload);
         const reqId = jsonPayload.reqId;
-        const returnTopic = topic + reqId;
-        client.publish(returnTopic, JSON.stringify(clinics))
+        // client.publish(returnTopic, JSON.stringify(clinics));
+
+        // Success message
+        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(clinics)));
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
-        // TODO: forward error
-        console.log(error.message);
+        // TODO: forward errors here
+        console.error(`Error: ${error.message}`);
+
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+        const request = JSON.parse(payload);
+        const reqId = request['reqId'];
+
+        let resTopic = topic;
+
+        if (reqId) {
+            resTopic += reqId;
+        }
+
+        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
+// TODO: test
 async function getAllTimeslots(topic, payload) {
     console.log('Get all Timeslots for a Clinic');
 
@@ -455,15 +523,66 @@ async function getAllTimeslots(topic, payload) {
         const clinicId = jsonPayload.clinicId;
         const returnTopic = topic + reqId;
         const timeslots = await Timeslot.find({ clinic: clinicId });
-        client.publish(returnTopic, JSON.stringify(timeslots));
+        // client.publish(returnTopic, JSON.stringify(timeslots));
+
+        // Success message
+        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(timeslots)));
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
-        // TODO: forward error
-        console.log(error.message);
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+        const request = JSON.parse(payload);
+        const reqId = request['reqId'];
+
+        let resTopic = topic;
+
+        if (reqId) {
+            resTopic += reqId;
+        }
+
+        client.publish(resTopic, JSON.stringify(errorMessage));
+    }
+}
+
+// TODO: test this too
+async function getAllTimeslotsDentist(topic, payload) {
+    console.log('Get all Timeslots for a Dentist');
+
+    try {
+        const jsonPayload = JSON.parse(payload);
+        const reqId = jsonPayload.reqId;
+        const dentistId = jsonPayload.dentistId;
+        const timeslots = await Timeslot.find({ dentist: dentistId });
+        // client.publish(returnTopic, JSON.stringify(timeslots));
+
+        // Success message
+        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(timeslots)));
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
+    } catch (error) {
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+
+        const request = JSON.parse(payload);
+        const reqId = request['reqId'];
+
+        let resTopic = topic;
+
+        if (reqId) {
+            resTopic += reqId;
+        }
+
+        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
 // TODO: Remove patient creation since it is just for testing
-
 async function createPatient(payload) {
     console.log('Create patient');
     // Parse the payload

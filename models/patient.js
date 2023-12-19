@@ -39,7 +39,11 @@ const patientSchema = new Schema({
     notifications: [{
         type: Schema.Types.ObjectId, ref: "Notification",
         required: false
-    }]
+    }],
+    schedulePreferences: {
+        type: String,
+        required: false
+    }
 });
 
 module.exports = mongoose.model("Patient", patientSchema);
