@@ -68,8 +68,7 @@ export default defineComponent ({
   },
   methods: {
     async getClinics() {
-      console.log('GET CLINICS');
-      Api.get('/clinics')
+            Api.get('/clinics')
         .then(response => {
           for(let i=0; i<response.data.length; i++){
             this.clinics.push(response.data[i]);
