@@ -78,6 +78,7 @@ export default {
     created() {
         this.getClinic(),
         this.getTimeSlots()
+        setInterval(this.getTimeSlots(), 60000); // refresh the timeslot data every minute (60 000 milliseconds)
     },
     methods: {
         getClinic() {
