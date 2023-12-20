@@ -7,10 +7,13 @@
                 <h5 href="#" class="card-title">{{ timeslotData.clinic }}</h5>
             </div>
             <!-- TODO: Use the actual clinic image or a dentist -->
-            <img src="https://http.dog/404.jpg" class="card-img-top" alt="Dentist Picture">
+            <img src="https://http.dog/404.jpg" class="card-img-top p-2" alt="Dentist Picture">
         </div>
         <div class="card-body">
-            <a href="#" class="card-link">{{ 'Dentist: ' + timeslotData.dentist }}</a>
+            <!-- <a href="#" class="card-link">{{ 'Dentist: ' + timeslotData.dentist }}</a> -->
+            <button class="btn btn-outline-tertiary">
+                {{ timeslotData.dentist}}
+            </button>
         </div>
         <div class="card-footer">
             {{ formattedTime }}
@@ -88,10 +91,34 @@ export default {
     background-color: black;
     color: white;
 }
-
+.card-container {
+    box-shadow: 2.5px 2.5px 2.5px rgba(0, 0, 0, 0.5);
+}
 .card-container:hover {
     transform: scale(1.02);
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 5px 10px;
+    box-shadow: 2.5px 2.5px 2.5px rgba(0, 0, 0, 0.5);
     cursor: pointer;
+}
+.card {
+    color: white;
+    /* background-color: var(--accent-primary); */
+}
+.card-header {
+    background-color: var(--accent-primary);
+}
+.card {
+    /* background-color: var(--secondary-color); */
+}
+.card-footer {
+    background-color: var(--accent-primary);
+}
+
+a {
+    font-weight: bolder;
+    color: var(--text-color);
+}
+
+a:hover {
+    color: var(--accent-secondary)
 }
 </style>
