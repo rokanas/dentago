@@ -353,9 +353,9 @@ mqttClient.on('message', (topic, message) => {
             // Print all the received Timeslots
             try {
                 const payload = JSON.parse(message);
-                console.log('\n' + topic);
-                console.log(payload);
-        
+                console.log('\n\nMessage received on topic: ' + topic);
+                console.log(payload.message);
+                console.log(payload.content + '\n');
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
@@ -364,8 +364,9 @@ mqttClient.on('message', (topic, message) => {
             // Clinic creation confirmation/rejection
             try {
                 const payload = JSON.parse(message);
-                console.log('\n' + topic);
-                console.log(payload);
+                console.log('\n\nMessage received on topic: ' + topic);
+                console.log(payload.message);
+                console.log(payload.content + '\n');
         
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
@@ -373,20 +374,22 @@ mqttClient.on('message', (topic, message) => {
             break;
         case MQTT_TOPICS['createDentist'] + clinicMongoId:
             // Dentist creation confirmation/rejection
-        try {
-            const payload = JSON.parse(message);
-            console.log('\n' + topic);
-            console.log(payload);
-        } catch (error) {
-            console.log("Error when processing MQTT message: ", error);
-        }
+            try {
+                const payload = JSON.parse(message);
+                console.log('\n\nMessage received on topic: ' + topic);
+                console.log(payload.message);
+                console.log(payload.content + '\n');
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
             break;
         case MQTT_TOPICS['createTimeslot'] + clinicMongoId:
             // Timeslot creation confirmation/rejection
             try {
                 const payload = JSON.parse(message);
-                console.log('\n' + topic);
-                console.log(payload);
+                console.log('\n\nMessage received on topic: ' + topic);
+                console.log(payload.message);
+                console.log(payload.content + '\n');
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
@@ -395,8 +398,9 @@ mqttClient.on('message', (topic, message) => {
             // Confirmation for Assigning/Unassigning Dentist from Timeslot
             try {
                 const payload = JSON.parse(message);
-                console.log('\n' + topic);
-                console.log(payload);
+                console.log('\n\nMessage received on topic: ' + topic);
+                console.log(payload.message);
+                console.log(payload.content + '\n');
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
@@ -412,6 +416,7 @@ mqttClient.on('message', (topic, message) => {
                 const timeslotId = timeslot._id;
                 console.log(payload)
                 const action = payload.instruction === 'BOOK' ? 'BOOKED' : 'CANCELLED';
+                console.log('\n\nMessage received on topic: ' + topic);
                 console.log(`Timeslot with the ID [${timeslotId}] has been ${action}`);
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
