@@ -1,34 +1,12 @@
 <template>
-    <div>
-        <HeaderBar></HeaderBar>
-
+    <div class="m-5">
         <h1> Welcome back, {{ username }}! </h1>
-
-        <!-- TODO: Turn this into a component maybe -->
-
-        <div class="user-info">
-            <div>
-                <label>Name: </label>
-                <input type="text" v-model="userInfoTemp.firstName" :disabled="!isEditing"
-                    :placeholder="userInfo['firstName']" />
-            </div>
-            <div>
-                <label>Last Name: </label>
-                <input type="text" v-model="userInfoTemp.lastName" :disabled="!isEditing"
-                    :placeholder="userInfo['lastName']" />
-            </div>
-            <div>
-                <label>Contact Info: </label>
-                <input type="text" v-model="userInfoTemp.contactInfo" :disabled="!isEditing"
-                    :placeholder="userInfo['contactInfo']" />
-            </div>
-            <button @click="toggleEdit">
-                {{ !isEditing ? 'Edit' : 'Update' }}
-            </button>
+        <div class="user-info-container p-3">
+            <UserInfoItem :userInfo="userInfo"></UserInfoItem>
         </div>
 
         <!-- SUB-SECTIONS -->
-        <div class="sub-sections">
+        <div class="sub-sections mt-4">
             <nav>
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
                     <button class="nav-link active" id="nav-appointments-tab" data-bs-toggle="tab"
@@ -39,20 +17,18 @@
                         Preferences</button>
                 </div>
             </nav>
-            <div class="tab-content" id="nav-tabContent">
+            <div class="tab-content p-5" id="nav-tabContent">
                 <div class="tab-pane fade show active" id="nav-appointments" role="tabpanel"
                     aria-labelledby="nav-appointments-tab" tabindex="0">
-                    <div class="your-appointments">
-                        <!-- EDIT PREFERENCES PAGE HERE -->
-                        <div class="container text-center">
-                            <div class="row">
-                                <div class="col" v-for="(appointment, index) in userInfo['appointments']" :key="index">
-                                    <AppointmentItem :timeslotId="appointment"></AppointmentItem>
-                                </div>
+                    <div class="container text-center d-flex justify-content-center justify-content-md-start">
+                        <div class="row">
+                            <div class="col m-2" v-for="(appointment, index) in userInfo['appointments']" :key="index">
+                                <AppointmentItem :timeslotId="appointment"></AppointmentItem>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="tab-pane fade" id="nav-preferences" role="tabpanel" aria-labelledby="nav-preferences-tab"
                     tabindex="0">
                     <div class="your-preferences">
@@ -73,40 +49,27 @@
                         <button>Update preferences</button> <!--TODO: link this button to an API call -->
                     </div>
                 </div>
+
             </div>
         </div>
-
-
-        <!-- Display the selected data -->
-        <!-- <div>
-            Selected Time Slots:
-            <pre>{{ preferredTimeWindow }}</pre>
-        </div> -->
     </div>
 </template>
 
 <script>
-import HeaderBar from '@/components/HeaderBar.vue'
 import AppointmentItem from '@/components/AppointmentItem.vue';
+import UserInfoItem from '@/components/UserInfoItem.vue';
 
 export default {
     components: {
-        HeaderBar,
-        AppointmentItem
+        AppointmentItem,
+        UserInfoItem
     },
     props: {
         username: String
     },
-    methods: {
-        toggleEdit() {
-            this.isEditing = !this.isEditing;
-        }
-    },
     data() {
         return {
             getNotifications: true,
-            isEditing: false,
-            userInfoTemp: { firstName: '', lastName: '', contactInfo: '' },
             userInfo: { firstName: 'Sapo', lastName: 'Reqlo', contactInfo: '+46694203255', appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'] },
             availableTimes: [
                 '8:00', '9:00', '10:00', '11:00',
@@ -128,6 +91,10 @@ export default {
 </script>
 
 <style scoped>
+.user-info-container {
+    background-color: var(--secondary-color);
+}
+
 .schedule-container {
     display: flex;
 }
@@ -138,5 +105,17 @@ export default {
 
 .time-checkbox {
     margin-bottom: 5px;
+}
+
+.nav-link {
+    color: white;
+    background-color: var(--accent-secondary);
+}
+
+/* Media query for adjusting justify-content */
+@media screen and (min-width: 1080px) {
+  .justify-content-md-start {
+    justify-content: start !important;
+  }
 }
 </style>
