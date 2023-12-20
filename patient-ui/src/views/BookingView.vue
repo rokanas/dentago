@@ -98,27 +98,21 @@ export default {
                     console.log(error);
                 })
         },
-        book(timeslotId){
+        book(timeslotId, patientId){
             Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
                 instruction: 'BOOK',
-                patient_id: '65670667fb90f7239456b2f2'      // TODO: remove this placeholder value
+                patient_id: patientId
             })
             .then(response => {
-                    alert('Booking successful!');
+                    if (response.data.Message === 'FAILURE'){
+                        alert('This appointment has already been booked by someone else.');
+                        this.$router.go()                   // Refresh the page to force a timeslot data update
+                    } else {
+                        alert('Booking successful!');
+                    }
                     console.log(response);
                 }).catch(error => {
                     alert('Something went wrong. Please try again.');
-                    console.log(error);
-                })
-        },
-        cancel(timeslotId){
-            Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
-                instruction: 'CANCEL',
-                patient_id: '65670667fb90f7239456b2f2'      // TODO: remove this placeholder value
-            })
-            .then(response => {
-                    console.log(response);
-                }).catch(error => {
                     console.log(error);
                 })
         },
