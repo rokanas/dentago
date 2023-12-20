@@ -2,7 +2,9 @@
     <div>
         <HeaderBar></HeaderBar>
 
-        <h1> Clinic name = {{ clinic.name }}</h1>
+        <h1> {{ clinic.name }}</h1>
+
+        <p> <b>Address:</b> {{ clinic.address }} </p>
 
         <div>
             <table>
@@ -10,14 +12,23 @@
                     <!-- The key (the date) is stored as a string including the time, so we extract just the date using "substring()" -->
                     <th> {{ key.substring(0, 15) }} </th>
                     <td v-for="appt in value" :key="appt">
+                        <!-- 'appt' stands for 'appointment' -->
                         <!-- When getting minutes that are "00", they only show "0" when printing, so there was a v-if statement needed -->
-                        <p v-if="appt['startTime'].getMinutes() === 0">
-                            {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }}0
+                        <p v-if="appt['startTime'].getMinutes() === 0 && appt['endTime'].getMinutes() === 0">
+                            {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }}0 - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}0
                         </p>
-                        <p v-else> {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }} </p>
+                        <p v-else-if="appt['startTime'].getMinutes() === 0">
+                            {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }}0 - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}
+                        </p>
+                        <p v-else-if="appt['endTime'].getMinutes() === 0">
+                            {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }} - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}0
+                        </p>
+                        <p v-else>
+                            {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }} - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}
+                        </p>
                         <!-- TODO: move cancel button to profile page -->
-                        <button @click="book(appt['_id'])"> Book </button>
-                        <button @click="cancel(appt['_id'])"> Cancel </button>
+                        <button v-if="appt['patient'] !== null" @click="book(appt['_id'])"> Book </button>
+                        <p v-else> <i> Unavailable </i> </p>
                     </td> 
                 </tr>
             </table>
