@@ -6,10 +6,13 @@ const rl = readline.createInterface({
 });
 
 // Variables
-// const clinicId = '';                 // The corresponding Clinic ID --> //TODO: fetch after successful login
-const clinicId = 'greenHillZoneClinic'; // Placeholder hardcoded value - remove 
-const clinidMongoId = '657304e661d1c9f248318306';
-const digitRegex = /^\d+$/;             // Checks that a String only contains digits
+// const clinicId = '';                             // The corresponding Clinic ID --> //TODO: fetch after successful login
+//const clinicId = 'greenHillZoneClinic';           // Placeholder hardcoded value - remove 
+//const clinicMongoId = '657304e661d1c9f248318306'; // green hill sprint3 DB
+const clinicId = 'testClinic';                      // Placeholder hardcoded value - remove 
+const clinicMongoId = '65805c5299d295eb1305e342';   // testClinic notification DB
+
+const digitRegex = /^\d+$/;                         // Checks that a String only contains digits (unused)
 
 // MQTT stuffs
 const mqtt = require('mqtt');
@@ -18,7 +21,7 @@ const hiveBroker = 'mqtt://broker.hivemq.com/:1883';
 const mqttClient = mqtt.connect(broker);
 
 // TEST TOPICS
-const mockApiPublish = 'dentago/dentist/'; 
+const mockApiPublish = 'dentago/mockDentist/'; 
 const mockApiSubscribe = mockApiPublish + clinicId;
 
 // MQTT topics
@@ -28,8 +31,9 @@ MQTT_TOPICS = {
     createDentist: 'dentago/dentist/creation/dentists/',
     createTimeslot: 'dentago/dentist/creation/timeslots/',
     assignTimeslot: 'dentago/dentist/assignment/timeslot/',
-    bookingNotifications: 'dentago/booking/'
+    booking: 'dentago/booking/'
 }
+const bookingNotification = `dentago/booking/+/${clinicMongoId}/SUCCESS`;
 
 const authLogin = 'dentago/dentist/login/'; // TODO: implement this for the login functionality
 
@@ -133,7 +137,7 @@ async function handleMenuInput(choice) {
                 await promptForDentistInfo(newDentist);
                 newDentist.clinic = clinicId;
                 const statusObject = { message: 'Request to create new Dentist resource in the database' };
-                const payload = { dentist: newDentist, reqId: clinicId, status: statusObject };
+                const payload = { dentist: newDentist, reqId: clinicMongoId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['createDentist'], JSON.stringify(payload));
                 console.log(payload); // TODO: remove 
             } catch (error) {
@@ -148,7 +152,7 @@ async function handleMenuInput(choice) {
             try {
                 await promptForTimeslotInfo(newTimeslot);
                 const statusObject = { message: 'Request to create new Timeslot resource in the database' };
-                const payload = { timeslot: newTimeslot, reqId: clinicId, status: statusObject };
+                const payload = { timeslot: newTimeslot, reqId: clinicMongoId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['createTimeslot'], JSON.stringify(payload));
                 console.log(newTimeslot); // TODO: remove
             } catch (error) {
@@ -158,7 +162,7 @@ async function handleMenuInput(choice) {
         
         // Get all Timeslots
         case '3':
-            // TODO: make this async with promise and set-timeout callback to continue execution if no timely response
+            // TODO: make this async with promise and set-timeout callback to continue execution if no timely response?
             fetchTimeslots();
             break;
 
@@ -169,7 +173,7 @@ async function handleMenuInput(choice) {
             try {
                 await assignDentist(timeslotUpdate);
                 const statusObject = { message: 'Request to assign Dentist to Timeslot resource in the database' };
-                const payload = { timeslot: timeslotUpdate, reqId: clinicId, status: statusObject };
+                const payload = { timeslotUpdate: timeslotUpdate, reqId: clinicMongoId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(payload));
                 console.log(timeslotUpdate); // TODO: remove
             } catch (error) {
@@ -184,7 +188,7 @@ async function handleMenuInput(choice) {
             try {
                 await unassignDentist(timeslotCancellation);
                 const statusObject = { message: 'Request to unassign Dentist from Timeslot resource in the database' };
-                const payload = { timeslot: timeslotCancellation, reqId: clinicId, status: statusObject };
+                const payload = { timeslotUpdate: timeslotCancellation, reqId: clinicMongoId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS['assignTimeslot'], JSON.stringify(payload));
                 console.log(timeslotCancellation); // TODO: remove
             } catch (error) {
@@ -213,12 +217,7 @@ async function handleMenuInput(choice) {
 function promptForDentistInfo(newDentist) {
     return new Promise(async (resolve, reject) => {
         rl.question('Enter the ID: ', (id) => {
-            const noWhitespaceId = id.trim();
-            if (!digitRegex.test(noWhitespaceId)) {
-                reject('Invalid input. Please enter only digits for ID');
-                return;                
-            }
-            newDentist.id = noWhitespaceId;
+            newDentist.id = id.trim();
 
             rl.question('Enter the name: ', (dentistName) => {
                 newDentist.name = dentistName.trim();
@@ -286,8 +285,9 @@ function promptForTimeslotInfo(newTimeslot) {
 // Send request to dentistAPI to fetch all Timeslots for a specific Clinic
 function fetchTimeslots() {
     const payload = {
-        reqId: clinicId,
-        clinicId: clinidMongoId
+        reqId: clinicMongoId,
+        clinicId: clinicMongoId,
+        status: { message: 'Request to fetch all Timeslots of a given Clinic' }
     }
     mqttClient.publish(MQTT_TOPICS['getTimeslots'], JSON.stringify(payload));
 }
@@ -296,12 +296,11 @@ function fetchTimeslots() {
 function assignDentist(timeslotUpdate) {
     return new Promise(async (resolve, reject) => {
         rl.question('Enter the Timeslot ID: ', (timeslotId) => {
-            timeslotUpdate.timeslot = timeslotId;
+            timeslotUpdate.timeslot = timeslotId.trim();
 
             rl.question('Enter the Dentist ID: ', (dentistId) => {
-                timeslotUpdate.dentist = dentistId;
-                // TODO: this just displays the ID's change to something more descriptive
-                rl.question(`Do you want to assign the following dentist ${dentistId} to this Timeslot ${timeslotId}? (Y/N): `, (answer) => {
+                timeslotUpdate.dentist = dentistId.trim();
+                rl.question(`Do you want to assign the following dentist [${dentistId}] to this Timeslot [${timeslotId}]? (Y/N): `, (answer) => {
                     if (answer.toLowerCase() === 'y') {
                         resolve();
                     } else {
@@ -319,7 +318,7 @@ function assignDentist(timeslotUpdate) {
 function unassignDentist(timeslotCancellation) {
     return new Promise(async (resolve) => {
         rl.question('Enter the Timeslot ID: ', (timeslotId) => {
-            timeslotCancellation.timeslot = timeslotId;
+            timeslotCancellation.timeslot = timeslotId.trim();
             timeslotCancellation.dentist = null;
             resolve();
         });
@@ -331,21 +330,27 @@ function unassignDentist(timeslotCancellation) {
 mqttClient.on('connect', () => {
     console.log('Connected to MQTT broker');
 
-    // Append the clinicId to all topics and subscribe to each
-    mqttClient.subscribe(Object.values(MQTT_TOPICS).map(topic => topic + clinicId), (error, granted) => {
+    // Append the clinicId to all topics and subscribe to each 
+    // TODO: extract this block and call it after successful login
+    mqttClient.subscribe(Object.values(MQTT_TOPICS).map(topic => { 
+        return topic !== MQTT_TOPICS.booking ? topic + clinicMongoId : bookingNotification; // Do not append clinicId to the "booking" topic (has different structure)
+    }), (error, granted) => {
         if(!error) {
             granted.forEach(key => {
                 console.log(`Subscribed to messages on: ${key.topic}`);
             });
+            displayMainMenu();
+        } else {
+            console.log('Error when subscribing to topics: ' + error);
         }
-        displayMainMenu();
         //displayLoginMenu(); // TODO: display login instead
     });
 });
 
 mqttClient.on('message', (topic, message) => {
     switch (topic) {
-        case MQTT_TOPICS['getTimeslots'] + clinicId:
+        case MQTT_TOPICS['getTimeslots'] + clinicMongoId:
+            // Print all the received Timeslots
             try {
                 const payload = JSON.parse(message);
                 console.log('\n' + topic);
@@ -355,10 +360,18 @@ mqttClient.on('message', (topic, message) => {
                 console.log("Error when processing MQTT message: ", error);
             }
             break;
-        case MQTT_TOPICS['createClinic'] + clinicId:
-            // No confirmation sent for now
+        case MQTT_TOPICS['createClinic'] + clinicMongoId:
+            // Clinic creation confirmation/rejection
+            try {
+                const payload = JSON.parse(message);
+                console.log('\n' + topic);
+                console.log(payload);
+        
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
             break;
-        case MQTT_TOPICS['createDentist'] + clinicId:
+        case MQTT_TOPICS['createDentist'] + clinicMongoId:
             // Dentist creation confirmation/rejection
         try {
             const payload = JSON.parse(message);
@@ -368,7 +381,7 @@ mqttClient.on('message', (topic, message) => {
             console.log("Error when processing MQTT message: ", error);
         }
             break;
-        case MQTT_TOPICS['createTimeslot'] + clinicId:
+        case MQTT_TOPICS['createTimeslot'] + clinicMongoId:
             // Timeslot creation confirmation/rejection
             try {
                 const payload = JSON.parse(message);
@@ -378,7 +391,7 @@ mqttClient.on('message', (topic, message) => {
                 console.log("Error when processing MQTT message: ", error);
             }
             break;
-        case MQTT_TOPICS['assignTimeslot'] + clinicId:
+        case MQTT_TOPICS['assignTimeslot'] + clinicMongoId:
             // Confirmation for Assigning/Unassigning Dentist from Timeslot
             try {
                 const payload = JSON.parse(message);
@@ -388,17 +401,21 @@ mqttClient.on('message', (topic, message) => {
                 console.log("Error when processing MQTT message: ", error);
             }
             break;
-        case MQTT_TOPICS['bookingNotifications']:
+        default:
+            //console.error(`TopicError: Message received at unhandled topic "${topic}"`); (previous default behaviour)
+
+            // Handle "booking" notifications for displaying Timeslot update notifications
+            // The notification topic has changing recipient ID's, therefore must be handled as the default switch case
             try {
                 const payload = JSON.parse(message);
-                const action = payload.status === 'BOOK' ? 'BOOKED' : 'CANCELLED';
-                console.log(`Timeslot with the ID [${payload.timeslotId}] has been ${action}`);
+                const timeslot = JSON.parse(payload.timeslotJSON);
+                const timeslotId = timeslot._id;
+                console.log(payload)
+                const action = payload.instruction === 'BOOK' ? 'BOOKED' : 'CANCELLED';
+                console.log(`Timeslot with the ID [${timeslotId}] has been ${action}`);
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
-            break;
-        default:
-            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
     }
 });
 
