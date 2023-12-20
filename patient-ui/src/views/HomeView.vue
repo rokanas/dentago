@@ -2,18 +2,15 @@
 
 <template>
   <div>
-    <HeaderBar></HeaderBar>
     <div class="banner">
       <h1> Welcome to Dentago! </h1>
       <p> {{ fillertext }} </p>
     </div>
-    <div>
-      <br>
-      Find clinics near you: <br><br>
+    <div class="p-4">
+      <button class="btn btn-outline-primary" @click="getClinics()"> Find clinics near you </button>
 
-      <button @click="getClinics()"> GET </button>
-
-      <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
+      <div class="map-container mt-2">
+        <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
         <!--- TODO: change "clinic.clinicLocation" back to "clinic.location" when appropriate changes are made in backend-->
         <!-- same goes for "clinicName" and "clinicId"-->
           <Marker v-for="clinic in clinics" :key="clinic.clinicId" :options="{ position: clinic.clinicLocation }">
@@ -24,40 +21,21 @@
             </InfoWindow>
           </Marker>
       </GoogleMap>
-    </div>
-    <div id="footer" class="banner">
-      <ContactInfoItem
-      img_src = "src/assets/email_material_icon.png"
-      text = "dentago@gmail.com"
-      ></ContactInfoItem>
-
-      <ContactInfoItem
-      img_src = "src/assets/phone_material_icon.png"
-      text = "+461234567890"
-      ></ContactInfoItem>
-
-      <ContactInfoItem
-      img_src = "src/assets/twitter_icon.png"
-      text = "@dentago"
-      ></ContactInfoItem>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 h1 {
-  font-size: 400%;
-  color:#FFA686;
+  font-size: 4em;
+  color: var(--primary-color);
   filter: drop-shadow(1px 3px #32292F);
+  font-weight: 600;
 }
 .banner{
-  background-color: #FFF0A8;
+  background-color: var(--secondary-color);
   padding: 2%;
-}
-
-#footer{
-  justify-content: space-evenly;
-  display: flex;
 }
 </style>
 
@@ -65,13 +43,11 @@ h1 {
 import { defineComponent } from 'vue';
 import { GoogleMap, Marker, InfoWindow } from "vue3-google-map";
 import { Api } from '@/Api.js';
-import HeaderBar from '@/components/HeaderBar.vue'
-import ContactInfoItem from '@/components/ContactInfoItem.vue'
 import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
   created() {
-    this.getClinics(),
+    // this.getClinics(),
     this.findUserLocation()
   },
   components: {
@@ -79,9 +55,7 @@ export default defineComponent ({
     // eslint-disable-next-line vue/no-reserved-component-names
     Marker,
     InfoWindow,
-    HeaderBar,
-    ContactInfoItem,
-    BookingButton
+    BookingButton,
   },
   data() {
     return {
@@ -94,6 +68,7 @@ export default defineComponent ({
   },
   methods: {
     async getClinics() {
+      console.log('GET CLINICS');
       Api.get('/clinics')
         .then(response => {
           for(let i=0; i<response.data.length; i++){
@@ -101,7 +76,7 @@ export default defineComponent ({
           }
           console.log(this.clinics);
         }).catch(error => {
-          console.log(error);
+          console.log(error.message);
         })
     },
     /*
