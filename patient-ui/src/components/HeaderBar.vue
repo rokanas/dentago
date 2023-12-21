@@ -8,11 +8,12 @@
                 Notifications
             </button>
             <div class="dropdown-content">
-                <Notification v-for="notification in notifications"
+                <NotificationItem v-for="notification in notifications"
                 :key="notification._id"
-                :title="notification.title"
-                :description="notification.description"
-                ></Notification>
+                :category="notification.category"
+                :message="notification.message"
+                :timeslots="notification.timeslots"
+                ></NotificationItem>
             </div>
         </div>
         <button class="btn" @click="redirect()"> Profile </button>
@@ -63,7 +64,7 @@
 </style>
 
 <script>
-import Notification from '@/components/Notification.vue'
+import NotificationItem from '@/components/NotificationItem.vue'
 
 export default {
     data() {
@@ -71,17 +72,14 @@ export default {
             username: 'ratKing', // placeholder value
             // TODO: remove placeholder values
             notifications: [
-                {_id: 1, title: "APPOINTMENT CANCELLED", description: "Appointment on Sunday, December 10th 2023 has been cancelled by dentist John."},
-                {_id: 2, title: "APPOINTMENT CONFIRMED", description: "Appointment booking confirmed!"},
-                {_id: 3, title: "APPOINTMENT CONFIRMED", description: "Appointment booking confirmed!"},
-                {_id: 4, title: "APPOINTMENT CONFIRMED", description: "Appointment booking confirmed!"},
-                {_id: 5, title: "APPOINTMENT CANCELLED", description: "Appointment on Monday, December 11th 2023 has been cancelled by dentist John."},
-                {_id: 6, title: "APPOINTMENT CONFIRMED", description: "Appointment booking confirmed!"},
+                {_id: 1, category: "CANCEL", message: "Appointment on Sunday, December 10th 2023 has been cancelled by dentist John.", timeslots: ["123rasd21dsad"]},
+                {_id: 2, category: "CANCEL", message: "Appointment on Monday, December 11th 2023 has been cancelled by dentist John.", timeslots: ["123rasd21dsad"]},
+                {_id: 3, category: "RECOMMENDATION", message: "The following appointments have been recommended to you: ", timeslots: ["123rasd21dsad", "12dsa2sasa"]},
             ]
         }
     },
     components: {
-        Notification
+        NotificationItem
     },
     created() {
         this.getNotifications()
