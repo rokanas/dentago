@@ -32,35 +32,6 @@
 #title{
     font-size: larger;
 }
-
-.dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.btn {
-  background-color: #ff865a;
-  padding: 12px;
-  font-size: medium;
-  /* border: none; */
-  cursor: pointer;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: beige;
-  min-width: 300px;
-  max-height: 300px;
-  text-overflow: clip;
-  overflow: scroll;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
 </style>
 
 <script>
@@ -87,9 +58,6 @@ export default {
     methods: {
         redirect(){
             this.$router.push('/user/' + this.username);
-        },
-        getNotifications(){
-            // TODO
         }
     }
 }
