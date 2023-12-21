@@ -1,8 +1,8 @@
 <template>
     <div id="navbar">
-        <router-link id="title" to="/"> Header Bar </router-link>
+        <router-link id="title" to="/"> Dentago </router-link>
         <button> Notifications </button>
-        <button @click="redirect()"> Profile </button>
+        <button class="btn" @click="redirect()"> Profile </button>
     </div>
 </template>
 
@@ -24,7 +24,7 @@
 export default {
     data() {
         return {
-            username: 'ratKing' // placeholder value
+            username: 'ratKing', // placeholder value
         }
     },
     methods: {
