@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const preference = require('./preference');
 
 const patientSchema = new Schema({
     id: {
@@ -37,11 +38,14 @@ const patientSchema = new Schema({
         unique: true
     },
     notifications: [{
-        type: Schema.Types.ObjectId, ref: "Notification",
+        type: Schema.Types.ObjectId, 
+        ref: "Notification",
+        default: [],
         required: false
     }],
     schedulePreferences: {
-        type: String,
+        type: preference.schema,
+        default: null,
         required: false
     }
 });
