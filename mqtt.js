@@ -34,6 +34,17 @@ const publish = (topic, payload) => {
     client.publish(topic, payload);
 };
 
+// subscribe to notification topic
+function subscribeNotifications(topic) {
+    client.subscribe(topic, (err) => {
+        if (!err) {
+            console.log(`Subscribed to topic: ${topic}`);
+        } else {
+            console.error('Subscription to topic failed', err);
+        }
+    });
+};
+
 // subscribe to a topic and return the message in the form of a Promise
 function subscribe(topic) {
     return new Promise((resolve, reject) => {
@@ -46,20 +57,25 @@ function subscribe(topic) {
             }
         });
 
-        // subscribe to the message event
+        // event handler for receiving mqtt messages
         client.on('message', (receivedTopic, message) => {
+            
             console.log(`Received message on topic ${receivedTopic}: ${message.toString()}`);
 
+            // declare the format of the notification topic, to be compared to incoming message topic
             const subNotificationRegex = /^dentago\/notifications\/.+$/;
 
+            // check if the message received is a notification
             if(receivedTopic.match(subNotificationRegex)) {
+                // if so, call the function to process it
                 notificationController.handleNotification(receivedTopic, message);
                 resolve();
 
+            // if not a notification or ping/echo
             } else {                
                 // unsubscribe from the topic after receiving the message
                 unsubscribe(topic);
-
+                    
                 // resolve the Promise with the received message
                 resolve(message.toString());
             }
@@ -90,5 +106,6 @@ process.on('SIGINT', () => {
 
 module.exports = {
     publish,
-    subscribe
+    subscribe,
+    subscribeNotifications 
 };

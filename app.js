@@ -23,7 +23,9 @@ const port = process.env.PORT || process.env.CI_PORT;
 mongoose.connect(mongoURI)
   .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
-    mqtt.subscribe('dentago/notifications/+');
+
+    // upon connecting to the DB, susbcribe to the notification topic
+    mqtt.subscribeNotifications('dentago/notifications/+');
   })
   .catch((err) => {
     console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
