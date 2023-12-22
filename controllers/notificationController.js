@@ -1,5 +1,7 @@
+const express = require('express');
 const Patient = require('../models/patient');
 const Notification = require('../models/notification');
+const router = express.Router();
 
 async function handleNotification(topic, payload) {
     try {
