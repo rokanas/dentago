@@ -11,7 +11,7 @@ const apiController = require('./controllers/apiController');
 const availabilityController = require('./controllers/availabilityController');
 const bookingController = require('./controllers/bookingController');
 const authController = require('./controllers/authController');
-const notificationController = require('l/controllers/notificationController');
+const notificationController = require('./controllers/notificationController');
 
 // load environmental variables from .env file to process.env object
 require('dotenv').config();
