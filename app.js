@@ -55,8 +55,8 @@ function orderByClinic(timeslots) {
         if (!timeslotsByClinic[clinicName]) {
             timeslotsByClinic[clinicName] = [];
         }
-        timeslotsByClinic[clinicName].push(JSON.stringify(timeslot));   // This creates a stringified JSON inside the regular JS object 
-        //                                                                 - which causes issues when calling JSON.stringify on it
+        timeslotsByClinic[clinicName].push(JSON.stringify(timeslot));   // TODO: fix! This creates a stringified JSON inside the regular JS object
+        //                                                                 - which causes issues when calling JSON.stringify on it the second time
     });
     return timeslotsByClinic;
 };
