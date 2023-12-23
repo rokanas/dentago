@@ -41,10 +41,7 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async 
 
         // subscribe to topic to receive timeslots payload
         const subTopic = 'dentago/booking/' + reqId + '/' + clinicId + '/#'; // include reqID in topic to ensure correct incoming payload
-        let subPayload = await mqtt.subscribe(subTopic);
-        
-        // parse MQTT message to JSON
-        subPayload = JSON.parse(subPayload);
+        const subPayload = await mqtt.subscribe(subTopic);
 
         // respond with relevant status code and message
         res.status(subPayload.status.code).json({ Message: subPayload.status.message, Data: subPayload.data });
