@@ -62,22 +62,33 @@ function subscribe(topic) {
             
             console.log(`Received message on topic ${receivedTopic}: ${message.toString()}`);
 
-            // declare the format of the notification topic, to be compared to incoming message topic
-            const subNotificationRegex = /^dentago\/notifications\/.+$/;
+            // parse MQTT message to JSON
+            const parsedMessage = JSON.parse(message);
+
+            // divide the topic into an array of words
+            const topicParts = receivedTopic.split('/');
 
             // check if the message received is a notification
-            if(receivedTopic.match(subNotificationRegex)) {
+            if(topicParts.includes('notifications')) {
+                
                 // if so, call the function to process it
-                notificationController.handleNotification(receivedTopic, message);
+                notificationController.handleNotification(receivedTopic, parsedMessage);
                 resolve();
 
-            // if not a notification or ping/echo
-            } else {                
+            // if incoming mesage is not a notificatino or ping/echo
+            } else {
+                // check if message received is a successful booking cancellation
+                // TODO: Make this work with cancellation from dentist as well
+                if (topicParts.includes('booking') && parsedMessage.instruction === 'CANCEL' && topicParts.includes('SUCCESS')) {
+                    // if so, call function to notify interested patients of newly available timeslot
+                    notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON));
+                }
+
                 // unsubscribe from the topic after receiving the message
                 unsubscribe(topic);
                     
                 // resolve the Promise with the received message
-                resolve(message.toString());
+                resolve(parsedMessage);
             }
         });
     });
