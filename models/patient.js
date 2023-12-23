@@ -35,6 +35,14 @@ const patientSchema = new Schema({
     refreshToken: {
         type: String,
         unique: true
+    },
+    notifications: [{
+        type: Schema.Types.ObjectId, ref: "Notification",
+        required: false
+    }],
+    schedulePreferences: {
+        type: String,
+        required: false
     }
 });
 

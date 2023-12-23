@@ -3,6 +3,7 @@ const authController = require('./authController.js');
 const Clinic = require('../models/clinic.js');
 const Dentist = require('../models/dentist.js');
 const Patient = require('../models/patient.js');
+const Notification = require('../models/notification.js');
 const router = express.Router();
 
 // TODO: Response from server timeouts
