@@ -29,10 +29,13 @@ async function handleNotification(topic, payload) {
 
 async function generateRecNotification(timeslot, message) {
     try { 
+        // find clinic that timeslot belongs to
         const clinic = await Clinic.findOne({ _id: timeslot.clinic });
 
+        // convert timeslot start time into date object
         const parsedDate = new Date(timeslot.startTime);
-        // parse name of day from timeslot's startTime
+
+        // parse name of day from timeslot's start time
         const timeslotDay = parsedDate.toLocaleDateString('en-US', { weekday: 'long' });
 
         // parse timeslot's startTime
@@ -48,18 +51,22 @@ async function generateRecNotification(timeslot, message) {
             timeslots: timeslot._id,
             read: false
         })
+
+        // extract cancelled patient id by parsing booking cancellation confirmation message
         const messageParts = message.split(' ');
         const cancelledPatientId = messageParts[messageParts.length - 1];
 
+        // fetch array of patients
         const patients = await Patient.find();
 
+        // loop through each patient
         for(const patient of patients) {
             // ignore patient that cancelled appointment & patients without saved preferences 
             if (patient._id.toString() !== cancelledPatientId && patient.schedulePreferences !== null) {
                 // extract preferences object from patient resource
                 const preferences = patient.schedulePreferences.toObject();
 
-                // extract non-empty days from preferences object
+                // extract non-empty days from patient preferences object
                 const days = Object.keys(preferences).filter(
                     (day) =>
                     Array.isArray(preferences[day]) &&  // check that attribute is an array of times
@@ -71,7 +78,7 @@ async function generateRecNotification(timeslot, message) {
                     // if so, extract the patient's preferred times
                     const preferredTimes = preferences[timeslotDay];
                     
-                    // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
+                    // save notification for patient if timeslot start time corresponds to patient's preferred time
                     if(preferredTimes.includes(timeslotHour)) {
                         patient.notifications.push(recNotification);
                         await patient.save();
@@ -81,6 +88,7 @@ async function generateRecNotification(timeslot, message) {
         }
 
     } catch (err) {
+        // internal error
         console.log("Error generating recommendation notification: " + err.message);
     } 
 }
