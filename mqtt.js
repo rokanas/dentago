@@ -75,13 +75,12 @@ function subscribe(topic) {
                 notificationController.handleNotification(receivedTopic, parsedMessage);
                 resolve();
 
-            // if incoming mesage is not a notificatino or ping/echo
+            // if incoming mesage is not a notification or ping/echo
             } else {
                 // check if message received is a successful booking cancellation
-                // TODO: Make this work with cancellation from dentist as well
                 if (topicParts.includes('booking') && parsedMessage.instruction === 'CANCEL' && topicParts.includes('SUCCESS')) {
                     // if so, call function to notify interested patients of newly available timeslot
-                    notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON));
+                    notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON), parsedMessage.status.message);
                 }
 
                 // unsubscribe from the topic after receiving the message

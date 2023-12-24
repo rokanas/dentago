@@ -22,13 +22,13 @@ async function generateRecommendations(preferences, timeslots) {
             // check if the timeslot's day is present in patient preferences
             if (days.includes(day)) {
                 // if so, extract the patient's preferred times
-                const recommendedTimes = preferences[day];
+                const preferredTimes = preferences[day];
         
                 // extract hour from timeslot's startTime
                 const startHour = timeslot.startTime.getUTCHours();
                 
                 // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
-                return recommendedTimes.includes(startHour);
+                return preferredTimes.includes(startHour);
                 
             } else {
                 // if the timeslot's day is not present in patient preferences, exclude it
@@ -109,6 +109,16 @@ router.get('/patients/:patient_id/recommendations', async (req, res) => {
     }
 });
 
+async function notifyRecommendation() {
+    try {
+        // every time a new cancellation is made
+        // or new timeslots are created,
+        // check against the preferences of all users
+
+    } catch(err) {
+        return err;
+    }
+}
 
 // export the router
 module.exports = router;

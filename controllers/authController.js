@@ -54,9 +54,6 @@ router.post('/register', async (req, res) => {
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/register/' + reqId;
         let subPayload = await mqtt.subscribe(subTopic);
-        
-        // parse MQTT message to JSON
-        subPayload = JSON.parse(subPayload);
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
@@ -96,9 +93,6 @@ router.patch('/login', async (req, res) => {
         const subTopic = 'dentago/authentication/login/' + reqId;
         let subPayload = await mqtt.subscribe(subTopic);
         
-        // parse MQTT message to JSON
-        subPayload = JSON.parse(subPayload);
-
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
             Message: subPayload.status.message, 
@@ -135,9 +129,6 @@ router.post('/refresh', async (req, res) => {
         const subTopic = 'dentago/authentication/refresh/' + reqId;
         let subPayload = await mqtt.subscribe(subTopic);
 
-        // parse MQTT message to JSON
-        subPayload = JSON.parse(subPayload);
-
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
             Message: subPayload.status.message, 
@@ -171,9 +162,6 @@ router.delete('/logout', async (req, res) => {
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/logout/' + reqId;
         let subPayload = await mqtt.subscribe(subTopic);
-
-        // parse MQTT message to JSON
-        subPayload = JSON.parse(subPayload);
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
