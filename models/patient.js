@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const notificationSchema = require('./notification.js');
 
 const preferenceSchema = new Schema({
     Monday: [{
@@ -117,7 +118,7 @@ const patientSchema = new Schema({
         unique: true
     },
     notifications: [{
-        type: Schema.Types.ObjectId, 
+        type: notificationSchema.schema, 
         ref: "Notification",
         default: [],
         required: false
