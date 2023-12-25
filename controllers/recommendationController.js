@@ -1,7 +1,11 @@
 const express = require('express');
 const Patient = require('../models/patient');
 const Timeslot = require('../models/timeslot');
+const authController = require('./authController.js');
 const router = express.Router();
+
+// extract token authentication method from authController file
+const authenticateToken = authController.authenticateToken
 
 // function that returns timeslots filtered according to patient preferences
 async function generateRecommendations(preferences, timeslots) {
@@ -78,7 +82,7 @@ router.patch('/patients/:patient_id/preferences', async (req, res) => {
 }); 
 
 // get list of recommended timeslots
-router.get('/patients/:patient_id/recommendations', async (req, res) => {
+router.get('/patients/:patient_id/recommendations', authenticateToken, async (req, res) => {
     try {
         // extract patient id from request parameter
         const patientId = req.params.patient_id;

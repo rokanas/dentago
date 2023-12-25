@@ -2,7 +2,11 @@ const express = require('express');
 const Patient = require('../models/patient');
 const Clinic = require('../models/clinic');
 const Notification = require('../models/notification');
+const authController = require('./authController.js');
 const router = express.Router();
+
+// extract token authentication method from authController file
+const authenticateToken = authController.authenticateToken
 
 async function handleNotification(topic, payload) {
     try {
@@ -96,8 +100,7 @@ async function generateRecNotification(timeslot, message) {
 /*====================  ROUTE HANDLERS  ==================== */
 /*=====================  NOTIFICATIONS ===================== */
 
-// TODO: add the authentication again
-router.get('/patients/:patient_id/notifications', async (req, res) => {
+router.get('/patients/:patient_id/notifications', authenticateToken, async (req, res) => {
     try {
 
         const patient = await Patient.findOne({ id: req.params.patient_id });
