@@ -12,7 +12,6 @@ function addListener(reqId, listener) {
         listeners.set(reqId, []);
     }
     listeners.get(reqId).push(listener);
-    console.log(listeners)
 }
 
 // remove listener for a specific request Id
@@ -20,13 +19,13 @@ function removeListener (reqId) {
     listeners.delete(reqId);
 }
 
-// trigger an event and notify registered listener
+// trigger on message event and notify registered listener
 function fireEvent(reqId, data) {
     const eventListeners = listeners.get(reqId) || [];
     eventListeners.forEach(listener => listener(data));
 }
 
-// export the router
+// export the functions
 module.exports = {
     addListener,
     removeListener,

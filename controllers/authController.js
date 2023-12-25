@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken')
 const mqtt = require('../mqtt.js');
 const generateId = require('../utils/generateId.js');
+const delay = require('../utils/delay.js');
 const messageManager = require('../utils/messageManager.js');
 const router = express.Router();
 
@@ -54,7 +55,27 @@ router.post('/register', async (req, res) => {
 
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/register/' + reqId;
-        let subPayload = await mqtt.subscribe(subTopic);
+        mqtt.subscribe(subTopic);
+
+        // promise to wait for the message to arrive by adding new listener to message event manager
+        const subPayloadPromise = new Promise(resolve => {
+            messageManager.addListener(reqId, function registerEndpoint(data) {
+                resolve(data);
+            });
+        });
+
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
+ 
+            // unsubscribe from the topic after receiving the message or timing out
+            mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
+    
+            // return message payload
+            return data;
+        });
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
@@ -92,7 +113,27 @@ router.patch('/login', async (req, res) => {
 
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/login/' + reqId;
-        let subPayload = await mqtt.subscribe(subTopic);
+        mqtt.subscribe(subTopic);
+
+        // promise to wait for the message to arrive by adding new listener to message event manager
+        const subPayloadPromise = new Promise(resolve => {
+            messageManager.addListener(reqId, function loginEndpoint(data) {
+                resolve(data);
+            });
+        });
+
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
+ 
+            // unsubscribe from the topic after receiving the message or timing out
+            mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
+    
+            // return message payload
+            return data;
+        });
         
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
@@ -128,7 +169,27 @@ router.post('/refresh', async (req, res) => {
 
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/refresh/' + reqId;
-        let subPayload = await mqtt.subscribe(subTopic);
+        mqtt.subscribe(subTopic);
+
+        // promise to wait for the message to arrive by adding new listener to message event manager
+        const subPayloadPromise = new Promise(resolve => {
+            messageManager.addListener(reqId, function refreshEndpoint(data) {
+                resolve(data);
+            });
+        });
+
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
+ 
+            // unsubscribe from the topic after receiving the message or timing out
+            mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
+    
+            // return message payload
+            return data;
+        });
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
@@ -162,7 +223,27 @@ router.delete('/logout', async (req, res) => {
 
         // subscribe to topic to access token payload
         const subTopic = 'dentago/authentication/logout/' + reqId;
-        let subPayload = await mqtt.subscribe(subTopic);
+        mqtt.subscribe(subTopic);
+
+        // promise to wait for the message to arrive by adding new listener to message event manager
+        const subPayloadPromise = new Promise(resolve => {
+            messageManager.addListener(reqId, function logoutEndpoint(data) {
+                resolve(data);
+            });
+        });
+
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
+ 
+            // unsubscribe from the topic after receiving the message or timing out
+            mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
+    
+            // return message payload
+            return data;
+        });
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 

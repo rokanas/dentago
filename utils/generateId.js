@@ -6,5 +6,5 @@ function generateId() {
     return id;
 }
 
-// export the router
-module.exports = generateId
+// export the function
+module.exports = generateId;
