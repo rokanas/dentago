@@ -77,6 +77,11 @@ router.post('/register', async (req, res) => {
             return data;
         });
 
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from authentication service'})
+        }
+
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
             Message: subPayload.status.message, 
@@ -134,6 +139,11 @@ router.patch('/login', async (req, res) => {
             // return message payload
             return data;
         });
+
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from authentication service'})
+        }
         
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
@@ -191,6 +201,11 @@ router.post('/refresh', async (req, res) => {
             return data;
         });
 
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from authentication service'})
+        }
+
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 
             Message: subPayload.status.message, 
@@ -244,6 +259,11 @@ router.delete('/logout', async (req, res) => {
             // return message payload
             return data;
         });
+
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from authentication service'})
+        }
 
         // respond with relevant status code and message, patient data and access token
         res.status(subPayload.status.code).json({ 

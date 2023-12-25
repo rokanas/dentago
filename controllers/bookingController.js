@@ -65,6 +65,11 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async 
             return data;
         });
 
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from booking service'})
+        }
+
         // respond with relevant status code and message
         res.status(subPayload.status.code).json({ Message: subPayload.status.message, Data: subPayload.data });
 
