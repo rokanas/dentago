@@ -81,8 +81,10 @@ client.on('message', (topic, message) => {
             notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON), parsedMessage.status.message);
         }
 
+        // declare variable to store reqId
         let reqId;
 
+        // for the booking service, reqId will be the third element in the topic
         if(topicParts.includes('booking')) {
             reqId = topicParts[2];
         } else {
@@ -90,7 +92,7 @@ client.on('message', (topic, message) => {
             reqId = topicParts[topicParts.length - 1];
         }
 
-        // Trigger the "customEvent" in Function B
+        // trigger on message event and pass message to listeners using reqId
         messageManager.fireEvent(reqId, parsedMessage);
     }
 });

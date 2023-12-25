@@ -44,20 +44,24 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async 
         const subTopic = 'dentago/booking/' + reqId + '/' + clinicId + '/#'; // include reqID in topic to ensure correct incoming payload
         mqtt.subscribe(subTopic);
 
-        // Promise to wait for the message to arrive
+        // promise to wait for the message to arrive by adding new listener to message event manager
         const subPayloadPromise = new Promise(resolve => {
             messageManager.addListener(reqId, function bookingEndpoint(data) {
                 resolve(data);
             });
         });
 
-        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(result => {
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
  
-            // unsubscribe from the topic after receiving the message or a timeout
+            // unsubscribe from the topic after receiving the message or timing out
             mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
     
-            // Optionally, return a modified result if needed
-            return result;
+            // return message payload
+            return data;
         });
 
         // respond with relevant status code and message
@@ -67,10 +71,6 @@ router.patch('/clinics/:clinic_id/timeslots/:slot_id', authenticateToken, async 
         res.status(500).json({Error: err.message});  // internal server error
     }
 });
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 // export the router
 module.exports = router;

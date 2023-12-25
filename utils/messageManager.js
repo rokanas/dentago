@@ -1,29 +1,34 @@
 /*===============  MESSAGE EVENT MANAGER  =============== */
 
 /* Each route handler that expects a message from the mqtt broker is added to the map
- * as a listener with its unique subTopic as a key. When a message is received, that
+ * as a listener with its unique requestId as a key. When a message is received, that
  * message is forwarded to the appropriate listener. */
 
 const listeners = new Map();
 
-// register a listener for a specific message topic
-function addListener(topic, listener) {
-    if (!listeners.has(topic)) {
-        listeners.set(topic, []);
+// register a listener for a specific requestId
+function addListener(reqId, listener) {
+    if (!listeners.has(reqId)) {
+        listeners.set(reqId, []);
     }
-    listeners.get(topic).push(listener);
+    listeners.get(reqId).push(listener);
     console.log(listeners)
 }
 
+// remove listener for a specific request Id
+function removeListener (reqId) {
+    listeners.delete(reqId);
+}
+
 // trigger an event and notify registered listener
-function fireEvent(topic, data) {
-    const eventListeners = listeners.get(topic) || [];
+function fireEvent(reqId, data) {
+    const eventListeners = listeners.get(reqId) || [];
     eventListeners.forEach(listener => listener(data));
-    listeners.delete(topic);
 }
 
 // export the router
 module.exports = {
     addListener,
+    removeListener,
     fireEvent
 }
