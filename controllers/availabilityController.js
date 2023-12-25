@@ -1,6 +1,7 @@
 const express = require('express');
 const mqtt = require('../mqtt.js');
-const utils = require('../utils');
+const generateId = require('../utils/generateId.js');
+const messageManager = require('../utils/messageManager.js');
 const authController = require('./authController.js');
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/clinics/:clinic_id/timeslots', authenticateToken, async (req, res) 
         const clinicId = req.params.clinic_id;
 
         // generate random request ID
-        const reqId = utils.generateId();
+        const reqId = generateId();
 
         // create payload as JSON string containing clinic and request IDs
         const pubPayload = `{

@@ -1,4 +1,4 @@
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 // generate random ID for each request
 function generateId() {
@@ -7,6 +7,4 @@ function generateId() {
 }
 
 // export the router
-module.exports = {
-    generateId,
-}
+module.exports = generateId

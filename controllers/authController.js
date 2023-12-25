@@ -1,7 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken')
 const mqtt = require('../mqtt.js');
-const utils = require('../utils');
+const generateId = require('../utils/generateId.js');
+const messageManager = require('../utils/messageManager.js');
 const router = express.Router();
 
 // middleware for jwt token authentication
@@ -38,7 +39,7 @@ router.post('/register', async (req, res) => {
         const patient = req.body;
 
         // generate random request ID
-        const reqId = utils.generateId();
+        const reqId = generateId();
 
         // create payload as JSON string
         const pubPayload = `{
@@ -75,7 +76,7 @@ router.patch('/login', async (req, res) => {
         const password = req.body.password;
 
         // generate random request ID
-        const reqId = utils.generateId();
+        const reqId = generateId();
 
         // create payload as JSON string
         const pubPayload = `{
@@ -112,7 +113,7 @@ router.post('/refresh', async (req, res) => {
         const refreshToken = req.body.token;
 
         // generate random request ID
-        const reqId = utils.generateId();
+        const reqId = generateId();
 
         // create payload as JSON string
         const pubPayload = `{
@@ -146,7 +147,7 @@ router.delete('/logout', async (req, res) => {
         const userId = req.body.id;
     
         // generate random request ID
-        const reqId = utils.generateId();
+        const reqId = generateId();
 
         // create payload as JSON string
         const pubPayload = `{

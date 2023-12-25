@@ -1,4 +1,5 @@
 const mqtt = require('mqtt');
+const messageManager = require('./utils/messageManager.js');
 const notificationController = require('./controllers/notificationController');
 require('dotenv').config();
 
@@ -47,51 +48,53 @@ function subscribeNotifications(topic) {
 
 // subscribe to a topic and return the message in the form of a Promise
 function subscribe(topic) {
-    return new Promise((resolve, reject) => {
-        client.subscribe(topic, (err) => {
-            if (!err) {
-                console.log(`Subscribed to topic: ${topic}`);
-            } else {
-                console.error('Subscription to topic failed', err);
-                reject(err);
-            }
-        });
-
-        // event handler for receiving mqtt messages
-        client.on('message', (receivedTopic, message) => {
-            
-            console.log(`Received message on topic ${receivedTopic}: ${message.toString()}`);
-
-            // parse MQTT message to JSON
-            const parsedMessage = JSON.parse(message);
-
-            // divide the topic into an array of words
-            const topicParts = receivedTopic.split('/');
-
-            // check if the message received is a notification
-            if(topicParts.includes('notifications')) {
-                
-                // if so, call the function to process it
-                notificationController.handleNotification(receivedTopic, parsedMessage);
-                resolve();
-
-            // if incoming mesage is not a notification or ping/echo
-            } else {
-                // check if message received is a successful booking cancellation
-                if (topicParts.includes('booking') && parsedMessage.instruction === 'CANCEL' && topicParts.includes('SUCCESS')) {
-                    // if so, call function to notify interested patients of newly available timeslot
-                    notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON), parsedMessage.status.message);
-                }
-
-                // unsubscribe from the topic after receiving the message
-                unsubscribe(topic);
-                    
-                // resolve the Promise with the received message
-                resolve(parsedMessage);
-            }
-        });
+    client.subscribe(topic, (err) => {
+        if (!err) {
+            console.log(`Subscribed to topic: ${topic}`);
+        } else {
+            console.error('Subscription to topic failed', err);
+        }
     });
-}
+};
+
+// event handler for receiving messages
+client.on('message', (topic, message) => {
+    console.log(`Received message on topic ${topic}: ${message.toString()}`);
+
+    // parse MQTT message to JSON
+    const parsedMessage = JSON.parse(message);
+
+    // divide the topic into an array of words
+    const topicParts = topic.split('/');
+
+    // check if the message received is a notification
+    if(topicParts.includes('notifications')) {
+              
+        // if so, call the function to process it
+        notificationController.handleNotification(topic, parsedMessage);
+
+    // if incoming mesage is not a notification or ping/echo
+    } else {
+        // check if message received is a successful booking cancellation
+        if (topicParts.includes('booking') && parsedMessage.instruction === 'CANCEL' && topicParts.includes('SUCCESS')) {
+            // if so, call function to notify interested patients of newly available timeslot
+            notificationController.generateRecNotification(JSON.parse(parsedMessage.timeslotJSON), parsedMessage.status.message);
+        }
+
+        let reqId;
+
+        if(topicParts.includes('booking')) {
+            reqId = topicParts[2];
+        } else {
+            // for all other services, it will be at the end of the topic
+            reqId = topicParts[topicParts.length - 1];
+        }
+
+        // Trigger the "customEvent" in Function B
+        messageManager.fireEvent(reqId, parsedMessage);
+    }
+});
+
 
 // unsubscribe from a topic
 const unsubscribe = (topic) => {
@@ -113,9 +116,13 @@ process.on('SIGINT', () => {
     });
 });
 
+/*===================  UTILITY FUNCTIONS  ==================== */
+
+
 
 module.exports = {
     publish,
     subscribe,
+    unsubscribe,
     subscribeNotifications 
 };
