@@ -109,16 +109,5 @@ router.get('/patients/:patient_id/recommendations', async (req, res) => {
     }
 });
 
-async function notifyRecommendation() {
-    try {
-        // every time a new cancellation is made
-        // or new timeslots are created,
-        // check against the preferences of all users
-
-    } catch(err) {
-        return err;
-    }
-}
-
 // export the router
 module.exports = router;

@@ -11,7 +11,6 @@ async function handleNotification(topic, payload) {
 
         // Create notification
         const userNotification = new Notification(payload);
-        userNotification.save();
 
         // Find patient
         const patient = await Patient.findOne({ id: patientId }).exec();
@@ -27,6 +26,7 @@ async function handleNotification(topic, payload) {
     }
 };
 
+// when previosuly booked timeslot is freed up, generate notification for users that have it in their schedulePreferences
 async function generateRecNotification(timeslot, message) {
     try { 
         // find clinic that timeslot belongs to
