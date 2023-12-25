@@ -12,7 +12,7 @@ require('dotenv').config();
 const Clinic   = require('./models/clinic');
 const Timeslot = require('./models/timeslot');
 const Dentist  = require('./models/dentist');   // Necessary to populate the query result (unused as of now)
-
+const Patient = require('./models/patient');
 
 // Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
@@ -36,6 +36,7 @@ const client = mqtt.connect(broker);
 // MQTT subscriber-topics
 const MQTT_SUB_TOPICS = {
     AVAILABILITY: 'dentago/availability/',
+    RECOMMENDATION: 'dentago/availability/recommendation/',
     MONITOR_SUB:  'dentago/monitor/availability/ping'
 };
 
@@ -127,12 +128,6 @@ client.on('message', async (topic, message) => {
                     throw new Error(errorMessage);
                 }
 
-                // TODO: remove
-                console.log(payload.startDate)
-                console.log(payload.endDate)
-                console.log(startDate)
-                console.log(endDate)
-
                 // Return only available Timeslots for a specific clinic
                 responseObject.timeslots = await Timeslot.find({ 
                     clinic: clinicId,
@@ -154,30 +149,95 @@ client.on('message', async (topic, message) => {
                 client.publish(responseTopic, JSON.stringify(responseObject));
                 console.log(responseObject);
 
+            } catch (error) {
+                console.log("Error when processing MQTT message: ", error);
+            }
+            break;
 
-                /****************************************************************************************
-                 * Logic to fetch all Timeslots from multiple Clinics in one query (no longer used)     *
-                 * Orders the Timeslots in key-value pairs, where key = Clinic's own ID (not Mongo _id) *
-                 * **************************************************************************************
-                // Fetch the desired Clinic(s)
-                const clinic = await Clinic.find({ id: {$in: clinicId} });
-                if (clinic.length === 0) {
-                    const errorMessage = 'Invalid clinic ID. Clinic(s) not found';
+        // Incoming request for recommended timeslot data according to user preference
+        case MQTT_SUB_TOPICS['RECOMMENDATION']:
+            try {
+                console.log('message received')
+                const payload = JSON.parse(message);
+                const reqId = payload.reqId;
+                const patientId = payload.patientId;
+                const responseTopic = topic + reqId; // Append recipient address
+                const responseObject = {
+                    reqId: reqId,
+                    status: { 
+                        code: null, 
+                        message: ''
+                    },
+                    timeslots: []
+                };
+
+                // Check if the Patient exists
+                const patient = await Patient.findOne({ _id: patientId });
+                
+                // if patient is not found in database, return 403
+                if (!patient) {
+                    // update attributes of responseObject
+                    responseObject.status.code = 403;
+                    responseObject.status.message = 'Access forbidden: invalid patient ID';
+
+                    // publish responseObject to patient API and discontinue
+                    client.publish(responseTopic, JSON.stringify(responseObject));
+                    break;
+                }
+
+                // Set the time ranges for DB query
+                const startDate = (payload.startDate) ? new Date(payload.startDate) : new Date();   // Set start search range to payload specified or current time
+                const endDate = (payload.endDate) ? new Date(payload.endDate) : new Date();         // Set end search range to payload specified or default range
+                
+                if (!payload.endDate) {                                             // If no endDate is specified in message payload
+                    endDate.setDate(startDate.getDate() + DEFAULT_RANGE_DAYS);      // Default range of 1 week
+                    endDate.setHours(0, 0, 0, 0);                                   // Reset hours to ensure query doesn't return Timeslots in a range of 8 date days
+                }
+
+                // Check if any of the provided dates are invalid
+                if (isNaN(startDate) || isNaN(endDate) || startDate >= endDate) {
+                    let errorMessage = 'Invalid Date input: expecting YYYY-MM-DDTHH:mm';
+                    if (startDate >= endDate) errorMessage = "Invalid Date input: startDate >= endDate";
                     responseObject.status.code = 403;
                     responseObject.status.message = errorMessage;
-                    throw new Error(errorMessage);
-                } 
 
-                // Fetch all the Timeslots for the Clinics 
-                const timeslots = await Timeslot.find({ clinic: {$in: clinic} }).exec();
-                
-                // Order the Timelots by Clinic
-                //const timeslotsByClinic = orderByClinic(timeslots);
-                ****************************************************************************************/
+                    client.publish(responseTopic, JSON.stringify(responseObject));
+                    throw new Error(errorMessage);
+                }
+
+                // fetch only available timeslots (where patient == null)
+                const timeslots = await Timeslot.find({ 
+                    patient:    null,
+                    dentist:    { $ne: null },
+                    startTime:  { $gt: startDate },
+                    endTime:    { $lt: endDate }
+                });
+
+                // extract preferences object from patient resource
+                const preferences = patient.schedulePreferences.toObject();
+
+                // call function to filter timeslots according to patient preferences
+                const recommendations = await generateRecommendations(preferences, timeslots);
+
+                // add recommendations to responeObject
+                responseObject.timeslots = recommendations;
+
+                // Assign status code and message
+                if (recommendations.length === 0) {
+                    responseObject.status.code = 404;
+                    responseObject.status.message = "No Timeslot recommendations found.";
+                } else {
+                    responseObject.status.code = 200;
+                    responseObject.status.message = "Timeslot recommendations found.";
+                }
+
+                // Publish the result
+                client.publish(responseTopic, JSON.stringify(responseObject));
 
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
             }
+
             break;
 
         // Received ping from Monitor-service
@@ -217,3 +277,45 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
+
+// function that returns timeslots filtered according to patient preferences
+async function generateRecommendations(preferences, timeslots) {
+    try {
+        // extract non-empty days from preferences object
+        const days = Object.keys(preferences).filter(
+            (day) =>
+            Array.isArray(preferences[day]) &&  // check that attribute is an array of times
+            preferences[day].length > 0         // check that day contains > 0 preferred hours
+        );
+
+        // filter timeslots aaccording to patient preferences
+        const recommendedTimeslots = timeslots.filter((timeslot) => {
+
+            // parse name of day from timeslot's startTime
+            const day = timeslot.startTime.toLocaleDateString('en-US', { weekday: 'long' });
+            
+            // check if the timeslot's day is present in patient preferences
+            if (days.includes(day)) {
+                // if so, extract the patient's preferred times
+                const preferredTimes = preferences[day];
+        
+                // extract hour from timeslot's startTime
+                const startHour = timeslot.startTime.getUTCHours();
+                
+                // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
+                return preferredTimes.includes(startHour);
+                
+            } else {
+                // if the timeslot's day is not present in patient preferences, exclude it
+                return false;
+            }
+        });
+
+        // return array of timeslot objects
+        return recommendedTimeslots;
+    
+    } catch(err) {
+        // log error
+        console.log(err.message);
+    }
+}
