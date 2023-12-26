@@ -21,13 +21,19 @@ const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 const host = process.env.HOST || process.env.CI_HOST;
 const port = process.env.PORT || process.env.CI_PORT;
 
+// function to subscribe to notification and monitoring service topics
+function subscribeTopics() {
+  mqtt.subscribe('dentago/notifications/+');
+  mqtt.subscribe('dentago/monitor/patient/ping')
+}
+
 // connect to MongoDB
 mongoose.connect(mongoURI)
   .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
 
-    // upon connecting to the DB, susbcribe to the notification topic
-    mqtt.subscribeNotifications('dentago/notifications/+');
+    // upon connecting to the DB, call function to subscribe to topics
+    subscribeTopics();
   })
   .catch((err) => {
     console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
