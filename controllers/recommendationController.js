@@ -1,59 +1,20 @@
 const express = require('express');
 const Patient = require('../models/patient');
-const Timeslot = require('../models/timeslot');
+const generateId = require('../utils/generateId.js');
+const delay = require('../utils/delay.js');
+const messageManager = require('../utils/messageManager.js');
+const mqtt = require('../mqtt.js');
 const authController = require('./authController.js');
 const router = express.Router();
 
 // extract token authentication method from authController file
-const authenticateToken = authController.authenticateToken
-
-// function that returns timeslots filtered according to patient preferences
-async function generateRecommendations(preferences, timeslots) {
-    try {
-        // extract non-empty days from preferences object
-        const days = Object.keys(preferences).filter(
-            (day) =>
-            Array.isArray(preferences[day]) &&  // check that attribute is an array of times
-            preferences[day].length > 0         // check that day contains > 0 preferred hours
-        );
-
-        // filter timeslots aaccording to patient preferences
-        const recommendedTimeslots = timeslots.filter((timeslot) => {
-
-            // parse name of day from timeslot's startTime
-            const day = timeslot.startTime.toLocaleDateString('en-US', { weekday: 'long' });
-            
-            // check if the timeslot's day is present in patient preferences
-            if (days.includes(day)) {
-                // if so, extract the patient's preferred times
-                const preferredTimes = preferences[day];
-        
-                // extract hour from timeslot's startTime
-                const startHour = timeslot.startTime.getUTCHours();
-                
-                // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
-                return preferredTimes.includes(startHour);
-                
-            } else {
-                // if the timeslot's day is not present in patient preferences, exclude it
-                return false;
-            }
-        });
-
-        // return array of timeslot objects
-        return recommendedTimeslots;
-    
-    } catch(err) {
-        // log error
-        console.log(err.message);
-    }
-}
+const authenticateToken = authController.authenticateToken;
 
 /*====================  ROUTE HANDLERS  ==================== */
 /*===================  RECOMMENDATIONS ===================== */
 
 // save patient schedule preferences
-router.patch('/patients/:patient_id/preferences', async (req, res) => {
+router.patch('/patients/:patient_id/preferences', authenticateToken, async (req, res) => {
     try {
         // extract recommendations from request body
         const preferences = req.body;
@@ -81,32 +42,77 @@ router.patch('/patients/:patient_id/preferences', async (req, res) => {
     }
 }); 
 
+// define default time range for timeslot recommendation query (when not specified in payload)
+const DEFAULT_RANGE_DAYS = 7;
+
 // get list of recommended timeslots
 router.get('/patients/:patient_id/recommendations', authenticateToken, async (req, res) => {
     try {
         // extract patient id from request parameter
         const patientId = req.params.patient_id;
 
-        // find patient in DB using provided id
-        const patient = await Patient.findOne({ id: patientId });
+        // extract timeslot time range from query parameters
+        const startDate = req.query.startDate ? req.query.startDate : new Date();   // if query parameter empty, set startDate to time of request
+        let endDate = req.query.endDate;
 
-        // if patient is not found in databse, return 403
-        if(!patient) {
-            return res.status(403).json({ Message: "Access forbidden: invalid patient ID"});
+        // if no endDate is specified in query parameters
+        if(!endDate) {
+            // set endDate to startDate
+            endDate = new Date(startDate)
+
+            // push endDate forward by 1 week (by default)
+            endDate.setDate(startDate.getDate() + DEFAULT_RANGE_DAYS);   
+
+            // reset hours to ensure query doesn't return timeslots in a range of 8 date days       
+            endDate.setHours(0, 0, 0, 0);   
         }
 
-        // extract preferences object from patient resource
-        const preferences = patient.schedulePreferences.toObject();
+        // generate random request ID
+        const reqId = generateId();
 
-        // fetch timeslots (placeholder)
-        // TODO: relocate function to availability service
-        const timeslots = await Timeslot.find();
+        // create payload as JSON string containing patient ID and time range for recommendations
+        const pubPayload = `{
+                             "status": { "message": "Request for timeslot recommendations" },
+                             "patientId": "${patientId}", 
+                             "reqId": "${reqId}",
+                             "startDate": "${startDate}",
+                             "endDate": "${endDate}"
+                            }`;
         
-        // call function to filter timeslots according to patient preferences
-        const recommendations = await generateRecommendations(preferences, timeslots);
-        
-        // return array of recommendations objects
-        res.status(200).json({ recommendations: recommendations });
+        // publish payload to availability service
+        const pubTopic = 'dentago/availability/recommendation/';
+        mqtt.publish(pubTopic, pubPayload);
+
+        // subscribe to topic to receive timeslots payload
+        const subTopic = pubTopic + reqId; // include reqID in topic to ensure correct incoming payload
+        mqtt.subscribe(subTopic);
+
+        // promise to wait for the message to arrive by adding new listener to message event manager
+        const subPayloadPromise = new Promise(resolve => {
+            messageManager.addListener(reqId, function recommendationEndpoint(data) {
+                resolve(data);
+            });
+        });
+
+        // store payload once promise is resolved, or time out after a delay
+        const subPayload = await Promise.race([subPayloadPromise, delay(10000)]).then(data => {
+    
+            // unsubscribe from the topic after receiving the message or timing out
+            mqtt.unsubscribe(subTopic);
+
+            // remove listener from the message event manager
+            messageManager.removeListener(reqId);
+    
+            // return message payload
+            return data;
+        });
+
+        // if no payload received in time
+        if(!subPayload) {
+            return res.status(504).json({ Error: 'Request timeout: no response received from availability service'})
+        }
+
+        res.status(subPayload.status.code).json({ Message: subPayload.status.message, Timeslots: subPayload.timeslots });
 
     } catch(err) {
         res.status(500).json({ Error: err.message }); // internal server error
