@@ -1,18 +1,12 @@
 const express = require('express');
-const authController = require('./authController.js');
 const Clinic = require('../models/clinic.js');
 const Dentist = require('../models/dentist.js');
 const Patient = require('../models/patient.js');
-const Notification = require('../models/notification.js');
+const authenticateToken = require('../utils/authenticateToken.js');
 const router = express.Router();
-
-// TODO: Response from server timeouts
 
 // define correct length for mongo object IDs
 const OBJ_ID_LENGTH = 24;
-
-// extract token authentication method from authController file
-const authenticateToken = authController.authenticateToken
 
 /*====================  ROUTE HANDLERS  ==================== */
 /*==================  CLINICS & DENTISTS  ================== */

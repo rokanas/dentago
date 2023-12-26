@@ -118,10 +118,6 @@ process.on('SIGINT', () => {
     });
 });
 
-/*===================  UTILITY FUNCTIONS  ==================== */
-
-
-
 module.exports = {
     publish,
     subscribe,

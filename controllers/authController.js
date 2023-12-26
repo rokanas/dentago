@@ -1,34 +1,10 @@
 const express = require('express');
-const jwt = require('jsonwebtoken')
 const mqtt = require('../mqtt.js');
 const generateId = require('../utils/generateId.js');
 const delay = require('../utils/delay.js');
 const messageManager = require('../utils/messageManager.js');
 const router = express.Router();
 
-// middleware for jwt token authentication
-function authenticateToken(req, res, next) {
-    // token comes from auth portion of request header
-    const authHeader = req.headers['authorization'];
-
-    // if we have auth header, return token portion, otherwise return undefined
-    const token = authHeader && authHeader.split(' ')[1];   // split space between bearer and token in auth header
-
-    // if token is undefined, return 401 unauthorized
-    if(token == null) {
-        return res.sendStatus(401).json({ Error: "Access unauthorized: no valid authentication credentials" });
-    }
-
-    // verify validity of access token
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
-        // if request has access token but token is no longer valid, return 403 forbidden
-        if(err) {
-            return res.status(403).json({ Error: "Access forbidden: authentication credentials invalid" });
-        }
-        // if access token is valid, proceed with request
-        next();
-    });
-}
 
 /*==================  ROUTE HANDLERS ================== */
 /*====================  USER AUTH  ==================== */
@@ -277,7 +253,4 @@ router.delete('/logout', async (req, res) => {
 });
 
 // export the router
-module.exports = {
-    router,
-    authenticateToken
-}
+module.exports = router;

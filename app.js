@@ -48,7 +48,7 @@ app.use(cors());
 
   // import routes
   app.use('/api', apiController);
-  app.use('/api', authController.router);
+  app.use('/api', authController);
   app.use('/api', availabilityController);
   app.use('/api', bookingController);
   app.use('/api', notificationController.router);

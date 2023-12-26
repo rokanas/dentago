@@ -6,5 +6,5 @@ function generateId() {
     return id;
 }
 
-// export the function
+// export the generate Id function
 module.exports = generateId;

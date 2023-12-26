@@ -2,11 +2,9 @@ const express = require('express');
 const Patient = require('../models/patient');
 const Clinic = require('../models/clinic');
 const Notification = require('../models/notification');
-const authController = require('./authController.js');
+const authenticateToken = require('../utils/authenticateToken.js');
 const router = express.Router();
 
-// extract token authentication method from authController file
-const authenticateToken = authController.authenticateToken
 
 async function handleNotification(topic, payload) {
     try {

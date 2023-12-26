@@ -3,11 +3,9 @@ const mqtt = require('../mqtt.js');
 const generateId = require('../utils/generateId.js');
 const delay = require('../utils/delay.js');
 const messageManager = require('../utils/messageManager.js');
-const authController = require('./authController.js');
+const authenticateToken = require('../utils/authenticateToken.js');
 const router = express.Router();
 
-// extract token authentication method from authController file
-const authenticateToken = authController.authenticateToken
 
 /*====================  ROUTE HANDLERS  ==================== */
 /*=================  AVAILABILITY SERVICE ================== */
