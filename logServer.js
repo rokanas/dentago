@@ -13,6 +13,7 @@ mqtt.subscribe("dentago/authentication/#");
 mqtt.subscribe("dentago/availability/#");   
 mqtt.subscribe("dentago/booking/#");               
 mqtt.subscribe("dentago/dentist/#");
+mqtt.subscribe("dentago/monitor/logging/ping");
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
