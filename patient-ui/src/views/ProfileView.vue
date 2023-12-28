@@ -33,23 +33,32 @@
                     tabindex="0">
                     <div class="your-preferences">
                         <!-- EDIT PREFERENCES PAGE HERE -->
-                        <div class="schedule-container">
-                            <div v-for="(day, index) in preferredTimeWindow" :key="index" class="day">
-                                <h4>{{ day.name }}</h4>
-                                <div v-for="time in availableTimes" :key="time" class="time-checkbox">
-                                    <input type="checkbox" :id="`${day.name}-${time}`" :value="time" v-model="day.times" />
-                                    <label :for="`${day.name}-${time}`">{{ time }}</label>
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <h3 id="schedule-text">Select your preferred schedule</h3>
+                                <div class="col day m-2 rounded" v-for="(day, index) in preferredTimeWindow" :key="index">
+                                    <h4 id="day-text">{{ day.name }}</h4>
+                                    <div class="m-1" v-for="time in availableTimes" :key="time">
+                                        <input class="form-check-input me-2" type="checkbox" :id="`${day.name}-${time}`"
+                                            :value="time" v-model="day.times" />
+                                        <label :for="`${day.name}-${time}`">{{ time }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row justify-content-end">
+                                <div class="col">
+                                    <button class="btn btn-primary m-2">Update preferences</button>
+                                    <input type="checkbox" id="checkbox" v-model="getNotifications" />
+                                    <label for="checkbox"> Notify Me </label>
+
+                                    <!--TODO: link this button to an API call -->
                                 </div>
                             </div>
                         </div>
-                        <br>
-                        <input type="checkbox" id="checkbox" v-model="getNotifications" />
-                        <label for="checkbox"> Notify Me </label>
 
-                        <button>Update preferences</button> <!--TODO: link this button to an API call -->
+                        {{ preferredTimeWindow }}
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -72,7 +81,7 @@ export default {
             getNotifications: true,
             userInfo: { firstName: 'Sapo', lastName: 'Reqlo', contactInfo: '+46694203255', appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'] },
             availableTimes: [
-                '8:00', '9:00', '10:00', '11:00',
+                '08:00', '09:00', '10:00', '11:00',
                 '12:00', '13:00', '14:00', '15:00',
                 '16:00', '17:00'
             ],
@@ -95,16 +104,22 @@ export default {
     background-color: var(--secondary-color);
 }
 
-.schedule-container {
-    display: flex;
-}
-
 .day {
-    margin-right: 20px;
+    background-color: var(--primary-color);
+    box-shadow: 2.5px 2.5px 2.5px rgba(0, 0, 0, 0.5);
+    width: 10em;
 }
 
-.time-checkbox {
-    margin-bottom: 5px;
+#schedule-text {
+    text-align: center;
+    font-weight: 300;
+    font-size: 2rem;
+}
+
+#day-text {
+    text-align: center;
+    font-weight: 300;
+    font-size: 1.5rem;
 }
 
 .nav-link {
@@ -114,8 +129,8 @@ export default {
 
 /* Media query for adjusting justify-content */
 @media screen and (min-width: 1080px) {
-  .justify-content-md-start {
-    justify-content: start !important;
-  }
+    .justify-content-md-start {
+        justify-content: start !important;
+    }
 }
 </style>
