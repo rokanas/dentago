@@ -9,19 +9,41 @@
     <div class="p-4">
       <button class="btn btn-outline-primary" @click="getClinics()"> Find clinics near you </button>
 
+      <!-- Google Map
+        - shows all clinics at their location using markers.
+        - centers on the user's location if they enable that permission, and gives a different zoom level
+        - centers on a "middle point" between Gothenburg and Stockholm with the appropiate zoom level
+      -->
+      <!-- // TODO: add a mt here -->
       <div class="map-container mt-2">
         <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
-        <!--- TODO: change "clinic.clinicLocation" back to "clinic.location" when appropriate changes are made in backend-->
-        <!-- same goes for "clinicName" and "clinicId"-->
-          <Marker v-for="clinic in clinics" :key="clinic.clinicId" :options="{ position: clinic.clinicLocation }">
+          <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
-              Clinic name: {{ clinic.clinicName }} <br>
+              Clinic name: {{ clinic.name }} <br>
               Clinic booking page
-              <BookingButton :clinicId="clinic.clinicId"></BookingButton>
+              <BookingButton :clinicId="clinic._id"></BookingButton>
             </InfoWindow>
           </Marker>
       </GoogleMap>
       </div>
+    </div>
+
+    <!-- Footer with contact information (email, phone number, Twitter) -->
+    <div id="footer" class="banner">
+      <ContactInfoItem
+      img_src = "src/assets/email_material_icon.png"
+      text = "dentago@gmail.com"
+      ></ContactInfoItem>
+
+      <ContactInfoItem
+      img_src = "src/assets/phone_material_icon.png"
+      text = "+461234567890"
+      ></ContactInfoItem>
+
+      <ContactInfoItem
+      img_src = "src/assets/twitter_icon.png"
+      text = "@dentago"
+      ></ContactInfoItem>
     </div>
   </div>
 </template>
@@ -46,6 +68,7 @@ import { Api } from '@/Api.js';
 import BookingButton from '@/components/BookingButton.vue';
 
 export default defineComponent ({
+  // When the page is created, it calls to get all clinics and tries to access the user's location
   created() {
     // this.getClinics(),
     this.findUserLocation()
@@ -73,7 +96,6 @@ export default defineComponent ({
           for(let i=0; i<response.data.length; i++){
             this.clinics.push(response.data[i]);
           }
-          console.log(this.clinics);
         }).catch(error => {
           console.log(error.message);
         })
