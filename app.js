@@ -12,6 +12,7 @@ const availabilityController = require('./controllers/availabilityController');
 const bookingController = require('./controllers/bookingController');
 const authController = require('./controllers/authController');
 const notificationController = require('./controllers/notificationController');
+const recommendationController = require('./controllers/recommendationController');
 
 // load environmental variables from .env file to process.env object
 require('dotenv').config();
@@ -47,10 +48,11 @@ app.use(cors());
 
   // import routes
   app.use('/api', apiController);
-  app.use('/api', authController.router);
+  app.use('/api', authController);
   app.use('/api', availabilityController);
   app.use('/api', bookingController);
   app.use('/api', notificationController.router);
+  app.use('/api', recommendationController);
 
   // catch all non-error handler for api (i.e., 404 Not Found)
   app.use('/api/*', function (_, res) {
