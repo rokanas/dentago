@@ -36,15 +36,16 @@
                         <div class="container">
                             <div class="row justify-content-center">
                                 <h3 id="schedule-text">Select your preferred schedule</h3>
-                                <div class="col day m-2 rounded" v-for="(day, index) in preferredTimeWindow" :key="index">
-                                    <h4 id="day-text">{{ day.name }}</h4>
+                                <div class="col day m-2 rounded" v-for="(times, day) in preferredTimeWindow" :key="day">
+                                    <h4 id="day-text">{{ day }}</h4>
                                     <div class="m-1" v-for="time in availableTimes" :key="time">
-                                        <input class="form-check-input me-2" type="checkbox" :id="`${day.name}-${time}`"
-                                            :value="time" v-model="day.times" />
-                                        <label :for="`${day.name}-${time}`">{{ time }}</label>
+                                        <input class="form-check-input me-2" type="checkbox" :id="`${day}-${time}`"
+                                            :value="time" v-model="preferredTimeWindow[day]" @change="sortPreferredTimes(day)"/>
+                                        <label :for="`${day}-${time}`">{{ time }}</label>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="row justify-content-end">
                                 <div class="col">
                                     <button class="btn btn-primary m-2">Update preferences</button>
@@ -55,7 +56,6 @@
                                 </div>
                             </div>
                         </div>
-
                         {{ preferredTimeWindow }}
                     </div>
                 </div>
@@ -85,16 +85,21 @@ export default {
                 '12:00', '13:00', '14:00', '15:00',
                 '16:00', '17:00'
             ],
-            preferredTimeWindow: [
-                { name: 'Monday', times: [] },
-                { name: 'Tuesday', times: [] },
-                { name: 'Wednesday', times: [] },
-                { name: 'Thursday', times: [] },
-                { name: 'Friday', times: [] },
-                { name: 'Saturday', times: [] },
-                { name: 'Sunday', times: [] }
-            ]
+            preferredTimeWindow: {
+                Monday: [],
+                Tuesday: [],
+                Wednesday: [],
+                Thursday: [],
+                Friday: [],
+                Saturday: [],
+                Sunday: []
+            }
         };
+    },
+    methods: {
+        sortPreferredTimes(day) {
+            this.preferredTimeWindow[day].sort();
+        }
     }
 }
 </script>
