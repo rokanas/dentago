@@ -27,24 +27,6 @@
       </GoogleMap>
       </div>
     </div>
-
-    <!-- Footer with contact information (email, phone number, Twitter) -->
-    <div id="footer" class="banner">
-      <ContactInfoItem
-      img_src = "src/assets/email_material_icon.png"
-      text = "dentago@gmail.com"
-      ></ContactInfoItem>
-
-      <ContactInfoItem
-      img_src = "src/assets/phone_material_icon.png"
-      text = "+461234567890"
-      ></ContactInfoItem>
-
-      <ContactInfoItem
-      img_src = "src/assets/twitter_icon.png"
-      text = "@dentago"
-      ></ContactInfoItem>
-    </div>
   </div>
 </template>
 
