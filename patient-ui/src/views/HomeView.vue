@@ -12,9 +12,8 @@
       <!-- Google Map
         - shows all clinics at their location using markers.
         - centers on the user's location if they enable that permission, and gives a different zoom level
-        - centers on a "middle point" between Gothenburg and Stockholm with the appropiate zoom level
+        - centers on a "middle point" between Gothenburg and Stockholm with the appropriate zoom level
       -->
-      <!-- // TODO: add a mt here -->
       <div class="map-container mt-2">
         <GoogleMap :api-key=API_KEY style="width: 100%; height: 500px" :center="center" :zoom="zoom">
           <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">

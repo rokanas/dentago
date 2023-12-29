@@ -41,7 +41,7 @@
                                     <div class="m-1" v-for="time in availableTimes" :key="time">
                                         <input class="form-check-input me-2" type="checkbox" :id="`${day}-${time}`"
                                             :value="time" v-model="preferredTimeWindow[day]" @change="sortPreferredTimes(day)"/>
-                                        <label :for="`${day}-${time}`">{{ time }}</label>
+                                        <label :for="`${day}-${time}`">{{ formatTime(time) }}</label>
                                     </div>
                                 </div>
                             </div>
@@ -81,9 +81,7 @@ export default {
             getNotifications: true,
             userInfo: { firstName: 'Sapo', lastName: 'Reqlo', contactInfo: '+46694203255', appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'] },
             availableTimes: [
-                '08:00', '09:00', '10:00', '11:00',
-                '12:00', '13:00', '14:00', '15:00',
-                '16:00', '17:00'
+                8, 9, 10, 11, 12, 13, 14, 15, 16, 17
             ],
             preferredTimeWindow: {
                 Monday: [],
@@ -99,6 +97,13 @@ export default {
     methods: {
         sortPreferredTimes(day) {
             this.preferredTimeWindow[day].sort();
+        },
+        formatTime(time) {
+            /**
+             * Formats time for a proper display in the UI
+             * For example 8 -> 08:00 while 10 -> 10:00
+             */
+            return `${time < 10 ? `0${time}` : time}:00`;
         }
     }
 }
