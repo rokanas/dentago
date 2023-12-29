@@ -49,9 +49,25 @@ function subscribe(topic) {
 client.on('message', async (topic, message) => {
     // print the received message
     console.log(`Received message on topic ${topic}: ${message.toString()}`);
-    
+        
+    // parse message to String
+    const parsedMessage = JSON.parse(message);
+
+    // isolate the topic suffix to extract the request type
+    const topicParts = topic.split('/');
+    const messageType = topicParts[topicParts.length - 1];
+
+    // if receiving a ping from the monitoring service
+    if(messageType === 'ping') {
+        const payload = "";
+        // publish an empty echo response back to monitoring service
+        publish("dentago/monitor/logging/echo", payload);
+        
+    // otherwise message is to be parsed and logged
+    } else {
     // call function to parse request
-    await controller.parseMessage(topic, message);
+    await controller.parseMessage(topic, parsedMessage);
+    }
 });
 
 

@@ -12,9 +12,6 @@ async function parseMessage(topic, message) {
         // establish timestamp
         const timeStamp = new Date().toLocaleString();
 
-        // parse message to String
-        const parsedMessage = JSON.parse(message);
-
         // call function to extract service type from topic name
         const service = await parseService(topic);
 
