@@ -35,18 +35,7 @@ const publish = (topic, payload) => {
     client.publish(topic, payload);
 };
 
-// subscribe to notification topic
-function subscribeNotifications(topic) {
-    client.subscribe(topic, (err) => {
-        if (!err) {
-            console.log(`Subscribed to topic: ${topic}`);
-        } else {
-            console.error('Subscription to topic failed', err);
-        }
-    });
-};
-
-// subscribe to a topic and return the message in the form of a Promise
+// subscribe to a topic
 function subscribe(topic) {
     client.subscribe(topic, (err) => {
         if (!err) {
@@ -67,8 +56,14 @@ client.on('message', (topic, message) => {
     // divide the topic into an array of words
     const topicParts = topic.split('/');
 
+    // if message received is a ping from monitoring service
+    if(topicParts.includes('ping')) {
+        const payload = "";
+        // publish an empty echo response back to monitoring service
+        publish("dentago/monitor/patient/echo", payload);
+    
     // check if the message received is a notification
-    if(topicParts.includes('notifications')) {
+    } else if(topicParts.includes('notifications')) {
               
         // if so, call the function to process it
         notificationController.handleNotification(topic, parsedMessage);
@@ -97,7 +92,6 @@ client.on('message', (topic, message) => {
     }
 });
 
-
 // unsubscribe from a topic
 const unsubscribe = (topic) => {
     client.unsubscribe(topic, function (err) {
@@ -121,6 +115,5 @@ process.on('SIGINT', () => {
 module.exports = {
     publish,
     subscribe,
-    unsubscribe,
-    subscribeNotifications 
+    unsubscribe
 };
