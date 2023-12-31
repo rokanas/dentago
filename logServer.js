@@ -19,6 +19,9 @@ mqtt.subscribe("dentago/monitor/logging/ping");
 mongoose.connect(mongoURI)
   .then(() => {
     console.log(`Connected to MongoDB with URI: ${mongoURI}`);
+
+    // call function to save logs stored in JSON file to database
+    controller.saveLogs();
   })
   .catch((err) => {
     console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
@@ -26,5 +29,5 @@ mongoose.connect(mongoURI)
     process.exit(1);
   });
 
-  // periodically call function to save logs stored in JSON file to database
-  setInterval(controller.saveLogs, 600000); // every 10 minutes
+// periodically call function to save logs again
+setInterval(controller.saveLogs, 600000); // every 10 minutes
