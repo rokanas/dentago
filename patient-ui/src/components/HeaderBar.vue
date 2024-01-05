@@ -81,14 +81,6 @@
   padding: 10px;
 }
 
-.TO-DELETE-dropdown-menu {
-  display: none;
-  position: absolute;
-  text-overflow: clip;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-}
-
 .material-symbols-outlined {
   color: black;
   font-size: 1.8em;
