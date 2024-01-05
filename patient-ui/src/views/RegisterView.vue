@@ -37,6 +37,9 @@
                 />
               </div>
               <div class="d-grid gap-2">
+                <div v-if="passwordError" class="alert alert-danger">
+                  {{ passwordErrorMessage }}
+                </div>
                 <button type="submit" class="btn btn-primary">Register</button>
               </div>
             </form>
@@ -61,17 +64,21 @@ export default {
         email: '',
         password: '',
         confirmPassword: ''
-      }
+      },
+      passwordError: false,
+      passwordErrorMessage: ''
     }
   },
   methods: {
     async handleRegister() {
-      console.log(this.registerForm);
+      console.log(this.registerForm)
       // Validate passwords match, etc.
       if (this.registerForm.password !== this.registerForm.confirmPassword) {
-        // Perhaps we can show some error
+        this.passwordError = true
+        this.passwordErrorMessage = 'Passwords do not match.'
         return
       }
+      this.passwordError = false // Reset error state before the API call
 
       // API call to backend to register the user
       try {
