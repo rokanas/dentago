@@ -40,19 +40,42 @@ const MQTT_TOPICS = {
     dentistMonitor: 'dentago/monitor/dentist/ping',
     getClinics: 'dentago/dentist/clinics/',
     getTimeslots: 'dentago/dentist/timeslot/',
-    getTimeslotsDentist: 'dentago/dentist/timeslots/dentist',
-
+    loginDentist: 'dentago/dentist/login/',
 
     // TODO: Remove this
     testPatients: 'dentago/test/patients'
 }
 
+const HTTP_STATUS_CODES = {
+    ok: 200,
+    created: 201,
+    conflict: 409,
+    badRequest: 400,
+    notFound: 404
+}
+
 // TODO: Add status for logging
 // Generalized mqtt message format for the CLI
-function createCLIResponseMessage(message, content) {
+function createCLIResponseMessage(message, content, code) {
     return {
         message: message,
-        content: content
+        content: content,
+        status: {
+            code: code,
+            message: message,
+        }
+    };
+}
+
+function createCLIResponseLoginMessage(message, content, code, response) {
+    return {
+        message: message,
+        content: content,
+        response: response,
+        status: {
+            code: code,
+            message: message,
+        }
     };
 }
 
@@ -104,11 +127,12 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['getTimeslots']:
             getAllTimeslots(topic, payload);
             break;
+        case MQTT_TOPICS['loginDentist']:
+            loginDentist(topic, payload);
+            break;
         case MQTT_TOPICS['testPatients']:
             createPatient(payload);
             break;
-        case MQTT_TOPICS['getTimeslotsDentist']:
-            getAllTimeslotsDentist(topic, payload);
         default:
             handleBookingNotification(topic, payload);
             break;
@@ -131,7 +155,7 @@ async function createClinic(topic, payload) {
         await newClinic.save();
 
         // Success message
-        const successMessage = createCLIResponseMessage('Clinic created!', JSON.parse(JSON.stringify(newClinic)));
+        const successMessage = createCLIResponseMessage(`Clinic created with ID ${objClinic.id}!`, JSON.parse(JSON.stringify(newClinic)), HTTP_STATUS_CODES.created);
 
         console.log(successMessage);
         let resTopic = `${topic}${reqId}`
@@ -140,33 +164,45 @@ async function createClinic(topic, payload) {
     catch (error) {
         // TODO: I don't like handling parsing in the catch block but I can't think of any other choice
         if (error.code === 11000) {
-            console.error('Error: Clinic with this id already exists');
-            const errorMessage = createCLIResponseMessage('Error: Clinic with this id already exists', []);
+            console.error('Error: Clinic with this ID already exists');
+            const errorMessage = createCLIResponseMessage('Error: Clinic with this ID already exists', [], HTTP_STATUS_CODES.conflict);
 
-            const request = JSON.parse(payload);
-            const reqId = request['reqId'];
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
 
-            let resTopic = topic;
+                let resTopic = topic;
 
-            if (reqId) {
-                resTopic += reqId;
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
             }
 
-            client.publish(resTopic, JSON.stringify(errorMessage));
         } else {
             console.error('Error: ' + error.message);
-            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-            const request = JSON.parse(payload);
-            const reqId = request['reqId'];
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
 
-            let resTopic = topic;
+                let resTopic = topic;
 
-            if (reqId) {
-                resTopic += reqId;
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
             }
 
-            client.publish(resTopic, JSON.stringify(errorMessage));
         }
     }
 }
@@ -195,7 +231,7 @@ async function createDentist(topic, payload) {
         await newDentist.save();
 
         // Success message
-        const successMessage = createCLIResponseMessage('Dentist created!', JSON.parse(JSON.stringify(newDentist)));
+        const successMessage = createCLIResponseMessage(`Dentist created with ID ${newDentist.id}!`, JSON.parse(JSON.stringify(newDentist)), HTTP_STATUS_CODES.created);
 
         console.log(successMessage);
         let resTopic = `${topic}${reqId}`
@@ -203,37 +239,48 @@ async function createDentist(topic, payload) {
     }
     catch (error) {
         if (error.code === 11000) {
-            console.error('Error: Dentist with this id already exists');
-            const errorMessage = createCLIResponseMessage('Error: Dentist with this id already exists', []);
+            console.error('Error: Dentist with this ID already exists');
+            const errorMessage = createCLIResponseMessage('Error: Dentist with this ID already exists', [], HTTP_STATUS_CODES.conflict);
 
-            const request = JSON.parse(payload);
-            const reqId = request['reqId'];
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
 
-            let resTopic = topic;
+                let resTopic = topic;
 
-            if (reqId) {
-                resTopic += reqId;
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                console.log(resTopic);
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
             }
-
-            console.log(resTopic);
-
-            client.publish(resTopic, JSON.stringify(errorMessage));
+            catch (error) {
+                console.error(error)
+            }
         } else {
             console.error('Error: ' + error.message);
-            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-            const request = JSON.parse(payload);
-            const reqId = request['reqId'];
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
 
-            let resTopic = topic;
+                let resTopic = topic;
 
-            if (reqId) {
-                resTopic += reqId;
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                console.log(resTopic);
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
             }
 
-            console.log(resTopic);
-
-            client.publish(resTopic, JSON.stringify(errorMessage));
         }
     }
 }
@@ -262,7 +309,7 @@ async function createTimeslot(topic, payload) {
             // Query the dentist
             dentist = await Dentist.findOne({ id: objTimeslot['dentist'] }).exec();
 
-            // If a dentist was provided but the id was not found
+            // If a dentist was provided but the ID was not found
             if (dentist === null) {
                 throw new Error("Dentist not found");
             }
@@ -285,7 +332,7 @@ async function createTimeslot(topic, payload) {
         await newTimeslot.save();
 
         // Success message
-        const successMessage = createCLIResponseMessage('Timeslot created!', JSON.parse(JSON.stringify(newTimeslot)));
+        const successMessage = createCLIResponseMessage(`Timeslot created for clinic ${objTimeslot['clinic']}!`, JSON.parse(JSON.stringify(newTimeslot)), HTTP_STATUS_CODES.created);
 
         console.log(successMessage);
         let resTopic = `${topic}${reqId}`
@@ -294,18 +341,23 @@ async function createTimeslot(topic, payload) {
     catch (error) {
         // Forward error here
         console.error('Error: ' + error.message);
-        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-        const request = JSON.parse(payload);
-        const reqId = request['reqId'];
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
 
-        let resTopic = topic;
+            let resTopic = topic;
 
-        if (reqId) {
-            resTopic += reqId;
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
         }
-
-        client.publish(resTopic, JSON.stringify(errorMessage));
+        catch (error) {
+            console.error(error);
+        }
     }
 }
 
@@ -357,7 +409,7 @@ async function assignDentist(topic, payload) {
             console.log(result);
 
             // Success message
-            const successMessage = createCLIResponseMessage('Dentist assigned!', JSON.parse(JSON.stringify(result)));
+            const successMessage = createCLIResponseMessage(`Dentist ${dentistId} assigned to timeslot with ID ${timeslotId}!`, JSON.parse(JSON.stringify(result)), HTTP_STATUS_CODES.ok);
 
             console.log(successMessage);
             let resTopic = `${topic}${reqId}`
@@ -403,7 +455,7 @@ async function assignDentist(topic, payload) {
             console.log(result);
 
             // Success message
-            const successMessage = createCLIResponseMessage('Dentist unassigned!', JSON.parse(JSON.stringify(result)));
+            const successMessage = createCLIResponseMessage(`Dentist unassigned from timeslot with ID ${timeslotId}!`, JSON.parse(JSON.stringify(result)), HTTP_STATUS_CODES.ok);
 
             console.log(successMessage);
             let resTopic = `${topic}${reqId}`
@@ -413,20 +465,23 @@ async function assignDentist(topic, payload) {
         // TODO: forward errors here
         console.error(`Error: ${error.message}`);
 
-        // Forward error here
-        // console.error('Error: ' + error.message);
-        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-        const request = JSON.parse(payload);
-        const reqId = request['reqId'];
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
 
-        let resTopic = topic;
+            let resTopic = topic;
 
-        if (reqId) {
-            resTopic += reqId;
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
         }
-
-        client.publish(resTopic, JSON.stringify(errorMessage));
+        catch (error) {
+            console.error(error)
+        }
     }
 }
 
@@ -488,7 +543,7 @@ async function getAllClinics(topic, payload) {
         // client.publish(returnTopic, JSON.stringify(clinics));
 
         // Success message
-        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(clinics)));
+        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(clinics)), HTTP_STATUS_CODES.ok);
 
         console.log(successMessage);
         let resTopic = `${topic}${reqId}`
@@ -498,22 +553,28 @@ async function getAllClinics(topic, payload) {
         console.error(`Error: ${error.message}`);
 
         // Forward error here
-        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-        const request = JSON.parse(payload);
-        const reqId = request['reqId'];
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
 
-        let resTopic = topic;
+            let resTopic = topic;
 
-        if (reqId) {
-            resTopic += reqId;
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error);
         }
 
-        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
-// TODO: test
+// Get all timeslots for a clinic and a dentist if requested
 async function getAllTimeslots(topic, payload) {
     console.log('Get all Timeslots for a Clinic');
 
@@ -521,64 +582,102 @@ async function getAllTimeslots(topic, payload) {
         const jsonPayload = JSON.parse(payload);
         const reqId = jsonPayload.reqId;
         const clinicId = jsonPayload.clinicId;
-        const returnTopic = topic + reqId;
-        const timeslots = await Timeslot.find({ clinic: clinicId });
-        // client.publish(returnTopic, JSON.stringify(timeslots));
+        const dentistId = jsonPayload.dentistId;
 
+        const dentist = await Dentist.findOne({ id: dentistId });
+
+        const clinic = await Clinic.findOne({ id: clinicId });
+
+        let timeslots = null;
+        
         // Success message
-        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(timeslots)));
+        let successMessage = null;
+
+        if (dentist)
+        {
+            timeslots = await Timeslot.find({ clinic: clinic._id, dentist: dentist._id });
+            successMessage = createCLIResponseMessage(`Get all timeslots for clinic ${clinicId} and dentist ${dentist.id}!`, JSON.parse(JSON.stringify(timeslots)), HTTP_STATUS_CODES.ok);
+        }
+        else {
+            timeslots = await Timeslot.find({ clinic: clinic._id });
+            successMessage = createCLIResponseMessage(`Get all timeslots for clinic ${clinicId}!`, JSON.parse(JSON.stringify(timeslots)), HTTP_STATUS_CODES.ok);
+        }
 
         console.log(successMessage);
-        let resTopic = `${topic}${reqId}`
+        let resTopic = `${topic}${reqId}`;
+
+        console.log(resTopic);
+
         client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
         // Forward error here
-        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
 
-        const request = JSON.parse(payload);
-        const reqId = request['reqId'];
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
 
-        let resTopic = topic;
+            let resTopic = topic;
 
-        if (reqId) {
-            resTopic += reqId;
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error);
         }
 
-        client.publish(resTopic, JSON.stringify(errorMessage));
     }
 }
 
-// TODO: test this too
-async function getAllTimeslotsDentist(topic, payload) {
-    console.log('Get all Timeslots for a Dentist');
-
+async function loginDentist(topic, payload) {
+    console.log("Log in dentist attempt");
     try {
         const jsonPayload = JSON.parse(payload);
-        const reqId = jsonPayload.reqId;
-        const dentistId = jsonPayload.dentistId;
-        const timeslots = await Timeslot.find({ dentist: dentistId });
-        // client.publish(returnTopic, JSON.stringify(timeslots));
+        const dentistId = jsonPayload['id'];
+        const dentistPassword = jsonPayload['password'];
+        const reqId = jsonPayload['reqId'];
 
-        // Success message
-        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(timeslots)));
-
-        console.log(successMessage);
-        let resTopic = `${topic}${reqId}`
-        client.publish(resTopic, JSON.stringify(successMessage));
-    } catch (error) {
-        // Forward error here
-        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, []);
-
-        const request = JSON.parse(payload);
-        const reqId = request['reqId'];
-
-        let resTopic = topic;
-
-        if (reqId) {
-            resTopic += reqId;
+        if (!dentistId || !dentistPassword) {
+            throw new Error('Incomplete fields');
         }
 
-        client.publish(resTopic, JSON.stringify(errorMessage));
+        const dentist = await Dentist.findOne({ id: dentistId, password: dentistPassword }).populate('clinic').exec();
+
+        if (!dentist)
+            throw new Error('Dentist not found');
+
+        // Success message
+        const successMessage = createCLIResponseLoginMessage('Dentist logged in!', JSON.parse(JSON.stringify(dentist)), HTTP_STATUS_CODES.ok, 'success');
+
+        let resTopic = `${topic}${reqId}`;
+
+        client.publish(resTopic, JSON.stringify(successMessage));
+
+    }
+    catch (error) {
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        let request = null;
+        let reqId = null;
+
+        try {
+            request = JSON.parse(payload);
+            reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        } catch (error) {
+            console.error(error);
+        }
     }
 }
 
@@ -594,7 +693,7 @@ async function createPatient(payload) {
             console.log('Patient created');
         }).catch((err) => {
             // Mongoose error code
-            if (err.code === 11000) console.error('ERROR! Patient with this id already exists | ' + err);
+            if (err.code === 11000) console.error('ERROR! Patient with this ID already exists | ' + err);
             else console.error(err);
         });
     }
