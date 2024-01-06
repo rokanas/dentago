@@ -31,9 +31,9 @@
 
 <style scoped>
 h1 {
-  font-size: 4em;
+  font-size: 3em;
   color: var(--primary-color);
-  filter: drop-shadow(1px 3px #32292F);
+  /*filter: drop-shadow(1px 3px #32292F);*/
   font-weight: 600;
 }
 .banner{
@@ -67,7 +67,7 @@ export default defineComponent ({
       center: {lat: 58.572053, lng: 14.702880},
       zoom: 7,
       clinics: [],
-      fillertext: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+      fillertext: "Say cheese! Book your dental appointment with a Dentago Partner — now all across Sweden."
     }
   },
   methods: {

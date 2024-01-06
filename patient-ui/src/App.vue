@@ -13,7 +13,9 @@ export default {
 </script>
 
 <template>
+  <div>
     <HeaderBar />
     <RouterView />
     <FooterBar />
+  </div>
 </template>

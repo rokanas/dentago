@@ -7,7 +7,12 @@
         </button>
 
         <div class="dropdown">
-            <button class="btn">
+            <button
+              class="btn dropdown-toggle"
+              id="notificationsDropdown"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
                 <span v-if="notifications.length === 0" class="material-symbols-outlined">
                     notifications
                 </span>
@@ -15,13 +20,14 @@
                     notifications_unread
                 </span>
             </button>
-            <div class="dropdown-content">
+      <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown">
+        <div class="list-group">
                 <NotificationItem v-for="notification in notifications" :key="notification._id"
                     :category="notification.category" :message="notification.message" :timeslots="notification.timeslots">
                 </NotificationItem>
             </div>
         </div>
-
+    </div>
 
         <button class="btn btn-link" @click="redirect()" data-toggle="tooltip" data-placement="bottom" title="Profile">
             <span class="material-symbols-outlined">
@@ -34,11 +40,16 @@
 
 <style scoped>
 #navbar {
-    display: flex;
-    background-color: #FFA686;
-    filter: drop-shadow(0px 2px 2px #000000);
-    justify-content: space-evenly;
-    padding: 1%;
+  display: flex;
+  box-shadow: none;
+  background-color: #ffa686;
+  justify-content: space-evenly;
+  padding: 1%;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
 }
 
 #title {
@@ -58,20 +69,29 @@
     cursor: pointer;
 }
 
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: beige;
-    min-width: 300px;
-    max-height: 300px;
-    text-overflow: clip;
-    overflow: scroll;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-    z-index: 1;
+
+.dropdown-menu {
+  background-color: beige;
+  width: 400px;
+  height: 300px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.list-group {
+  padding: 10px;
 }
 
-.dropdown:hover .dropdown-content {
-    display: block;
+.material-symbols-outlined {
+  color: black;
+  font-size: 1.8em;
+  /* Adjust the size as needed */
+  /* transition: transform 0.2s, color 0.2s; */
+}
+
+.material-symbols-outlined:hover {
+  /* transform: scale(1.2); Adjust the scale factor as needed for the pop effect */
+  color: #333;
+  /* Darker shade of black for hover effect */
 }
 </style>
 
@@ -109,18 +129,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.material-symbols-outlined {
-    color: black;
-    font-size: 1.8em;
-    /* Adjust the size as needed */
-    /* transition: transform 0.2s, color 0.2s; */
-}
-
-.material-symbols-outlined:hover {
-    /* transform: scale(1.2); Adjust the scale factor as needed for the pop effect */
-    color: #333;
-    /* Darker shade of black for hover effect */
-}
-</style>
