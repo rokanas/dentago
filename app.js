@@ -18,6 +18,9 @@ const Patient = require('./models/patient');
 const Dentist = require('./models/dentist');
 const Notification = require('./models/notification');
 
+const { createCLIResponseMessage, createCLIResponseLoginMessage, HTTP_STATUS_CODES } = require('./utils/utils');
+
+
 // Connect to MongoDB
 const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_LOCAL_URI;
 
@@ -36,50 +39,12 @@ const MQTT_TOPICS = {
     createDentist: 'dentago/dentist/creation/dentists/',
     createTimeslot: 'dentago/dentist/creation/timeslots/',
     assignDentist: 'dentago/dentist/assignment/timeslot/',
-    bookingNotification: 'dentago/booking/+/+/SUCCESS', // TODO: Check this with david
     dentistMonitor: 'dentago/monitor/dentist/ping',
     getClinics: 'dentago/dentist/clinics/',
     getTimeslots: 'dentago/dentist/timeslot/',
     loginDentist: 'dentago/dentist/login/',
-
-    // TODO: Remove this
-    testPatients: 'dentago/test/patients'
+    echo: 'dentago/monitor/dentist/echo'
 }
-
-const HTTP_STATUS_CODES = {
-    ok: 200,
-    created: 201,
-    conflict: 409,
-    badRequest: 400,
-    notFound: 404
-}
-
-// TODO: Add status for logging
-// Generalized mqtt message format for the CLI
-function createCLIResponseMessage(message, content, code) {
-    return {
-        message: message,
-        content: content,
-        status: {
-            code: code,
-            message: message,
-        }
-    };
-}
-
-function createCLIResponseLoginMessage(message, content, code, response) {
-    return {
-        message: message,
-        content: content,
-        response: response,
-        status: {
-            code: code,
-            message: message,
-        }
-    };
-}
-
-const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -130,11 +95,8 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['loginDentist']:
             loginDentist(topic, payload);
             break;
-        case MQTT_TOPICS['testPatients']:
-            createPatient(payload);
-            break;
         default:
-            handleBookingNotification(topic, payload);
+            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
             break;
     }
 });
@@ -142,6 +104,16 @@ client.on('message', (topic, payload) => {
 client.on('error', (err) => {
     console.error(err);
     process.exit(1);
+});
+
+process.on('SIGINT', () => {
+    console.log('Closing MQTT connection...');
+
+    // End MQTT connection and exit process using success codes for both
+    client.end({ reasonCode: 0x00 }, () => {
+        console.log('MQTT connection closed');
+        process.exit(0);
+    });
 });
 
 async function createClinic(topic, payload) {
@@ -202,7 +174,6 @@ async function createClinic(topic, payload) {
             catch (error) {
                 console.error(error);
             }
-
         }
     }
 }
@@ -280,7 +251,6 @@ async function createDentist(topic, payload) {
             catch (error) {
                 console.error(error);
             }
-
         }
     }
 }
@@ -317,13 +287,9 @@ async function createTimeslot(topic, payload) {
 
         let dentistId = dentist === null ? null : dentist._id; // Get the dentist_id
 
-        // TODO: DELETE AFTER TESTING | CREATE ANOTHER ENDPOINT FOR TIMESLOTS WITH PATIENTS (TESTING)
-        // let patient = await Patient.findOne({ id: objTimeslot['patient'] }).exec();
-
         const newTimeslot = new Timeslot({
             clinic: clinicId,
             dentist: dentistId,
-            // patient: patient._id,
             patient: null,
             startTime: objTimeslot['startTime'],
             endTime: objTimeslot['endTime'],
@@ -405,7 +371,6 @@ async function assignDentist(topic, payload) {
 
             const result = await timeslot.save();
 
-            // TODO: Forward success message here
             console.log(result);
 
             // Success message
@@ -451,7 +416,6 @@ async function assignDentist(topic, payload) {
 
             const result = await timeslot.save();
 
-            // TODO: Forward success message here
             console.log(result);
 
             // Success message
@@ -462,7 +426,6 @@ async function assignDentist(topic, payload) {
             client.publish(resTopic, JSON.stringify(successMessage));
         }
     } catch (error) {
-        // TODO: forward errors here
         console.error(`Error: ${error.message}`);
 
         const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
@@ -485,54 +448,14 @@ async function assignDentist(topic, payload) {
     }
 }
 
-async function handleBookingNotification(topic, payload) {
-    // TODO: Ask david how the notification works
-
-    // Forwards the request to a specific client that subscribed to their respective topic
-    try {
-        const topicArray = topic.split('/');
-
-        /**
-         * Example message: dentago/booking/+/+/SUCCESS.
-         *                     0  /   1   /   2   /  3  /    4
-         * Since the subscribed topic uses + as a wildcard,
-         * the size of the topicArray will always be correct
-         */
-
-        const clinicId = topicArray[3];
-        const status = topicArray[4];
-
-        // Check valid message
-        if (clinicId.length === 0 || status.length === 0) {
-            throw new Error('Invalid topic data');
-        }
-
-        let resTopic = `dentago/booking/${clinicId}`;
-        resTopic += status;
-
-        let instruction = JSON.parse(payload.toString())['instruction'];
-        let timeslot = JSON.parse(payload.timeslot);
-
-        const dentistNotification = { timeslot: timeslot, instruction: instruction };
-
-        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
-
-        client.publish(resTopic, dentistNotification);
-
-    } catch (error) {
-        console.log(error.message);
-    }
-}
-
 async function handlePing() {
     try {
-        client.publish(ECHO_TOPIC, `echo echo echo`);
+        client.publish(MQTT_TOPICS.echo, `echo echo echo`);
     } catch (error) {
         console.log(error.message);
     }
 }
 
-// TODO: test
 async function getAllClinics(topic, payload) {
     console.log('Get all clinics');
 
@@ -540,7 +463,6 @@ async function getAllClinics(topic, payload) {
         const clinics = await Clinic.find().exec();
         const jsonPayload = JSON.parse(payload);
         const reqId = jsonPayload.reqId;
-        // client.publish(returnTopic, JSON.stringify(clinics));
 
         // Success message
         const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(clinics)), HTTP_STATUS_CODES.ok);
@@ -549,7 +471,6 @@ async function getAllClinics(topic, payload) {
         let resTopic = `${topic}${reqId}`
         client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
-        // TODO: forward errors here
         console.error(`Error: ${error.message}`);
 
         // Forward error here
@@ -570,7 +491,6 @@ async function getAllClinics(topic, payload) {
         catch (error) {
             console.error(error);
         }
-
     }
 }
 
@@ -628,7 +548,6 @@ async function getAllTimeslots(topic, payload) {
         catch (error) {
             console.error(error);
         }
-
     }
 }
 
@@ -678,26 +597,5 @@ async function loginDentist(topic, payload) {
         } catch (error) {
             console.error(error);
         }
-    }
-}
-
-// TODO: Remove patient creation since it is just for testing
-async function createPatient(payload) {
-    console.log('Create patient');
-    // Parse the payload
-    try {
-        const objPatient = JSON.parse(payload);
-        const newPatient = new Patient(objPatient);
-
-        newPatient.save().then(() => {
-            console.log('Patient created');
-        }).catch((err) => {
-            // Mongoose error code
-            if (err.code === 11000) console.error('ERROR! Patient with this ID already exists | ' + err);
-            else console.error(err);
-        });
-    }
-    catch (error) {
-        console.log(error);
     }
 }
