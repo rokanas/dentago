@@ -103,7 +103,11 @@ export default {
                         this.$router.go()                   // Refresh the page to force a timeslot data update
                     } else {
                         alert('Booking successful!');
-                        this.$router.push(`/user/${localStorage.getItem("patientId")}`);
+                        const patientData = localStorage.getItem("patient");
+                        const parsedData = JSON.parse(patientData);
+                        const username = parsedData.username;
+
+                        this.$router.push(`/user/${username}`);
                     }
                     console.log(response);
                 }).catch(error => {

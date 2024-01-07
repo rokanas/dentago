@@ -68,6 +68,15 @@ export default {
             localStorage.setItem("access-token", res.data.AccessToken)
             localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
             localStorage.setItem("patientId", res.data.Patient._id)
+
+            // TODO: Properly store the data
+            const patientData = {
+                "username": res.data.Patient.id,
+                "firstName": res.data.Patient.firstName,
+                "lastName": res.data.Patient.lastName,
+              }
+
+              localStorage.setItem("patientData", JSON.stringify(patientData));
           }
             this.loginForm = {}
             this.$router.push('/')

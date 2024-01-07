@@ -1,6 +1,6 @@
 <template>
     <div class="m-5">
-        <h1> Welcome back, {{ username }}! </h1>
+        <h1> Welcome back, {{ firstName + ' ' + lastName }}! </h1>
 
         <!-- SUB-SECTIONS -->
         <div class="sub-sections mt-4">
@@ -73,6 +73,8 @@ export default {
     },
     data() {
         return {
+            firstName: JSON.parse(localStorage.getItem("patient")).firstName,
+            lastName: JSON.parse(localStorage.getItem("patient")).lastName,
             patientId: localStorage.getItem('patientId'),
             getNotifications: true,
             // appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'],
