@@ -23,6 +23,10 @@
                                 <h1>No appointments</h1>
                             </div>
                             <div v-else class="col m-2" v-for="(appointment, index) in appointments" :key="index">
+                                
+                                
+                                
+                                
                                 <AppointmentItem :timeslot="appointment"></AppointmentItem>
                             </div>
                         </div>

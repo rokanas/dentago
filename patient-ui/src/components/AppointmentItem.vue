@@ -1,7 +1,7 @@
 <!-- Some code was reused from https://git.chalmers.se/courses/dit342/2023/group-15-web -->
 
 <template>
-    <div>
+<div>
     <div class="card card-container" style="width: 18rem;">
         <div data-bs-toggle="modal" data-bs-target="#appointmentModal">
             <div class="card-header">
@@ -88,9 +88,8 @@ export default {
             .then(response => {
                     if (response.data.Message === 'FAILURE'){
                         alert('This appointment has already been booked by someone else.');
-                        // this.$router.go();
-                        window.location.reload();                  // Refresh the page to force a timeslot data update
                     }
+                    this.$router.go();
                     console.log(response);
                 }).catch(error => {
                     alert('Something went wrong. Please try again.');
