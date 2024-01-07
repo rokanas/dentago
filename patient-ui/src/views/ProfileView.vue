@@ -73,9 +73,9 @@ export default {
     },
     data() {
         return {
-            firstName: JSON.parse(localStorage.getItem("patient")).firstName,
-            lastName: JSON.parse(localStorage.getItem("patient")).lastName,
-            patientId: localStorage.getItem('patientId'),
+            firstName: JSON.parse(localStorage.getItem("patientData")).firstName,
+            lastName: JSON.parse(localStorage.getItem("patientData")).lastName,
+            patientId: JSON.parse(localStorage.getItem("patientData"))._id,
             getNotifications: true,
             // appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'],
             appointments: [],

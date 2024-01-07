@@ -66,20 +66,13 @@ export default {
         .then((res) => {
           if (res.status === 200){
             localStorage.setItem("access-token", res.data.AccessToken)
-            localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
-            localStorage.setItem("patientId", res.data.Patient._id)
+            // localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
+            // localStorage.setItem("patientId", res.data.Patient._id)
 
-            // TODO: Properly store the data
-            const patientData = {
-                "username": res.data.Patient.id,
-                "firstName": res.data.Patient.firstName,
-                "lastName": res.data.Patient.lastName,
-              }
-
-              localStorage.setItem("patientData", JSON.stringify(patientData));
+            localStorage.setItem("patientData", JSON.stringify(res.data.Patient));
           }
-            this.loginForm = {}
-            this.$router.push('/')
+          this.loginForm = {}
+          this.$router.push('/')
         })
         .catch((err) => {
           console.log(err)

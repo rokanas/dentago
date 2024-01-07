@@ -64,7 +64,7 @@ export default {
     },
     data() {
         return {
-            patientId: localStorage.getItem('patientId'),
+            patientId: JSON.parse(localStorage.getItem("patientData"))._id,
             timeslotData: { clinic: 'Green Hill Zone Clinic', dentist: 'Sonic The Hedgehog', time: '2005-09-23T14:00:00.000+00:00' },
             cancelBookingPressed: 0
         }

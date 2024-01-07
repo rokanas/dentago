@@ -62,7 +62,7 @@ export default {
             days: {},
             clinic: {},
             timeslots: [],
-            patientId: localStorage.getItem("patientId")
+            patientId: JSON.parse(localStorage.getItem("patientData"))._id
         }
     },
     props: {
@@ -103,9 +103,7 @@ export default {
                         this.$router.go()                   // Refresh the page to force a timeslot data update
                     } else {
                         alert('Booking successful!');
-                        const patientData = localStorage.getItem("patient");
-                        const parsedData = JSON.parse(patientData);
-                        const username = parsedData.username;
+                        const username = JSON.parse(localStorage.getItem("patientData")).id;
 
                         this.$router.push(`/user/${username}`);
                     }

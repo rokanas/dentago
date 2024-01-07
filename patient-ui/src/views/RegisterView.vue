@@ -106,14 +106,7 @@ export default {
               localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
               localStorage.setItem("patientId", res.data.Patient._id)
 
-              // TODO: Properly store the data
-              const patientData = {
-                "username": res.data.Patient.id,
-                "firstName": res.data.Patient.firstName,
-                "lastName": res.data.Patient.lastName,
-              }
-
-              localStorage.setItem("patientData", JSON.stringify(patientData));
+              localStorage.setItem("patientData", JSON.stringify(res.data.Patient));
             }
             this.registerForm = {}
             this.$router.push('/')
