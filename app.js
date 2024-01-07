@@ -2,10 +2,6 @@
  * Some of the mongodb setup was taken from https://git.chalmers.se/courses/dit342/2023/group-15-web
  */
 
-/**
- * CONSTRAINTS: THE DENTIST CLI WILL HAVE TO TAKE CARE OF THE JSON VALIDATION
- */
-
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
@@ -262,8 +258,6 @@ async function createTimeslot(topic, payload) {
         const request = JSON.parse(payload);
         const objTimeslot = request['timeslot'];
         const reqId = request['reqId'];
-
-        // const objTimeslot = JSON.parse(payload);
 
         const clinic = await Clinic.findOne({ id: objTimeslot['clinic'] }).exec();
 
