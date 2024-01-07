@@ -101,7 +101,7 @@ import NotificationItem from '@/components/NotificationItem.vue'
 export default {
     data() {
         return {
-            username: 'ratKing', // placeholder value
+            username: JSON.parse(localStorage.getItem("patientData")).id,
             // TODO: remove placeholder values
             notifications: [
                 { _id: 1, category: "CANCEL", message: "Appointment on Sunday, December 10th 2023 has been cancelled by dentist John.", timeslots: ["123rasd21dsad"] },

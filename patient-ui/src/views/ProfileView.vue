@@ -20,7 +20,7 @@
                     <div class="container text-center d-flex justify-content-center justify-content-md-start">
                         <div class="row">
                             <div class="col m-2" v-for="(appointment, index) in appointments" :key="index">
-                                <AppointmentItem :timeslotId="appointment"></AppointmentItem>
+                                <AppointmentItem :timeslot="appointment"></AppointmentItem>
                             </div>
                         </div>
                     </div>

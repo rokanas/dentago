@@ -7,8 +7,6 @@
       <p> {{ fillertext }} </p>
     </div>
     <div class="p-4">
-      <button class="btn btn-outline-primary" @click="getClinics()"> Find clinics near you </button>
-
       <!-- Google Map
         - shows all clinics at their location using markers.
         - centers on the user's location if they enable that permission, and gives a different zoom level
@@ -51,7 +49,7 @@ import BookingButton from '@/components/BookingButton.vue';
 export default defineComponent ({
   // When the page is created, it calls to get all clinics and tries to access the user's location
   created() {
-    // this.getClinics(),
+    this.getClinics(),
     this.findUserLocation()
   },
   components: {

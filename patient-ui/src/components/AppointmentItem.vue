@@ -26,7 +26,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="appointmentModalLabel"> {{ timeslotData.clinic }}</h5>
+                    <h5 class="modal-title" id="appointmentModalLabel"> {{ "FUCK YOU CLINIC" }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -65,12 +65,17 @@ export default {
     data() {
         return {
             patientId: JSON.parse(localStorage.getItem("patientData"))._id,
-            timeslotData: { clinic: 'Green Hill Zone Clinic', dentist: 'Sonic The Hedgehog', time: '2005-09-23T14:00:00.000+00:00' },
+            timeslotData: {
+                clinic: this.timeslot.clinic.name,
+                dentist: this.timeslot.dentist.name,
+                time: this.timeslot.startTime
+            },
             cancelBookingPressed: 0
         }
     },
     methods: {
         formatDateTime(dateTimeString) {
+            console.log(dateTimeString);
             const options = { month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
             const dateTime = new Date(dateTimeString);
             return dateTime.toLocaleString('en-US', options);
