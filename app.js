@@ -109,13 +109,8 @@ client.on('message', async (topic, message) => {
                 }
 
                 // Set the time ranges for DB query
-                const startDate = (payload.startDate) ? new Date(payload.startDate) : new Date();   // Set start search range to payload specified or current time
-                const endDate = (payload.endDate) ? new Date(payload.endDate) : new Date();         // Set end search range to payload specified or default range
-                
-                if (!payload.endDate) {                                             // If no endDate is specified in message payload
-                    endDate.setDate(startDate.getDate() + DEFAULT_RANGE_DAYS);      // Default range of 1 week
-                    endDate.setHours(0, 0, 0, 0);                                   // Reset hours to ensure query doesn't return Timeslots in a range of 8 date days
-                }
+                const startDate = new Date(payload.startDate);
+                const endDate = new Date(payload.endDate);
 
                 // Check if any of the provided dates are invalid
                 if (isNaN(startDate) || isNaN(endDate) || startDate >= endDate) {
@@ -186,13 +181,8 @@ client.on('message', async (topic, message) => {
                 }
 
                 // Set the time ranges for DB query
-                const startDate = (payload.startDate) ? new Date(payload.startDate) : new Date();   // Set start search range to payload specified or current time
-                const endDate = (payload.endDate) ? new Date(payload.endDate) : new Date();         // Set end search range to payload specified or default range
-                
-                if (!payload.endDate) {                                             // If no endDate is specified in message payload
-                    endDate.setDate(startDate.getDate() + DEFAULT_RANGE_DAYS);      // Default range of 1 week
-                    endDate.setHours(0, 0, 0, 0);                                   // Reset hours to ensure query doesn't return Timeslots in a range of 8 date days
-                }
+                const startDate = new Date(payload.startDate);
+                const endDate = new Date(payload.endDate);
 
                 // Check if any of the provided dates are invalid
                 if (isNaN(startDate) || isNaN(endDate) || startDate >= endDate) {
