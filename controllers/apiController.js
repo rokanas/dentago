@@ -67,6 +67,30 @@ router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
     }
 });
 
+// update patient info
+router.patch('/patients/:patient_id', async (req, res) => {
+    try {
+        // extract id from request parameters
+        const patientId = req.params.patient_id;
+
+        // find and patch patient with new info
+        const updatedPatient = await Patient.findOneAndUpdate(
+            { _id: patientId },
+            { $set: req.body },
+            { new: true });
+
+        // if patient is not found
+        if (!updatedPatient) {
+            return res.status(404).json({ Error: 'Patient not found' });
+        }
+ 
+        res.status(200).json({Message: 'Patient details updated successfully', Patient: updatedPatient});              // request successful
+
+    } catch (err) {
+        res.status(500).json({Error: err.message}); // internal server error
+    }
+});
+
 /*====================  ROUTE HANDLERS  ==================== */
 /*================  PATIENTS (TESTING ONLY)  =============== */
 

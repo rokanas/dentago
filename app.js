@@ -12,9 +12,9 @@ const app = express();
 const proxy = httpProxy.createProxyServer();
 
 const apiInstances = [];
-let nextInstance = 3001;
+let nextInstance = Number(port) + 1;
 
-const minServer = process.env.MIN_SEREVR;
+const minServer = process.env.MIN_SERVER;
 const maxServer = process.env.MAX_SERVER;
 
 for(let i = 0; i < maxServer; i++) {
@@ -23,11 +23,11 @@ for(let i = 0; i < maxServer; i++) {
   apiInstances.push(apiInstance);
 
   apiInstance.stdout.on('data', (data) => {
-    console.log(`API Server ${i + 1} stdout: ${data.toString()}`);
+    console.log(`API Server ${i + 1}: ${data.toString()}`);
   });
 
   apiInstance.stderr.on('data', (data) => {
-    console.error(`API Server ${i + 1} stderr: ${data.toString()}`);
+    console.error(`API Server ${i + 1}: ${data.toString()}`);
   });
 };
 
@@ -51,7 +51,7 @@ process.on('SIGINT', () => {
 });
 
 function iterateInstance() {
-  nextInstance = nextInstance >= 3008  ? 3001 : nextInstance + 1;
+  nextInstance = nextInstance >= (Number(port)) + (Number(maxServer))  ? 3001 : nextInstance + 1;
 }
 
 module.exports = app;
