@@ -88,7 +88,8 @@ export default {
             .then(response => {
                     if (response.data.Message === 'FAILURE'){
                         alert('This appointment has already been booked by someone else.');
-                        this.$router.go()                   // Refresh the page to force a timeslot data update
+                        // this.$router.go();
+                        window.location.reload();                  // Refresh the page to force a timeslot data update
                     }
                     console.log(response);
                 }).catch(error => {

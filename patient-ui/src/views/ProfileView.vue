@@ -19,7 +19,10 @@
                     aria-labelledby="nav-appointments-tab" tabindex="0">
                     <div class="container text-center d-flex justify-content-center justify-content-md-start">
                         <div class="row">
-                            <div class="col m-2" v-for="(appointment, index) in appointments" :key="index">
+                            <div v-if="appointments.length == 0">
+                                <h1>No appointments</h1>
+                            </div>
+                            <div v-else class="col m-2" v-for="(appointment, index) in appointments" :key="index">
                                 <AppointmentItem :timeslot="appointment"></AppointmentItem>
                             </div>
                         </div>
