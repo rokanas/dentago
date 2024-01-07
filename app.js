@@ -5,14 +5,20 @@
 // Dependencies
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
-const Clinic = require('./models/clinic');
-const Timeslot = require('./models/timeslot');
+
 require('dotenv').config();
 
-const { createClinic, createDentist, createTimeslot, assignDentist } = require('./utils/entityManager');
+const Clinic = require('./models/clinic');
+const Timeslot = require('./models/timeslot');
+const Patient = require('./models/patient');
+const Dentist = require('./models/dentist');
+const Notification = require('./models/notification');
+
+const { createCLIResponseMessage, createCLIResponseLoginMessage, HTTP_STATUS_CODES } = require('./utils/utils');
+
 
 // Connect to MongoDB
-const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/DentagoTestDB';
+const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_LOCAL_URI;
 
 mongoose.connect(mongoURI).then(() => {
     console.log(`Connected to MongoDB!\n`);
@@ -25,17 +31,16 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT
 // TODO: define QOS here
 const MQTT_TOPICS = {
-    createClinic: 'dentago/dentist/creation/clinics',
-    createDentist: 'dentago/dentist/creation/dentists',
-    createTimeslot: 'dentago/dentist/creation/timeslot',
-    assignDentist: 'dentago/dentist/assignment/timeslot',
-    bookingNotification: 'dentago/booking/+/+/SUCCESS', //+reqId/+clinicId/+status
+    createClinic: 'dentago/dentist/creation/clinics/',
+    createDentist: 'dentago/dentist/creation/dentists/',
+    createTimeslot: 'dentago/dentist/creation/timeslots/',
+    assignDentist: 'dentago/dentist/assignment/timeslot/',
     dentistMonitor: 'dentago/monitor/dentist/ping',
     getClinics: 'dentago/dentist/clinics/',
-    getTimeslots: 'dentago/dentist/timeslot/'
+    getTimeslots: 'dentago/dentist/timeslot/',
+    loginDentist: 'dentago/dentist/login/',
+    echo: 'dentago/monitor/dentist/echo'
 }
-
-const ECHO_TOPIC = 'dentago/monitor/dentist/echo';
 
 const MQTT_OPTIONS = {
     // Placeholder to add options in the future
@@ -63,19 +68,19 @@ client.on('message', (topic, payload) => {
 
     switch (topic) {
         case MQTT_TOPICS['createClinic']:
-            createClinic(payload);
+            createClinic(topic, payload);
             break;
         case MQTT_TOPICS['createDentist']:
-            createDentist(payload);
+            createDentist(topic, payload);
             break;
         case MQTT_TOPICS['createTimeslot']:
-            createTimeslot(payload);
+            createTimeslot(topic, payload);
             break;
         case MQTT_TOPICS['assignDentist']:
-            assignDentist(payload);
+            assignDentist(topic, payload);
             break;
         case MQTT_TOPICS['dentistMonitor']:
-            handlePing(topic);
+            handlePing();
             break;
         case MQTT_TOPICS['getClinics']:
             getAllClinics(topic, payload);
@@ -83,8 +88,11 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['getTimeslots']:
             getAllTimeslots(topic, payload);
             break;
+        case MQTT_TOPICS['loginDentist']:
+            loginDentist(topic, payload);
+            break;
         default:
-            handleBookingNotification(topic, payload);
+            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
             break;
     }
 });
@@ -94,78 +102,494 @@ client.on('error', (err) => {
     process.exit(1);
 });
 
-async function handleBookingNotification(topic, payload) {
+process.on('SIGINT', () => {
+    console.log('Closing MQTT connection...');
 
-    // Forwards the request to a specific client that subscribed to their respective topic
+    // End MQTT connection and exit process using success codes for both
+    client.end({ reasonCode: 0x00 }, () => {
+        console.log('MQTT connection closed');
+        process.exit(0);
+    });
+});
+
+async function createClinic(topic, payload) {
     try {
-        const topicArray = topic.split('/');
+        const request = JSON.parse(payload);
+        const objClinic = request['clinic'];
+        const reqId = request['reqId'];
 
-        /**
-         * Example message: dentago/booking/reqId/clinicId/approved.
-         *                     0  /   1   /   2   /  3  /    4
-         * Since the subscribed topic uses + as a wildcard,
-         * the size of the topicArray will always be correct
-         */
+        const newClinic = new Clinic(objClinic);
 
-        const clinicId = topicArray[3];
-        const status = topicArray[4];
+        await newClinic.save();
 
-        // Check valid message
-        if (clinicId.length === 0 || status.length === 0) {
-            throw new Error('Invalid topic data');
+        // Success message
+        const successMessage = createCLIResponseMessage(`Clinic created with ID ${objClinic.id}!`, JSON.parse(JSON.stringify(newClinic)), HTTP_STATUS_CODES.created);
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
+    }
+    catch (error) {
+        // TODO: I don't like handling parsing in the catch block but I can't think of any other choice
+        if (error.code === 11000) {
+            console.error('Error: Clinic with this ID already exists');
+            const errorMessage = createCLIResponseMessage('Error: Clinic with this ID already exists', [], HTTP_STATUS_CODES.conflict);
+
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
+
+                let resTopic = topic;
+
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
+            }
+
+        } else {
+            console.error('Error: ' + error.message);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
+
+                let resTopic = topic;
+
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
+    }
+}
+
+async function createDentist(topic, payload) {
+    // Parse the payload
+    try {
+        const request = JSON.parse(payload);
+        const objDentist = request['dentist'];
+        const reqId = request['reqId'];
+
+        // Find object ID
+        const clinic = await Clinic.findOne({ id: objDentist['clinic'] }).exec();
+
+        if (clinic === null) {
+            throw new Error('Clinic not found');
         }
 
-        let resTopic = `dentago/booking/${clinicId}`;
-        resTopic += status;
-        
-        let instruction = JSON.parse(payload.toString())['instruction'];
-        let timeslot = JSON.parse(payload.timeslot);
-        
-        const dentistNotification = { timeslot: timeslot, instruction: instruction };
+        const newDentist = new Dentist({
+            id: objDentist['id'],
+            name: objDentist['name'],
+            password: objDentist['password'],
+            clinic: clinic._id,
+        });
 
-        console.log(`Send booking notification for clinic: ${clinicId} with status: ${status} | ${instruction}`);
+        await newDentist.save();
 
-        client.publish(resTopic, dentistNotification);
+        // Success message
+        const successMessage = createCLIResponseMessage(`Dentist created with ID ${newDentist.id}!`, JSON.parse(JSON.stringify(newDentist)), HTTP_STATUS_CODES.created);
 
-    } catch (error) {
-        console.log(error);
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
+    }
+    catch (error) {
+        if (error.code === 11000) {
+            console.error('Error: Dentist with this ID already exists');
+            const errorMessage = createCLIResponseMessage('Error: Dentist with this ID already exists', [], HTTP_STATUS_CODES.conflict);
+
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
+
+                let resTopic = topic;
+
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                console.log(resTopic);
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error)
+            }
+        } else {
+            console.error('Error: ' + error.message);
+            const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+            try {
+                const request = JSON.parse(payload);
+                const reqId = request['reqId'];
+
+                let resTopic = topic;
+
+                if (reqId) {
+                    resTopic += reqId;
+                }
+
+                console.log(resTopic);
+
+                client.publish(resTopic, JSON.stringify(errorMessage));
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
     }
 }
 
-async function handlePing(topic) {
+async function createTimeslot(topic, payload) {
+
+    // Parse the payload
     try {
-        // TODO: Make this a variable maybe
-        client.publish(ECHO_TOPIC, `echo echo echo`);
-    } catch (error) {
-        console.log(error);
+        const request = JSON.parse(payload);
+        const objTimeslot = request['timeslot'];
+        const reqId = request['reqId'];
+
+        const clinic = await Clinic.findOne({ id: objTimeslot['clinic'] }).exec();
+
+        if (clinic === null) {
+            throw new Error("Clinic not found");
+        }
+
+        let clinicId = clinic._id;
+
+        // If a dentist is provided
+        let dentist = null;
+        if (objTimeslot['dentist'] != null) {
+            // Query the dentist
+            dentist = await Dentist.findOne({ id: objTimeslot['dentist'] }).exec();
+
+            // If a dentist was provided but the ID was not found
+            if (dentist === null) {
+                throw new Error("Dentist not found");
+            }
+        }
+
+        let dentistId = dentist === null ? null : dentist._id; // Get the dentist_id
+
+        const newTimeslot = new Timeslot({
+            clinic: clinicId,
+            dentist: dentistId,
+            patient: null,
+            startTime: objTimeslot['startTime'],
+            endTime: objTimeslot['endTime'],
+        });
+
+        await newTimeslot.save();
+
+        // Success message
+        const successMessage = createCLIResponseMessage(`Timeslot created for clinic ${objTimeslot['clinic']}!`, JSON.parse(JSON.stringify(newTimeslot)), HTTP_STATUS_CODES.created);
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
+    }
+    catch (error) {
+        // Forward error here
+        console.error('Error: ' + error.message);
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 }
 
-async function getAllClinics(topic, message) {
+async function assignDentist(topic, payload) {
+    console.log('assign dentist');
+    try {
+        const objPayload = JSON.parse(payload);
+
+        const reqId = objPayload['reqId'];
+        const objTimeslot = objPayload['timeslotUpdate'];
+
+        const timeslotId = objTimeslot.timeslot;
+        const dentistId = objTimeslot.dentist;
+
+        let dentistObjId = null;
+
+        // Check timeslot has a proper mongo_id
+        if (timeslotId.length !== 24)
+            throw new Error('Invalid timeslot format');
+
+        // Find the timeslot
+        const timeslot = await Timeslot.findById(timeslotId).exec();
+
+        if (!timeslot)
+            throw new Error('Timeslot not found');
+
+
+        // If a dentist is provided, assign the slot
+        if (dentistId !== null) {
+            // console.log('ASSIGN APPOINTMENT');
+
+            if (timeslot.dentist !== null)
+                throw new Error('Timeslot already assigned');
+
+            // Find the dentist
+            const dentist = await Dentist.findOne({ id: dentistId }).exec();
+
+            if (!dentist)
+                throw new Error('Dentist not found');
+
+            // Update the timeslot with the found dentist
+            dentistObjId = dentist['_id'];
+
+            timeslot.dentist = dentistObjId;
+
+            const result = await timeslot.save();
+
+            console.log(result);
+
+            // Success message
+            const successMessage = createCLIResponseMessage(`Dentist ${dentistId} assigned to timeslot with ID ${timeslotId}!`, JSON.parse(JSON.stringify(result)), HTTP_STATUS_CODES.ok);
+
+            console.log(successMessage);
+            let resTopic = `${topic}${reqId}`
+            client.publish(resTopic, JSON.stringify(successMessage));
+        }
+        // Otherwise, cancel the slot
+        else {
+            /**
+             * When canceling an appointment,
+             * if there is a patient assigned, the patient is removed
+             * and a notification is forwarded to the client API.
+            */
+            // console.log('CANCEL APPOINTMENT');
+
+            if (timeslot.dentist === null)
+                throw new Error('Timeslot already unassigned');
+
+            // Unassign the dentist
+            timeslot.dentist = null;
+
+            // If there is a patient assigned to it, remove it
+            let patient_id = timeslot.patient;
+
+            if (patient_id != null) {
+                timeslot.patient = null;
+
+                const patient = await Patient.findById(patient_id).exec();
+                let resTopic = `dentago/notifications/${patient.id}`;
+
+                // Forward cancel notification
+                const newNotification = new Notification({
+                    category: 'CANCEL',
+                    message: 'Sorry, your appointment was cancelled :(',
+                    timeslots: timeslotId,
+                });
+
+                client.publish(resTopic, JSON.stringify(newNotification));
+            }
+
+            const result = await timeslot.save();
+
+            console.log(result);
+
+            // Success message
+            const successMessage = createCLIResponseMessage(`Dentist unassigned from timeslot with ID ${timeslotId}!`, JSON.parse(JSON.stringify(result)), HTTP_STATUS_CODES.ok);
+
+            console.log(successMessage);
+            let resTopic = `${topic}${reqId}`
+            client.publish(resTopic, JSON.stringify(successMessage));
+        }
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error)
+        }
+    }
+}
+
+async function handlePing() {
+    try {
+        client.publish(MQTT_TOPICS.echo, `echo echo echo`);
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+async function getAllClinics(topic, payload) {
     console.log('Get all clinics');
 
     try {
         const clinics = await Clinic.find().exec();
-        const payload = JSON.parse(message);
-        const reqId = payload.reqId;
-        const returnTopic = topic + reqId;
-        client.publish(returnTopic, JSON.stringify(clinics))
+        const jsonPayload = JSON.parse(payload);
+        const reqId = jsonPayload.reqId;
+
+        // Success message
+        const successMessage = createCLIResponseMessage('Get all clinics!', JSON.parse(JSON.stringify(clinics)), HTTP_STATUS_CODES.ok);
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`
+        client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
-        console.log(error);
+        console.error(`Error: ${error.message}`);
+
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 }
 
-async function getAllTimeslots(topic, message) {
+// Get all timeslots for a clinic and a dentist if requested
+async function getAllTimeslots(topic, payload) {
     console.log('Get all Timeslots for a Clinic');
 
     try {
-        const payload = JSON.parse(message);
-        const reqId = payload.reqId;
-        const clinicId = payload.clinicId;
-        const returnTopic = topic + reqId;
-        const timeslots = await Timeslot.find( {clinic: clinicId} );
-        client.publish(returnTopic, JSON.stringify(timeslots));
+        const jsonPayload = JSON.parse(payload);
+        const reqId = jsonPayload.reqId;
+        const clinicId = jsonPayload.clinicId;
+        const dentistId = jsonPayload.dentistId;
+
+        const dentist = await Dentist.findOne({ id: dentistId });
+
+        const clinic = await Clinic.findOne({ id: clinicId });
+
+        let timeslots = null;
+        
+        // Success message
+        let successMessage = null;
+
+        if (dentist)
+        {
+            timeslots = await Timeslot.find({ clinic: clinic._id, dentist: dentist._id });
+            successMessage = createCLIResponseMessage(`Get all timeslots for clinic ${clinicId} and dentist ${dentist.id}!`, JSON.parse(JSON.stringify(timeslots)), HTTP_STATUS_CODES.ok);
+        }
+        else {
+            timeslots = await Timeslot.find({ clinic: clinic._id });
+            successMessage = createCLIResponseMessage(`Get all timeslots for clinic ${clinicId}!`, JSON.parse(JSON.stringify(timeslots)), HTTP_STATUS_CODES.ok);
+        }
+
+        console.log(successMessage);
+        let resTopic = `${topic}${reqId}`;
+
+        console.log(resTopic);
+
+        client.publish(resTopic, JSON.stringify(successMessage));
     } catch (error) {
-        console.log(error);
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        try {
+            const request = JSON.parse(payload);
+            const reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+}
+
+async function loginDentist(topic, payload) {
+    console.log("Log in dentist attempt");
+    try {
+        const jsonPayload = JSON.parse(payload);
+        const dentistId = jsonPayload['id'];
+        const dentistPassword = jsonPayload['password'];
+        const reqId = jsonPayload['reqId'];
+
+        if (!dentistId || !dentistPassword) {
+            throw new Error('Incomplete fields');
+        }
+
+        const dentist = await Dentist.findOne({ id: dentistId, password: dentistPassword }).populate('clinic').exec();
+
+        if (!dentist)
+            throw new Error('Dentist not found');
+
+        // Success message
+        const successMessage = createCLIResponseLoginMessage('Dentist logged in!', JSON.parse(JSON.stringify(dentist)), HTTP_STATUS_CODES.ok, 'success');
+
+        let resTopic = `${topic}${reqId}`;
+
+        client.publish(resTopic, JSON.stringify(successMessage));
+
+    }
+    catch (error) {
+        // Forward error here
+        const errorMessage = createCLIResponseMessage(`Error: ${error.message}`, [], HTTP_STATUS_CODES.badRequest);
+
+        let request = null;
+        let reqId = null;
+
+        try {
+            request = JSON.parse(payload);
+            reqId = request['reqId'];
+
+            let resTopic = topic;
+
+            if (reqId) {
+                resTopic += reqId;
+            }
+
+            client.publish(resTopic, JSON.stringify(errorMessage));
+        } catch (error) {
+            console.error(error);
+        }
     }
 }

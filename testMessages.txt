@@ -1,25 +1,82 @@
 Test messages for the MQTT CLI
 
-mqtt pub -t dentago/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"greenHillZoneClinic\", \"name\": \"Green Hill Zone Clinic\", \"address\": \"Green Hill Street 123\", \"location\": {\"lat\": 3.0, \"lng\": 3.0}}'
-mqtt pub -t dentago/creation/clinics -h test.mosquitto.org -m '{ \"id\": \"crisisCityClinic\", \"name\": \"Crisis City Clinic\", \"address\": \"Crisis Street 456\", \"location\": {\"lat\": 69.0, \"lng\": 42.0}}'
+// CLINIC WITH NO OPENING HOURS
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}}'
 
-mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"id\": \"sonicDentist\", \"name\": \"Sonic The Hedgehog\", \"clinic\": \"greenHillZoneClinic\"}'
-mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"id\": \"tailsDentist\", \"name\": \"Miles "Tails" Prower\", \"clinic\": \"greenHillZoneClinic\"}'
-mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"id\": \"shadowDentist\", \"name\": \"Shadow The Hedgehog\", \"clinic\": \"crisisCityClinic\"}'
-mqtt pub -t dentago/creation/dentists -h test.mosquitto.org -m '{ \"id\": \"leonardoDentist\", \"name\": \"Leonardo The Turtle\", \"clinic\": \"crisisCityClinic\"}'
+// CLINIC WITH THE SAME ID
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic\", \"name\": \"Test Clinic\", \"address\": \"Test Street 123\", \"location\": {\"lat\": 0.0, \"lng\": 0.0}}}'
 
-mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"clinic\": \"crisisCityClinic\", \"startTime\": \"2023-11-28T12:34:56Z\", \"endTime\": \"2023-11-28T12:34:56Z\"}'
-mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"clinic\": \"greenHillZoneClinic\", \"startTime\": \"2023-11-28T12:34:56Z\", \"endTime\": \"2023-11-28T12:34:56Z\"}'
-mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"dentist\": \"sonicDentist\", \"clinic\": \"greenHillZoneClinic\", \"startTime\": \"2023-11-28T12:34:56Z\", \"endTime\": \"2023-11-28T12:34:56Z\"}'
-mqtt pub -t dentago/creation/timeslot -h test.mosquitto.org -m '{ \"clinic\": \"demonClinic\", \"startTime\": \"2005-11-28T12:34:56Z\", \"endTime\": \"2005-12-28T11:00:00Z\"}'
+// CLINIC WITH WRONG COORDINATES
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 420.69, \"lng\": 690.420}}}'
 
+// CLINIC WITH WRONG OPENING HOURS
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.230}, \"hours\": [-12, 58]}}'
+
+// CLINIC WITH VALID OPENING HOURS AND LOCATION
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\", \"name\": \"Test Clinic 2\", \"address\": \"Test Street 124\", \"location\": {\"lat\": 23.3123, \"lng\": 23.230}, \"hours\": [0, 23]}}'
+
+// CLINIC WITH MISSING DATA
+mqtt pub -t dentago/dentist/creation/clinics/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"clinic\": {\"id\": \"testClinic2\"}}'
+
+
+// DENTIST
+mqtt pub -t dentago/dentist/creation/dentists/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"dentist\": {\"id\": \"testDentist\", \"name\": \"Test the Dentist\", \"password\": \"123test\", \"clinic\": \"testClinic\"}}'
+
+// DENTIST WITH THE SAME ID
+mqtt pub -t dentago/dentist/creation/dentists/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"dentist\": {\"id\": \"testDentist\", \"name\": \"Test the Dentist\", \"password\": \"123test\", \"clinic\": \"testClinic\"}}'
+
+// DENTIST WITH MISSING DATA
+mqtt pub -t dentago/dentist/creation/dentists/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"dentist\": {}}'
+
+
+// TIMESLOT WITH A DENTIST
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"dentist\": \"testDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
+// TIMESLOT WITH PATIENT (ONLY TEST)
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"patient\": \"99\", \"dentist\": \"testDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
+// TIMESLOT WITH A WRONG DENTIST
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"dentist\": \"wrongDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
+// TIMESLOT WITH A WRONG CLINIC
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"wrongClinic\", \"dentist\": \"wrongDentist\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
+// TIMESLOT WITH NO DENTIST
+mqtt pub -t dentago/dentist/creation/timeslots/ -h test.mosquitto.org -m '{ \"reqId\": \"123\", \"timeslot\": {\"clinic\": \"testClinic\", \"startTime\": \"2024-01-03T08:00:00Z\", \"endTime\": \"2024-01-01T10:00:00Z\"}}'
+
+
+// TIMESLOT ASSIGNMENT + NOTIFICATIONS
+mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"65805c7c99d295eb1305e354\", \"dentist\": \"testDentist\"}'
+
+// TIMESLOT CANCEL + NOTIFICATIONS (Look for timeslot id)
+mqtt pub -t dentago/dentist/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"658067ed38b1247ceeb2d93a\", \"dentist\": null}'
+
+
+// BOOKING NOTIFICATIONS
+mqtt pub -t dentago/booking/request123/testClinic/SUCCESS -h test.mosquitto.org -m '{\"timeslot\": \"657efbbed34f74e0150e0bba\", \"instructions\": \"BOOK\"}'
+
+
+// PING
+mqtt pub -t dentago/monitor/dentist/ping -h test.mosquitto.org -m 'shrek'
+
+
+// GET ALL CLINICS
+mqtt pub -t dentago/dentist/clinics/ -h test.mosquitto.org -m '{\"reqId\": \"req123\"}'
+
+// GET ALL CLINICS SYNTAX ERROR
+mqtt pub -t dentago/dentist/clinics/ -h test.mosquitto.org -m '{sdas}'
+
+
+// GET ALL TIMESLOTS FOR A CLINIC
+mqtt pub -t dentago/dentist/timeslot/ -h test.mosquitto.org -m '{\"reqId\": \"req123\", \"clinicId\": \"65805c5299d295eb1305e342\"}'
+// GET ALL TIMESLOTS FOR A CLINIC NOT FOUND
+mqtt pub -t dentago/dentist/timeslot/ -h test.mosquitto.org -m '{\"reqId\": \"req123\", \"clinicId\": \"657f0956f490df985be0da0f\"}'
+
+
+// PATIENT
 mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"656f05e335ed5bbd1bfeb0f7\", \"dentist\": \"sonicDentist\"}'
 mqtt pub -t dentago/assignment/timeslot -h test.mosquitto.org -m '{\"timeslot\": \"656f060a35ed5bbd1bfeb0ff\", \"dentist\": null}'
 
-mqtt pub -t dentago/booking/clinic1/user1/approved -h test.mosquitto.org -m 'test'
-mqtt sub -t dentago/booking/clinic1/+ -h test.mosquitto.org
-mqtt sub -t dentago/+ -h test.mosquitto.org
 
 
-mqtt pub -t dentago/availability/ -h test.mosquitto.org -m '{\"reqID\": \"request123\", \"clinicID\": [\"crisisCityClinic\", \"greenHillZoneClinic\"]}'
-
+For testing I could use these messages and compare the results
