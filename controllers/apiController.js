@@ -68,7 +68,7 @@ router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
 });
 
 // update patient info
-router.patch('/patients/:patient_id', async (req, res) => {
+router.patch('/patients/:patient_id', authenticateToken, async (req, res) => {
     try {
         // extract id from request parameters
         const patientId = req.params.patient_id;
