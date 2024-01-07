@@ -1,9 +1,6 @@
 <template>
     <div class="m-5">
         <h1> Welcome back, {{ username }}! </h1>
-        <div class="user-info-container p-3">
-            <UserInfoItem :userInfo="userInfo"></UserInfoItem>
-        </div>
 
         <!-- SUB-SECTIONS -->
         <div class="sub-sections mt-4">
@@ -22,7 +19,7 @@
                     aria-labelledby="nav-appointments-tab" tabindex="0">
                     <div class="container text-center d-flex justify-content-center justify-content-md-start">
                         <div class="row">
-                            <div class="col m-2" v-for="(appointment, index) in userInfo['appointments']" :key="index">
+                            <div class="col m-2" v-for="(appointment, index) in appointments" :key="index">
                                 <AppointmentItem :timeslotId="appointment"></AppointmentItem>
                             </div>
                         </div>
@@ -48,7 +45,7 @@
 
                             <div class="row justify-content-end">
                                 <div class="col">
-                                    <button class="btn btn-primary m-2">Update preferences</button>
+                                    <button class="btn btn-primary m-2" @click="updatePreferences">Update preferences</button>
                                     <input type="checkbox" id="checkbox" v-model="getNotifications" />
                                     <label for="checkbox"> Notify Me </label>
 
@@ -56,7 +53,6 @@
                                 </div>
                             </div>
                         </div>
-                        {{ preferredTimeWindow }}
                     </div>
                 </div>
             </div>
@@ -65,21 +61,22 @@
 </template>
 
 <script>
+import { Api } from '@/Api.js'
 import AppointmentItem from '@/components/AppointmentItem.vue';
-import UserInfoItem from '@/components/UserInfoItem.vue';
 
 export default {
     components: {
-        AppointmentItem,
-        UserInfoItem
+        AppointmentItem
     },
     props: {
         username: String
     },
     data() {
         return {
+            patientId: localStorage.getItem('patientId'),
             getNotifications: true,
-            userInfo: { firstName: 'Sapo', lastName: 'Reqlo', contactInfo: '+46694203255', appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'] },
+            // appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'],
+            appointments: [],
             availableTimes: [
                 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
             ],
@@ -94,6 +91,9 @@ export default {
             }
         };
     },
+    created() {
+        this.getAppointments()
+    },
     methods: {
         sortPreferredTimes(day) {
             this.preferredTimeWindow[day].sort();
@@ -104,6 +104,27 @@ export default {
              * For example 8 -> 08:00 while 10 -> 10:00
              */
             return `${time < 10 ? `0${time}` : time}:00`;
+        },
+        getAppointments(){
+            Api.get('/patients/' + this.patientId + '/timeslots', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+             .then((res) => {
+                this.appointments = res.data.Timeslots;
+             })
+             .catch((err) => {
+                console.log(err)
+             })
+        },
+        updatePreferences(){
+            Api.patch('/patients/' + this.patientId + '/preferences',
+                {preferredTimeWindow: this.preferredTimeWindow},
+                {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+             .then((res) => {
+                console.log(res)
+                alert('success!')
+             })
+             .catch((err) => {
+                console.log(err)
+             })
         }
     }
 }

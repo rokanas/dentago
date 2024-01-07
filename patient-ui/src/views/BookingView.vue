@@ -1,7 +1,5 @@
 <template>
     <div>
-        <HeaderBar></HeaderBar>
-
         <h1> {{ clinic.name }}</h1>
 
         <p> <b>Address:</b> {{ clinic.address }} </p>
@@ -26,8 +24,7 @@
                         <p v-else>
                             {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }} - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}
                         </p>
-                        <!-- TODO: move cancel button to profile page -->
-                        <button v-if="appt['patient'] !== null" @click="book(appt['_id'])"> Book </button>
+                        <button v-if="appt['patient'] === null" @click="book(appt['_id'], patientId)"> Book </button>
                         <p v-else> <i> Unavailable </i> </p>
                     </td> 
                 </tr>
@@ -59,18 +56,15 @@ td {
 
 <script>
 import { Api } from '@/Api.js';
-import HeaderBar from '@/components/HeaderBar.vue'
 
 export default {
     data() {
         return {
             days: {},
             clinic: {},
-            timeslots: []
+            timeslots: [],
+            patientId: localStorage.getItem("patientId")
         }
-    },
-    components: {
-        HeaderBar
     },
     props: {
         clinicId: String
@@ -82,7 +76,7 @@ export default {
     },
     methods: {
         getClinic() {
-            Api.get('/clinics/' + this.clinicId)
+            Api.get('/clinics/' + this.clinicId, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
                 .then(response => {
                     this.clinic = response.data;
                 }).catch(error => {
@@ -90,7 +84,8 @@ export default {
                 })
         },
         getTimeSlots(){
-            Api.get('/clinics/' + this.clinicId + '/timeslots')
+            // add sorting filtering
+            Api.get('/clinics/65805c5299d295eb1305e342/timeslots?startDate=2023-12-26&endDate=2023-12-27', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
             .then(response => {
                     this.timeslots = response.data.Timeslots;
                     this.organizeAppointments();
@@ -102,7 +97,7 @@ export default {
             Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
                 instruction: 'BOOK',
                 patient_id: patientId
-            })
+            }, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
             .then(response => {
                     if (response.data.Message === 'FAILURE'){
                         alert('This appointment has already been booked by someone else.');

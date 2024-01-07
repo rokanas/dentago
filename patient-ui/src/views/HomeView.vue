@@ -72,7 +72,7 @@ export default defineComponent ({
   },
   methods: {
     async getClinics() {
-            Api.get('/clinics')
+            Api.get('/clinics', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
         .then(response => {
           for(let i=0; i<response.data.length; i++){
             this.clinics.push(response.data[i]);

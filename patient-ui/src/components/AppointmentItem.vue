@@ -1,6 +1,7 @@
 <!-- Some code was reused from https://git.chalmers.se/courses/dit342/2023/group-15-web -->
 
 <template>
+    <div>
     <div class="card card-container" style="width: 18rem;">
         <div data-bs-toggle="modal" data-bs-target="#appointmentModal">
             <div class="card-header">
@@ -12,7 +13,7 @@
         <div class="card-body">
             <!-- <a href="#" class="card-link">{{ 'Dentist: ' + timeslotData.dentist }}</a> -->
             <button class="btn btn-outline-tertiary">
-                {{ timeslotData.dentist}}
+                {{ timeslotData.dentist }}
             </button>
         </div>
         <div class="card-footer">
@@ -36,14 +37,16 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button v-if="cancelBookingPressed == 0" type="button" class="btn btn-danger" @click="handleButtonCancel">Cancel Booking</button>
-                    <button v-if="cancelBookingPressed == 1" type="button" class="btn btn-danger" @click="confirmCancellation">Confirm Cancellation</button>
+                    <button v-if="cancelBookingPressed == 1" type="button" class="btn btn-danger" @click="confirmCancellation(timeslot._id, patientId)">Confirm Cancellation</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </template>
 
 <script>
+import { Api } from '@/Api.js'
 
 // TODO: Fetch the timeslot data here
 export default {
@@ -52,7 +55,7 @@ export default {
         myModalEl.addEventListener('hidden.bs.modal', this.resetCancelBookingPressed);
     },
     props: {
-        timeslotId: String
+        timeslot: Object
     },
     computed: {
         formattedTime() {
@@ -61,6 +64,7 @@ export default {
     },
     data() {
         return {
+            patientId: localStorage.getItem('patientId'),
             timeslotData: { clinic: 'Green Hill Zone Clinic', dentist: 'Sonic The Hedgehog', time: '2005-09-23T14:00:00.000+00:00' },
             cancelBookingPressed: 0
         }
@@ -71,9 +75,21 @@ export default {
             const dateTime = new Date(dateTimeString);
             return dateTime.toLocaleString('en-US', options);
         },
-        confirmCancellation() {
-            // TODO: Cancel appointment here
-            console.log('Cancel appointment');
+        confirmCancellation(timeslotId, patientId) {
+            Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
+                instruction: 'CANCEL',
+                patient_id: patientId
+            }, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+            .then(response => {
+                    if (response.data.Message === 'FAILURE'){
+                        alert('This appointment has already been booked by someone else.');
+                        this.$router.go()                   // Refresh the page to force a timeslot data update
+                    }
+                    console.log(response);
+                }).catch(error => {
+                    alert('Something went wrong. Please try again.');
+                    console.log(error);
+                })
             this.cancelBookingPressed += 1;
         },
         handleButtonCancel() {
