@@ -3,7 +3,6 @@
         <h1> {{ clinic.name }}</h1>
 
         <p> <b>Address:</b> {{ clinic.address }} </p>
-
         <div>
             <table>
                 <tr v-for="(value, key) in days" :key="key">
@@ -72,7 +71,7 @@ export default {
     created() {
         this.getClinic(),
         this.getTimeSlots()
-        setInterval(this.getTimeSlots(), 60000); // refresh the timeslot data every minute (60 000 milliseconds)
+        setInterval(this.getTimeSlots, 60000); // refresh the timeslot data every minute (60 000 milliseconds)
     },
     methods: {
         getClinic() {
@@ -104,6 +103,7 @@ export default {
                         this.$router.go()                   // Refresh the page to force a timeslot data update
                     } else {
                         alert('Booking successful!');
+                        this.$router.push(`/user/${localStorage.getItem("patientId")}`);
                     }
                     console.log(response);
                 }).catch(error => {
@@ -129,6 +129,8 @@ export default {
             }
 
             // This creates a map-like object where the key is each individual date when there are timeslots, and the value is those timeslots.
+            this.days = {};
+
             for(let i=0; i<this.timeslots.length; i++){
                 let timeslot = this.timeslots[i];
                 let daysKey = new Date(timeslot["startTime"].getFullYear(), timeslot["startTime"].getMonth(), timeslot["startTime"].getDate());
