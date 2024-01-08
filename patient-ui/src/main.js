@@ -8,6 +8,11 @@ import router from './router'
 
 const app = createApp(App)
 
+router.beforeEach((to, from, next) => {
+    window.dispatchEvent(new Event('route-change'));
+    next();
+  });
+
 app.use(router)
 
 app.mount('#app')

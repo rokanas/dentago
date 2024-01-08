@@ -1,13 +1,20 @@
 <template>
     <div>
         <h1> {{ clinic.name }}</h1>
+        <input type="date" v-model="selectedStartDate">
+        <input type="date" v-model="selectedEndDate">
+        <button @click="getSelection(selectedStartDate, selectedEndDate)">GET SELECTED</button>
         <p> <b>Address:</b> {{ clinic.address }} </p>
+
+        <div v-if="timeslots.length == 0">
+            <h3>No timeslots available for the selected range</h3>
+        </div>
         <div>
             <table>
                 <tr v-for="(value, key) in days" :key="key">
                     <!-- The key (the date) is stored as a string including the time, so we extract just the date using "substring()" -->
                     <th> {{ key.substring(0, 15) }} </th>
-                    <td v-for="appt in value" :key="appt">
+                    <td v-for="appt in value" :key="appt" :class="{ 'unavailable': appt['patient'] !== null }">
                         <!-- 'appt' stands for 'appointment' -->
                         <!-- When getting minutes that are "00", they only show "0" when printing, so there was a v-if statement needed -->
                         <p v-if="appt['startTime'].getMinutes() === 0 && appt['endTime'].getMinutes() === 0">
@@ -51,6 +58,9 @@ td {
     border: 2px solid;
     text-align: center;
 }
+.unavailable {
+    background-color: #ffcccc; /* Set your desired background color for unavailable appointments */
+}
 </style>
 
 <script>
@@ -64,6 +74,8 @@ export default {
             timeslots: [],
             patientId: JSON.parse(localStorage.getItem("patientData"))._id,
             startDate: new Date().toLocaleDateString('sv-SE'),
+            selectedStartDate: null,
+            selectedEndDate: null,
         }
     },
     computed: {
@@ -96,6 +108,17 @@ export default {
             // add sorting filtering
             // TODO: add a date picker for startDate and endDate
             Api.get(`/clinics/${this.clinic._id}/timeslots?startDate=${this.startDate}&endDate=${this.endDate}`, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+            .then(response => {
+                    this.timeslots = response.data.Timeslots;
+                    this.organizeAppointments();
+                }).catch(error => {
+                    console.log(error);
+                })
+        },
+        getSelection(){
+            // add sorting filtering
+            // TODO: add a date picker for startDate and endDate
+            Api.get(`/clinics/${this.clinic._id}/timeslots?startDate=${this.selectedStartDate}&endDate=${this.selectedEndDate}`, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
             .then(response => {
                     this.timeslots = response.data.Timeslots;
                     this.organizeAppointments();

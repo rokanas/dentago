@@ -23,6 +23,7 @@
           <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
               Clinic name: {{ clinic.name }} <br>
+              Opening hours: {{ clinic.hours[0] + '-' + clinic.hours[1] }} <br>
               Clinic booking page
               <BookingButton :clinicId="clinic._id"></BookingButton>
             </InfoWindow>

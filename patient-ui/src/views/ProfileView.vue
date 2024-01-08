@@ -11,6 +11,9 @@
                     <button class="nav-link" id="nav-preferences-tab" data-bs-toggle="tab" data-bs-target="#nav-preferences"
                         type="button" role="tab" aria-controls="nav-preferences" aria-selected="false">Your
                         Preferences</button>
+                    <button class="nav-link" id="nav-recommendations-tab" data-bs-toggle="tab" data-bs-target="#nav-recommendations"
+                        type="button" role="tab" aria-controls="nav-recommendations" aria-selected="false" @click="getRecommendations">Your
+                        Recommendations</button>
                 </div>
             </nav>
             <div class="tab-content p-5" id="nav-tabContent">
@@ -18,7 +21,7 @@
                     aria-labelledby="nav-appointments-tab" tabindex="0">
                     <div class="container text-center d-flex justify-content-center justify-content-md-start">
                         <div class="row">
-                            <div v-if="appointments.length == 0">
+                            <div v-if="appointments.length == 0" style="margin-bottom: 20rem;">
                                 <h3>No appointments</h3>
                             </div>
 
@@ -78,11 +81,13 @@
                                 <h3 id="schedule-text">Select your preferred schedule</h3>
                                 <div class="col day m-2 rounded" v-for="(times, day) in preferredTimeWindow" :key="day">
                                     <h4 id="day-text">{{ day }}</h4>
-                                    <div class="m-1" v-for="time in availableTimes" :key="time">
-                                        <input class="form-check-input me-2" type="checkbox" :id="`${day}-${time}`"
-                                            :value="time" v-model="preferredTimeWindow[day]"
-                                            @change="sortPreferredTimes(day)" />
-                                        <label :for="`${day}-${time}`">{{ formatTime(time) }}</label>
+                                    <div id="day-thingy">
+                                        <div class="m-1" v-for="time in availableTimes" :key="time">
+                                            <input class="form-check-input me-2" type="checkbox" :id="`${day}-${time}`"
+                                                :value="time" v-model="preferredTimeWindow[day]"
+                                                @change="sortPreferredTimes(day)" />
+                                            <label :for="`${day}-${time}`">{{ formatTime(time) }}</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -90,15 +95,19 @@
                             <div class="row justify-content-end">
                                 <div class="col">
                                     <button class="btn btn-primary m-2" @click="updatePreferences">Update
-                                        preferences</button>
-                                    <input type="checkbox" id="checkbox" v-model="getNotifications" />
-                                    <label for="checkbox"> Notify Me </label>
+                                        preferences
+                                    </button>
 
                                     <!--TODO: link this button to an API call -->
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="tab-pane fade" id="nav-recommendations" role="tabpanel" aria-labelledby="nav-recommendations-tab"
+                    tabindex="0">
+                    <h1>GET RECOMMENDATIONS</h1>
+                    {{ recommendedTimeslots }}
                 </div>
             </div>
         </div>
@@ -121,7 +130,7 @@ export default {
             // appointments: ['657304e861d1c9f248318320', '657304e861d1c9f248318326'],
             appointments: [],
             availableTimes: [
-                8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
             ],
             preferredTimeWindow: {
                 Monday: [],
@@ -131,7 +140,8 @@ export default {
                 Friday: [],
                 Saturday: [],
                 Sunday: []
-            }
+            },
+            recommendedTimeslots: []
         };
     },
     created() {
@@ -140,6 +150,17 @@ export default {
     methods: {
         sortPreferredTimes(day) {
             this.preferredTimeWindow[day].sort();
+        },
+        async getRecommendations() {
+            console.log('Get recommendations');
+            Api.get('/patients/' + this.patientId + '/recommendations', { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
+                .then((res) => {
+                    this.recommendedTimeslots = res.data.Timeslots;
+                    // console.log(this.appointments);
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
         },
         formatTime(time) {
             /**
@@ -269,4 +290,11 @@ a {
 
 a:hover {
     color: var(--accent-secondary)
-}</style>
+}
+
+#day-thingy {
+    overflow-y: scroll;
+    max-height: 20rem;
+}
+
+</style>

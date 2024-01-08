@@ -1,5 +1,6 @@
 <template>
     <div id="navbar">
+
         <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="navigateTo('/')"
             data-toggle="tooltip" data-placement="bottom" title="Home">
             <span class="material-symbols-outlined">
@@ -16,8 +17,9 @@
                     notifications_unread
                 </span>
             </button>
-            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown">
+            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown" @click="getNotifications">
                 <div class="list-group">
+                    <h5 v-if="notifications.length === 0">No notifications</h5>
                     <NotificationItem v-for="notification in notifications" :key="notification._id"
                         :category="notification.category" :message="notification.message"
                         :timeslots="notification.timeslots">
@@ -124,8 +126,12 @@ export default {
     components: {
         NotificationItem
     },
+    mounted() {
+        window.addEventListener('route-change', this.getNotifications);
+    },
     created() {
-        this.getNotifications()
+        this.getNotifications(),
+        setInterval(this.getNotifications, 5000); // refresh the timeslot data every minute (60 000 milliseconds)
     },
     methods: {
         navigateTo(route) {
@@ -135,8 +141,23 @@ export default {
             const username = JSON.parse(localStorage.getItem("patientData")).id;
             this.$router.push('/user/' + username);
         },
-        getNotifications() {
-            // TODO
+        async getNotifications() {
+            if (!localStorage.getItem("patientData"))
+            {
+                this.notifications = [];
+                return;
+            }
+            const userId = JSON.parse(localStorage.getItem("patientData")).id;
+            Api.get(`/patients/${userId}/notifications`, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}},
+            {
+                id: userId,
+            })
+                .then((res) => {
+                    this.notifications = res.data;
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
         },
         async handleLogout() {
             const userId = JSON.parse(localStorage.getItem("patientData")).id;
