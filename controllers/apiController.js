@@ -2,6 +2,7 @@ const express = require('express');
 const Clinic = require('../models/clinic.js');
 const Dentist = require('../models/dentist.js');
 const Patient = require('../models/patient.js');
+const Timeslot = require('../models/timeslot.js');
 const authenticateToken = require('../utils/authenticateToken.js');
 const router = express.Router();
 
@@ -64,6 +65,51 @@ router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
         res.status(200).json(dentist);                // request successful
     } catch (err) {
         res.status(500).json({Error: err.message});   // internal server error
+    }
+});
+
+router.get('/patients/:patient_id/timeslots', authenticateToken, async (req, res) => {
+    try {
+        // extract patient id from request parameters
+        const patientId = req.params.patient_id;
+
+        // find timeslots with matching patient id
+        const timeslots = await Timeslot.find({ patient: patientId });
+
+        // if no timeslots are found
+        if(timeslots.length === 0 || timeslots === null) {
+            return res.status(404).json({ Message: 'No timeslots found' });
+        }
+
+        res.status(200).json({ Timeslots: timeslots });  // request successful
+
+
+    } catch (err) {
+        res.status(500).json({Error: err.message}); // internal server error
+    }
+});
+
+// update patient info
+router.patch('/patients/:patient_id', authenticateToken, async (req, res) => {
+    try {
+        // extract id from request parameters
+        const patientId = req.params.patient_id;
+
+        // find and patch patient with new info
+        const updatedPatient = await Patient.findOneAndUpdate(
+            { _id: patientId },
+            { $set: req.body },
+            { new: true });
+
+        // if patient is not found
+        if (!updatedPatient) {
+            return res.status(404).json({ Error: 'Patient not found' });
+        }
+ 
+        res.status(200).json({Message: 'Patient details updated successfully', Patient: updatedPatient});              // request successful
+
+    } catch (err) {
+        res.status(500).json({Error: err.message}); // internal server error
     }
 });
 
