@@ -29,7 +29,23 @@ mongoose.connect(mongoUri).then(() => {
 });
 
 
-// TODO: change to the non-public mosquitto broker once implemented
+// Date-Time formatters
+// converts UTC time to Swedish local time
+const swedishTimeFormatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Stockholm',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+});
+
+// converts UTC time to an English String-representation of the current weekday according to Swedish local time
+const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+
+
+// Connect to the MQTT broker
 const broker = 'mqtt://test.mosquitto.org/:1883';
 const client = mqtt.connect(broker);
 
@@ -44,11 +60,7 @@ const MQTT_SUB_TOPICS = {
 const MONITOR_PUB = 'dentago/monitor/availability/echo';
 
 
-// Other Variables
-const DEFAULT_RANGE_DAYS = 7; // Default time range for query unless specified in payload
-
-
-// Order Timelots by Clinic in key-value pairs 
+// Order Timelots by Clinic in key-value pairs (unused)
 function orderByClinic(timeslots) {
     const timeslotsByClinic = {};
     timeslots.forEach((timeslot) => {
@@ -281,16 +293,16 @@ async function generateRecommendations(preferences, timeslots) {
         // filter timeslots aaccording to patient preferences
         const recommendedTimeslots = timeslots.filter((timeslot) => {
 
-            // parse name of day from timeslot's startTime
-            const day = timeslot.startTime.toLocaleDateString('en-US', { weekday: 'long' });
+            // parse name of day
+            const day = dayFormatter.format(timeslot.startTime);
             
             // check if the timeslot's day is present in patient preferences
             if (days.includes(day)) {
                 // if so, extract the patient's preferred times
                 const preferredTimes = preferences[day];
         
-                // extract hour from timeslot's startTime
-                const startHour = timeslot.startTime.getUTCHours();
+                // extract hour from timeslot's startTime 
+                const startHour = new Date(swedishTimeFormatter.format(timeslot.startTime)).getHours();
                 
                 // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
                 return preferredTimes.includes(startHour);
