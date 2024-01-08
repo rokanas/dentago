@@ -16,13 +16,13 @@ async function parseMessage(topic, message) {
         const service = await parseService(topic);
 
         // call function to determine direction of MQTT message
-        const direction = await parseDirection(parsedMessage);
+        const direction = await parseDirection(message);
 
         // call function to extract status info from message
-        const status = JSON.stringify(parsedMessage.status)
+        const status = JSON.stringify(message.status)
 
         // call function to extract request Id of MQTT message
-        const reqId = await parseReqId(parsedMessage, topic, service, direction)
+        const reqId = await parseReqId(message, topic, service, direction)
 
         // create logo object
         const log = {
@@ -36,9 +36,6 @@ async function parseMessage(topic, message) {
 
         // call function to record log in JSON file
         await logMessage(log);
-
-        // call function to incrememnt statistics counter (future feature)
-        // await incrementCounter();
 
     } catch(err) {
         console.log('Error parsing message: ' + err.message);
