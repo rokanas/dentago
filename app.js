@@ -91,9 +91,6 @@ client.on('message', (topic, payload) => {
         case MQTT_TOPICS['loginDentist']:
             loginDentist(topic, payload);
             break;
-        default:
-            console.error(`TopicError: Message received at unhandled topic "${topic}"`);
-            break;
     }
 });
 
