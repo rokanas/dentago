@@ -1,7 +1,6 @@
 <template>
     <div class="m-5">
         <h1> Welcome back, {{ firstName + ' ' + lastName }}! </h1>
-
         <!-- SUB-SECTIONS -->
         <div class="sub-sections mt-4">
             <nav>
@@ -20,14 +19,51 @@
                     <div class="container text-center d-flex justify-content-center justify-content-md-start">
                         <div class="row">
                             <div v-if="appointments.length == 0">
-                                <h1>No appointments</h1>
+                                <h3>No appointments</h3>
                             </div>
+
                             <div v-else class="col m-2" v-for="(appointment, index) in appointments" :key="index">
-                                
-                                
-                                
-                                
-                                <AppointmentItem :timeslot="appointment"></AppointmentItem>
+                                <!-- CARD -->
+                                <div class="card card-container" style="width: 18rem;" data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                                    <div class="card-header">
+                                        <h5 href="#" class="card-title"> {{ appointment.clinic.name }} </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6> {{ appointment.dentist.name }} </h6>
+                                    </div>
+                                    <div class="card-footer">
+                                        {{ formatDateTime(appointment.startTime) }}
+                                    </div>
+                                </div>
+
+                                <!-- MODAL -->
+                                <div class="modal fade" id="appointmentModal" tabindex="-1"
+                                    aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">
+                                                    Do you want to cancel your appointment?
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>{{ appointment.clinic.name }} with {{ appointment.dentist.name }}</p>
+                                                <p>{{ formatDateTime(appointment.startTime) }}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @click="confirmCancellation(appointment._id, patientId)">
+                                                    Yes
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    No
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -44,7 +80,8 @@
                                     <h4 id="day-text">{{ day }}</h4>
                                     <div class="m-1" v-for="time in availableTimes" :key="time">
                                         <input class="form-check-input me-2" type="checkbox" :id="`${day}-${time}`"
-                                            :value="time" v-model="preferredTimeWindow[day]" @change="sortPreferredTimes(day)"/>
+                                            :value="time" v-model="preferredTimeWindow[day]"
+                                            @change="sortPreferredTimes(day)" />
                                         <label :for="`${day}-${time}`">{{ formatTime(time) }}</label>
                                     </div>
                                 </div>
@@ -52,7 +89,8 @@
 
                             <div class="row justify-content-end">
                                 <div class="col">
-                                    <button class="btn btn-primary m-2" @click="updatePreferences">Update preferences</button>
+                                    <button class="btn btn-primary m-2" @click="updatePreferences">Update
+                                        preferences</button>
                                     <input type="checkbox" id="checkbox" v-model="getNotifications" />
                                     <label for="checkbox"> Notify Me </label>
 
@@ -69,12 +107,8 @@
 
 <script>
 import { Api } from '@/Api.js'
-import AppointmentItem from '@/components/AppointmentItem.vue';
 
 export default {
-    components: {
-        AppointmentItem
-    },
     props: {
         username: String
     },
@@ -114,27 +148,50 @@ export default {
              */
             return `${time < 10 ? `0${time}` : time}:00`;
         },
-        getAppointments(){
-            Api.get('/patients/' + this.patientId + '/timeslots', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
-             .then((res) => {
-                this.appointments = res.data.Timeslots;
-             })
-             .catch((err) => {
-                console.log(err)
-             })
+        async getAppointments() {
+            Api.get('/patients/' + this.patientId + '/timeslots', { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
+                .then((res) => {
+                    this.appointments = res.data.Timeslots;
+                    // console.log(this.appointments);
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
         },
-        updatePreferences(){
+        updatePreferences() {
             Api.patch('/patients/' + this.patientId + '/preferences',
-                {preferredTimeWindow: this.preferredTimeWindow},
-                {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
-             .then((res) => {
-                console.log(res)
-                alert('success!')
-             })
-             .catch((err) => {
-                console.log(err)
-             })
-        }
+                { preferredTimeWindow: this.preferredTimeWindow },
+                { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
+                .then((res) => {
+                    console.log(res)
+                    alert('success!')
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
+        },
+        confirmCancellation(timeslotId, patientId) {
+            Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
+                instruction: 'CANCEL',
+                patient_id: patientId
+            }, { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
+                .then(response => {
+                    if (response.data.Message === 'FAILURE') {
+                        alert('This appointment has already been booked by someone else.');
+                    }
+                    // this.$router.push('/');
+                    this.getAppointments();
+                }).catch(error => {
+                    alert('Something went wrong. Please try again.');
+                    console.log(error);
+                })
+            this.cancelBookingPressed += 1;
+        },
+        formatDateTime(dateTimeString) {
+            const options = { month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            const dateTime = new Date(dateTimeString);
+            return dateTime.toLocaleString('en-US', options);
+        },
     }
 }
 </script>
@@ -173,4 +230,43 @@ export default {
         justify-content: start !important;
     }
 }
-</style>
+
+.timeslot {
+    background-color: black;
+    color: white;
+}
+
+.card-container {
+    box-shadow: 2.5px 2.5px 2.5px rgba(0, 0, 0, 0.5);
+}
+
+.card-container:hover {
+    transform: scale(1.02);
+    box-shadow: 2.5px 2.5px 2.5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.card {
+    color: white;
+}
+
+.card-header {
+    background-color: var(--accent-primary);
+}
+
+.card-body {
+    color: var(--text-color);
+}
+
+.card-footer {
+    background-color: var(--accent-primary);
+}
+
+a {
+    font-weight: bolder;
+    color: var(--text-color);
+}
+
+a:hover {
+    color: var(--accent-secondary)
+}</style>

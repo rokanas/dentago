@@ -12,7 +12,7 @@
         </div>
         <div class="card-body">
             <!-- <a href="#" class="card-link">{{ 'Dentist: ' + timeslotData.dentist }}</a> -->
-            <button class="btn btn-outline-tertiary">
+            <button class="btn btn-outline-tertiary" @click="testEvent">
                 {{ timeslotData.dentist }}
             </button>
         </div>
@@ -91,6 +91,7 @@ export default {
                     }
                     this.$router.go();
                     console.log(response);
+                    this.$emit('cancel-appointment', 'cancellation');
                 }).catch(error => {
                     alert('Something went wrong. Please try again.');
                     console.log(error);
@@ -102,6 +103,10 @@ export default {
         },
         resetCancelBookingPressed() {
             this.cancelBookingPressed = 0;
+        },
+        testEvent() {
+            console.log('tetst event');
+            this.$emit('test-event', 'wtf');
         }
     },
 }

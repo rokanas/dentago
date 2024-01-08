@@ -52,7 +52,6 @@ router.beforeEach((to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     // Check if the user is authenticated (you can implement your own authentication check here)
     const isAuthenticated = localStorage.getItem("access-token");
-    console.log(isAuthenticated);
     
     if (!isAuthenticated) {
       // If not authenticated, redirect to the login page
