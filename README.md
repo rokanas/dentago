@@ -1,6 +1,8 @@
 # app-patient
 
 Repository for the patient UI of the system *"Dentago"*.
+This repository communicates/relies on the following other repositories within the *Dentago* system:
+- [*api-patient*](https://git.chalmers.se/courses/dit355/2023/student-teams/dit356-2023-13/api-patient) for all endpoints and connections with other services.
 
 ## Tech Stack
 - [Vue 3](https://vuejs.org/)
@@ -8,6 +10,7 @@ Repository for the patient UI of the system *"Dentago"*.
 - [Vue3 Google Maps library](https://www.npmjs.com/package/vue3-google-map)
 - [Google Maps API](https://developers.google.com/maps)
 - [Axios](https://axios-http.com/docs/intro)
+- [BootstrapVue](https://bootstrap-vue.org/)
 
 ## Configuration
 
