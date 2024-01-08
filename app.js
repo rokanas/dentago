@@ -143,13 +143,8 @@ client.on('message', async (topic, message) => {
                 }).populate('dentist');
 
                 // Assign status code and message
-                if (responseObject.timeslots.length === 0) {
-                    responseObject.status.code = 404;
-                    responseObject.status.message = "No available Timeslots found.";
-                } else {
-                    responseObject.status.code = 200;
-                    responseObject.status.message = "Available Timeslots found.";
-                }
+                responseObject.status.code = 200;
+                responseObject.status.message = (responseObject.timeslots.length === 0) ? "No available Timeslots found." : "Available Timeslots found.";
 
                 // Publish the result
                 client.publish(responseTopic, JSON.stringify(responseObject));
@@ -222,13 +217,8 @@ client.on('message', async (topic, message) => {
                 responseObject.timeslots = recommendations;
 
                 // Assign status code and message
-                if (recommendations.length === 0) {
-                    responseObject.status.code = 404;
-                    responseObject.status.message = "No Timeslot recommendations found.";
-                } else {
-                    responseObject.status.code = 200;
-                    responseObject.status.message = "Timeslot recommendations found.";
-                }
+                responseObject.status.code = 200;
+                responseObject.status.message = (responseObject.timeslots.length === 0) ? "No Timeslot recommendations found." : "Timeslot recommendations found.";
 
                 // Publish the result
                 client.publish(responseTopic, JSON.stringify(responseObject));
