@@ -1,18 +1,22 @@
 const mongoose = require('mongoose');
+
 const Schema = mongoose.Schema;
 
-// define schema for dentist resource
 const dentistSchema = new Schema({
-    dentistId: {
+    id: {
         type: String,
         unique: true,
         required: true
     },
-    dentistName: {
+    name: {
         type: String,
         required: true
     },
-    dentistClinic: {
+    password: {
+        type: String,
+        required: true
+    },
+    clinic: {
         type: Schema.Types.ObjectId, ref: "Clinic"
     }
 });
