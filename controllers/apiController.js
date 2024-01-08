@@ -74,7 +74,7 @@ router.get('/patients/:patient_id/timeslots', authenticateToken, async (req, res
         const patientId = req.params.patient_id;
 
         // find timeslots with matching patient id
-        const timeslots = await Timeslot.find({ patient: patientId });
+        const timeslots = await Timeslot.find({ patient: patientId }).populate('clinic').populate('dentist').exec();
 
         // if no timeslots are found
         if(timeslots.length === 0 || timeslots === null) {
