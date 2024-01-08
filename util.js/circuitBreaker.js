@@ -1,6 +1,5 @@
 import CircuitBreaker from "opossum";
-import { connectDatabase, disconnectDatabase } from "../util.js/database.js";
-
+import {test} from "../tests/circuitBreakerTest.js"
 import bookTimeslot from "../functionalities/bookTimeslot.js";
 import cancelTimeslot from "../functionalities/cancelTimeslot.js";
 
@@ -68,23 +67,9 @@ function createCircuitBreaker(action, options = defaultOptions) {
   breaker.on("halfOpen", () =>
     console.log("Circuit breaker is half-open (accepting one trial request).")
   );
-
+  console.log(
+    `Created a circuit breaker with a timeout of (${options.timeout}), a reset timeout of (${options.resetTimeout}) and an error threshold percentage of (${options.errorThresholdPercentage}).`
+  );
   return breaker;
 }
 
-let firstTime = true;
-
-async function test() {
-  // mongoose.connection.readyState
-  if (firstTime) {
-    firstTime = false;
-    setTimeout(() => {
-      console.log("Attempting to disconnect to database on purpose..");
-      disconnectDatabase();
-    }, 5000);
-    setTimeout(() => {
-      console.log("Attempting to reconnect to database on purpose.");
-      connectDatabase();
-    }, 20000);
-  }
-}
