@@ -40,6 +40,9 @@ const swedishTimeFormatter = new Intl.DateTimeFormat('sv-SE', {
     second: 'numeric'
 });
 
+// converts UTC time to an English String-representation of the current weekday according to Swedish local time
+const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Europe/Stockholm' }); 
+
 // when previosuly booked timeslot is freed up, generate notification for users that have it in their schedulePreferences
 async function generateRecNotification(timeslot, message) {
     try { 
@@ -50,7 +53,7 @@ async function generateRecNotification(timeslot, message) {
         const parsedDate = new Date(swedishTimeFormatter.format(timeslot.startTime));
 
         // parse name of day from timeslot's start time
-        const timeslotDay = parsedDate.toLocaleDateString('en-US', { weekday: 'long' });
+        const timeslotDay = dayFormatter.format(timeslot.startTime);
 
         // parse timeslot's startTime
         const timeslotYear = parsedDate.getFullYear();
