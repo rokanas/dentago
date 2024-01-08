@@ -1,13 +1,12 @@
 <template>
     <div id="navbar">
-        {{ isLoggedIn }}
-        <button  v-if="isLoggedIn" class="btn btn-link" @click="navigateTo('/')" data-toggle="tooltip" data-placement="bottom" title="Home">
+        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="navigateTo('/')" data-toggle="tooltip" data-placement="bottom" title="Home">
             <span class="material-symbols-outlined">
                 home
             </span>
         </button>
 
-        <div  v-if="isLoggedIn" class="dropdown">
+        <div v-if="$route.path !== '/login' && $route.path !== '/register'" class="dropdown">
             <button class="btn dropdown-toggle" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 <span v-if="notifications.length === 0" class="material-symbols-outlined">
                     notifications
@@ -26,11 +25,15 @@
             </div>
         </div>
 
-        <button  v-if="isLoggedIn" class="btn btn-link" @click="redirect()" data-toggle="tooltip" data-placement="bottom" title="Profile">
+        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="redirect()" data-toggle="tooltip" data-placement="bottom" title="Profile">
             <span class="material-symbols-outlined">
                 account_circle
             </span>
         </button>
+
+        <h2 v-if="$route.path === '/login' || $route.path === '/register'">
+            Welcome to dentago!
+        </h2>
     </div>
 </template>
 
@@ -124,19 +127,6 @@ export default {
         },
         getNotifications() {
             // TODO
-        }
-    },
-    computed: {
-        isLoggedIn() {
-            const storage = localStorage.getItem("access-token")
-            console.log(storage);
-            if (storage === null){
-                return false;
-            }
-            else {
-                return true;
-            }
-            // return localStorage.getItem("access-token");
         }
     }
 }
