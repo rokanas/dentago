@@ -28,7 +28,7 @@ mongoose.connect(mongoURI).then(() => {
 // MQTT Components
 const SERVICES = [
     'booking',
-    'dentago', // TODO: Maybe the dentago-api needs a different name
+    'patient',
     'dentist',
     'availability',
     'authentication'
@@ -63,7 +63,7 @@ let availableAppointments = 0;
 // Ping to each service
 function sendHeartbeat() {
     SERVICES.forEach(service => {
-        client.publish(formatPubTopic(service), `pinging ${service} :)`);
+        client.publish(formatPubTopic(service), `{"message": "pinging ${service} :)"}`);
     });
 }
 
