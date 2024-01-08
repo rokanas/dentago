@@ -28,6 +28,18 @@ async function handleNotification(topic, payload) {
     }
 };
 
+// Date-Time formatters (looking up the right locale every time we need to format a Date is very inefficient so instead we create Formatter objects with the correct settings)
+// converts UTC time to Swedish local time
+const swedishTimeFormatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Stockholm',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+});
+
 // when previosuly booked timeslot is freed up, generate notification for users that have it in their schedulePreferences
 async function generateRecNotification(timeslot, message) {
     try { 
@@ -35,7 +47,7 @@ async function generateRecNotification(timeslot, message) {
         const clinic = await Clinic.findOne({ _id: timeslot.clinic });
 
         // convert timeslot start time into date object
-        const parsedDate = new Date(timeslot.startTime);
+        const parsedDate = new Date(swedishTimeFormatter.format(timeslot.startTime));
 
         // parse name of day from timeslot's start time
         const timeslotDay = parsedDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -44,7 +56,7 @@ async function generateRecNotification(timeslot, message) {
         const timeslotYear = parsedDate.getFullYear();
         const timeslotMonth = parsedDate.getMonth() + 1; // add 1 to correct function's default mapping (jan-dec = 0-11 by default)
         const timeslotDate = parsedDate.getDate();
-        const timeslotHour = parsedDate.getUTCHours();
+        const timeslotHour = parsedDate.getHours();
 
         // create notification
         const recNotification = new Notification({
