@@ -19,15 +19,16 @@ const rl = readline.createInterface({
 });
 
 // Variables
-let clinicId = '';                                  // The Clinic ID correlating with the currently logged in dentist. Fetched after successful login
-let userId = '';                                    // The dentist ID of the currently logged in user. Received after successful login
-let clinicMongoId = '';                             // Included in the bookingNotification topic
+let clinicId = '';      // The Clinic ID correlating with the currently logged in dentist. Fetched after successful login
+let userId = '';        // The dentist ID of the currently logged in user. Received after successful login
+let clinicMongoId = ''; // Included in the bookingNotification topic
 
-const digitRegex = /^\d+$/;                         // Checks that a String only contains digits (unused)
-const dayHourRegex = /^(1?[0-9]|2[0-3])$/;          // Checks that a String contains a number in the span of 0-23
-const coordinateRegex = /^[-+]?\d*\.?\d*$/;         // Checks if a String starts with a '+' or '-', followed by any amount of digits, then a '.', and any amount of digits
+const digitRegex = /^\d+$/;                 // Checks that a String only contains digits (unused)
+const dayHourRegex = /^(1?[0-9]|2[0-3])$/;  // Checks that a String contains a number in the span of 0-23
+const coordinateRegex = /^[-+]?\d*\.?\d*$/; // Checks if a String starts with a '+' or '-', followed by any amount of digits, then a '.', and any amount of digits
 
-let isLoggedIn = false;
+let isLoggedIn = false; // Used to print the correct menu (login/main)
+
 const preLoginReqId = crypto.randomBytes(10).toString('hex'); // Generate random reqId to ensure that only the publishing CLI instance receives the responses
 //                                                               After a successful login the Dentist ID is used instead to ensure no collisions
 
@@ -114,23 +115,23 @@ function displayMainMenu() {
 }
 
 
-//================================ HANDLE USER INPUT ================================//
+//================================ USER INPUT HANDLERS ================================//
 
-//================ LOGIN MENU FUNCTIONS ====================//
+//================ LOGIN MENU HANDLER ====================//
 async function handleLoginMenuInput(choice) {
     switch (choice) {
         // Login as Dentist
         case '1':
-            const loginInfo = {
-                id: '',
-                password: '',
-                reqId: '',
-                status: {
-                    message: ''
-                }
-            };
-            console.log("Please enter your login information");
             try {
+                console.log("Please enter your login information");
+                const loginInfo = {
+                    id: '',
+                    password: '',
+                    reqId: '',
+                    status: {
+                        message: ''
+                    }
+                };
                 await login(loginInfo).then(console.log);
                 unSubscribeToLoginTopics();
                 subscribeToMainTopics();
@@ -141,9 +142,9 @@ async function handleLoginMenuInput(choice) {
     
         // Register new Dentist
         case '2':
-            const newDentist = {};
-            console.log("Please enter your credentials");
             try {
+                console.log("Please enter your credentials");
+                const newDentist = {};
                 await promptForDentistInfo(newDentist);
                 const statusObject = { message: 'Request to create new Dentist resource in the database' };
                 const payload = { dentist: newDentist, reqId: preLoginReqId, status: statusObject };
@@ -155,17 +156,17 @@ async function handleLoginMenuInput(choice) {
         
         // Create new Clinic
         case '3':
-            const newClinic = {
-                id: '',
-                name: '',
-                address: '',
-                location: {
-                    lat: null,
-                    lng: null
-                }
-            };
-            console.log("Please enter the Clinic's information");
             try {
+                console.log("Please enter the Clinic's information");
+                const newClinic = {
+                    id: '',
+                    name: '',
+                    address: '',
+                    location: {
+                        lat: null,
+                        lng: null
+                    }
+                };
                 await promptForClinicInfo(newClinic);
                 const statusObject = { message: 'Request to create new Clinic resource in the database' };
                 const payload = { clinic: newClinic, reqId: preLoginReqId, status: statusObject };
@@ -199,6 +200,95 @@ async function handleLoginMenuInput(choice) {
         displayLoginMenu();
     }
 }
+
+//======================= MAIN MENU HANDLER =======================//
+async function handleMenuInput(choice) {
+    switch (choice) {
+        // Add new Dentist
+        case '1':
+            try {
+                console.log("Please enter the Dentist's credentials");
+                const newDentist = {};
+                await promptForDentistInfo(newDentist);
+                const statusObject = { message: 'Request to create new Dentist resource in the database' };
+                const payload = { dentist: newDentist, reqId: userId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS.createDentist, JSON.stringify(payload));
+            } catch (error) {
+                console.log(error);
+            }
+            break;
+
+        // Add new Timeslot
+        case '2':
+            try {
+                console.log("Please enter the necessary Timeslot information");
+                const newTimeslot = { clinic: clinicId, dentist: null, patient: null };
+                await promptForTimeslotInfo(newTimeslot);
+                const statusObject = { message: 'Request to create new Timeslot resource in the database' };
+                const payload = { timeslot: newTimeslot, reqId: userId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS.createTimeslot, JSON.stringify(payload));
+            } catch (error) {
+                console.log(error);
+            }
+            break;
+        
+        // Get all Timeslots for the Clinic
+        case '3':
+            fetchTimeslots();
+            break;
+
+        // Get all Timeslots for the currently logged in Dentist
+        case '4':
+            fetchTimeslots(userId);
+            break;
+
+        // Assign Dentist to Timeslot
+        case '5':
+            try {
+                console.log("Please enter the necessary information");
+                const timeslotUpdate = {};
+                await assignDentist(timeslotUpdate);
+                const statusObject = { message: 'Request to assign Dentist to Timeslot resource in the database' };
+                const payload = { timeslotUpdate: timeslotUpdate, reqId: userId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS.assignTimeslot, JSON.stringify(payload));
+            } catch (error) {
+                console.log(error);
+            }
+            break;
+
+        // Cancel booked Timeslot
+        case '6':
+            try {
+                console.log("Please enter the necessary information");
+                const timeslotCancellation = {};
+                await unassignDentist(timeslotCancellation);
+                const statusObject = { message: 'Request to unassign Dentist from Timeslot resource in the database' };
+                const payload = { timeslotUpdate: timeslotCancellation, reqId: userId, status: statusObject };
+                mqttClient.publish(MQTT_TOPICS.assignTimeslot, JSON.stringify(payload));
+            } catch (error) {
+                console.log(error);
+            }
+            break;
+
+        // Exit the program
+        case '0':
+            console.log('Exiting the program.');
+            rl.close();
+            mqttClient.end(); // Close MQTT connection
+            process.exit(0);
+        
+        // Invalid input
+        default:
+            console.log('Invalid choice. Please try again.');
+            break;
+    }
+  
+    // Display the main menu after processing the choice
+    displayMainMenu();
+}
+
+
+//============================== READ USER INPUT METHODS ==============================//
 
 // Login function
 function login(loginInfo) {
@@ -351,94 +441,6 @@ function promptForClinicInfo(newClinic) {
             }
         });
     });
-}
-
-
-//============================== MAIN MENU FUNCTIONS ==============================//
-// Function to handle user input and execute corresponding actions
-async function handleMenuInput(choice) {
-    switch (choice) {
-        // Add new Dentist
-        case '1':
-            const newDentist = {};
-            console.log("Please enter the Dentist's credentials");
-            try {
-                await promptForDentistInfo(newDentist);
-                const statusObject = { message: 'Request to create new Dentist resource in the database' };
-                const payload = { dentist: newDentist, reqId: userId, status: statusObject };
-                mqttClient.publish(MQTT_TOPICS.createDentist, JSON.stringify(payload));
-            } catch (error) {
-                console.log(error);
-            }
-            break;
-
-        // Add new Timeslot
-        case '2':
-            const newTimeslot = { clinic: clinicId, dentist: null, patient: null };
-            console.log("Please enter the necessary Timeslot information");
-            try {
-                await promptForTimeslotInfo(newTimeslot);
-                const statusObject = { message: 'Request to create new Timeslot resource in the database' };
-                const payload = { timeslot: newTimeslot, reqId: userId, status: statusObject };
-                mqttClient.publish(MQTT_TOPICS.createTimeslot, JSON.stringify(payload));
-            } catch (error) {
-                console.log(error);
-            }
-            break;
-        
-        // Get all Timeslots for the Clinic
-        case '3':
-            fetchTimeslots();
-            break;
-
-        // Get all Timeslots for the currently logged in Dentist
-        case '4':
-            fetchTimeslots(userId);
-            break;
-
-        // Assign Dentist to Timeslot
-        case '5':
-            const timeslotUpdate = {};
-            console.log("Please enter the necessary information");
-            try {
-                await assignDentist(timeslotUpdate);
-                const statusObject = { message: 'Request to assign Dentist to Timeslot resource in the database' };
-                const payload = { timeslotUpdate: timeslotUpdate, reqId: userId, status: statusObject };
-                mqttClient.publish(MQTT_TOPICS.assignTimeslot, JSON.stringify(payload));
-            } catch (error) {
-                console.log(error);
-            }
-            break;
-
-        // Cancel booked Timeslot
-        case '6':
-            const timeslotCancellation = {};
-            console.log("Please enter the necessary information");
-            try {
-                await unassignDentist(timeslotCancellation);
-                const statusObject = { message: 'Request to unassign Dentist from Timeslot resource in the database' };
-                const payload = { timeslotUpdate: timeslotCancellation, reqId: userId, status: statusObject };
-                mqttClient.publish(MQTT_TOPICS.assignTimeslot, JSON.stringify(payload));
-            } catch (error) {
-                console.log(error);
-            }
-            break;
-
-        // Exit the program
-        case '0':
-            console.log('Exiting the program.');
-            rl.close();
-            mqttClient.end(); // Close MQTT connection
-            process.exit(0);
-        
-        // Invalid input
-        default:
-            console.log('Invalid choice. Please try again.');
-            break;
-    }
-  
-    // Display the main menu after processing the choice
-    displayMainMenu();
 }
 
 // Read new Dentist input from user
