@@ -8,13 +8,30 @@
 
 // TODO: Maybe make a simple graphic interface, just boxes and text
 const mqtt = require('mqtt');
+const mongoose = require('mongoose');
+
+const Timeslot = require('./models/timeslot');
+require('dotenv').config();
+
+// Connect to MongoDB
+const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_LOCAL_URI;
+
+mongoose.connect(mongoURI).then(() => {
+    console.log(`Connected to MongoDB!\n`);
+}).catch((err) => {
+    console.error(`Failed to connect to MongoDB with URI: ${mongoURI}`);
+    console.error(err.stack);
+    process.exit(1);
+});
+
 
 // MQTT Components
 const SERVICES = [
     'booking',
     'dentago', // TODO: Maybe the dentago-api needs a different name
     'dentist',
-    'availability'
+    'availability',
+    'authentication'
 ];
 
 const SUB_MQTT_TOPIC = 'dentago/#';
@@ -33,6 +50,7 @@ const MQTT_OPTIONS = {
 const HEARTBEAT_INTERVAL = 1000; // 1 second
 const LOAD_CHECK_MINUTE = 60000; // 60 seconds
 const LOAD_CHECK_SECOND = 1000; // 1 seconds
+const CHECK_APPOINTMENTS = 500; // 1 seconds
 const DISPLAY_EVERY_SEC = 5000;
 const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
 
@@ -40,6 +58,7 @@ const QUEUE_MAX_LENGTH = Math.round(LOAD_CHECK_MINUTE / 1000);
 let isServiceOnline = {};
 let requestsPerSecond = {};
 let requestsPerMinute = {};
+let availableAppointments = 0;
 
 // Ping to each service
 function sendHeartbeat() {
@@ -66,6 +85,13 @@ function monitorServices() {
     }, HEARTBEAT_INTERVAL);
 }
 
+// Repeat every CHECK_APPOINTMENTS
+function checkAvailableAppointments() {
+    setTimeout(() => {
+        // TODO: ask erik about this
+    }, CHECK_APPOINTMENTS);
+}
+
 // Repeat every LOAD_CHECK_SECOND
 function monitorLoad() {
     setTimeout(() => {
@@ -81,6 +107,18 @@ function monitorLoad() {
         });
 
         monitorLoad();
+    }, LOAD_CHECK_SECOND);
+}
+
+function monitorAvailability() {
+    setTimeout(async () => {
+
+        availableAppointments = await Timeslot.countDocuments({
+            patient: null,
+            dentist: { $ne: null }
+        });
+
+        monitorAvailability();
     }, LOAD_CHECK_SECOND);
 }
 
@@ -101,6 +139,8 @@ function displayInfo() {
             console.log(`\t${totalReqPerMin} total requests per minute`);
 
         });
+        console.log('');
+        console.log(`Available appointments: ${availableAppointments}`)
         console.log('');
 
         displayInfo();
@@ -127,6 +167,7 @@ client.on('connect', () => {
     sendHeartbeat();
     monitorServices();
     monitorLoad();
+    monitorAvailability();
     displayInfo();
 });
 
