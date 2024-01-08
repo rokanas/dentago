@@ -57,6 +57,8 @@ client.on("message", async (topic, mqttMessage) => {
   if (topic === subscribeTopic) {
     const payload = mqttMessage.toString();
 
+    console.log(payload);
+
     const { instruction, slotId, clinicId, patientId, reqId } =
       JSON.parse(payload);
 
