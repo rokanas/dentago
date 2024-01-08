@@ -106,11 +106,6 @@ async function saveLogs() {
     }
 };
 
-async function incrementCounter() {
-    // future feature
-    // add logic
-}
-
 // extract service type from topic name
 async function parseService(topic) {
     try {

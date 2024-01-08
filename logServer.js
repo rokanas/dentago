@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');       // mongoDB data structuring and schema validation
-const path = require('path');               // handles file paths
 const mqtt = require('./mqtt.js');          // contains mqtt functions
 const controller = require('./controller'); // contains message parsing and logging functions
 
