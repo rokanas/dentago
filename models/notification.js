@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const notificationSchema = new Schema({
-    category: { // I wanted to use type but I thought it was going to be a problem since it's a keyword
+    category: {
         type: String,
-        enum: ['CANCEL', 'RESCHEDULE', 'RECOMMENDATION'], // There are only two types for now
+        enum: ['CANCEL', 'RESCHEDULE', 'RECOMMENDATION'],
         required: true
     },
     message: {
