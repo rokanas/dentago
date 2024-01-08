@@ -89,7 +89,6 @@ client.on('message', async (topic, message) => {
                 const clinicId = payload.clinicId;
                 const responseTopic = topic + reqId; // Append recipient address
                 const responseObject = {
-                    reqId: reqId,
                     status: { 
                         code: null, 
                         message: ''
@@ -129,7 +128,7 @@ client.on('message', async (topic, message) => {
                     dentist:    { $ne: null },
                     startTime:  { $gt: startDate },
                     endTime:    { $lt: endDate }
-                });
+                }).populate('dentist');
 
                 // Assign status code and message
                 if (responseObject.timeslots.length === 0) {
@@ -158,7 +157,6 @@ client.on('message', async (topic, message) => {
                 const patientId = payload.patientId;
                 const responseTopic = topic + reqId; // Append recipient address
                 const responseObject = {
-                    reqId: reqId,
                     status: { 
                         code: null, 
                         message: ''
