@@ -193,10 +193,12 @@ router.post('/refresh', async (req, res) => {
     }
 });
 
-router.delete('/logout', async (req, res) => {
+router.patch('/logout', async (req, res) => {
     try {
         // extract user id from request body
         const userId = req.body.id;
+        console.log('REQUEST FOR THE LOGOUT!');
+        console.log(req.body);
     
         // generate random request ID
         const reqId = generateId();
