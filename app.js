@@ -29,7 +29,7 @@ mongoose.connect(mongoUri).then(() => {
 });
 
 
-// Date-Time formatters
+// Date-Time formatters (looking up the right locale every time we need to format a Date is very inefficient so instead we create Formatter objects with the correct settings)
 // converts UTC time to Swedish local time
 const swedishTimeFormatter = new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Europe/Stockholm',
