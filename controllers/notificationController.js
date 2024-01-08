@@ -108,17 +108,8 @@ router.get('/patients/:patient_id/notifications', authenticateToken, async (req,
         }
 
         const patientNotifications = patient.notifications;
-        let allNotifications = [];
-        
-        // Iterate through all the notifications
-        const notificationPromises = patientNotifications.map(async (notification) => {
-            const currentNotification = await Notification.findById(notification);
-            allNotifications.push(currentNotification);
-        });
 
-        await Promise.all(notificationPromises);
-
-        res.status(200).json(allNotifications); // request successful
+        res.status(200).json(patientNotifications); // request successful
     } catch(err) {
         res.status(500).json({ Error: err.message });  // internal server error
     }
