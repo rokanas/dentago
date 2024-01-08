@@ -66,8 +66,6 @@ export default {
         .then((res) => {
           if (res.status === 200){
             localStorage.setItem("access-token", res.data.AccessToken)
-            // localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
-            // localStorage.setItem("patientId", res.data.Patient._id)
 
             localStorage.setItem("patientData", JSON.stringify(res.data.Patient));
           }

@@ -1,7 +1,6 @@
 <template>
     <div>
         <h1> {{ clinic.name }}</h1>
-
         <p> <b>Address:</b> {{ clinic.address }} </p>
         <div>
             <table>
@@ -23,7 +22,8 @@
                         <p v-else>
                             {{ appt['startTime'].getHours() }}:{{ appt['startTime'].getMinutes() }} - {{ appt['endTime'].getHours() }}:{{ appt['endTime'].getMinutes() }}
                         </p>
-                        <button v-if="appt['patient'] === null" @click="book(appt['_id'], patientId)"> Book </button>
+                        <p>{{ appt['dentist']['name'] }}</p>
+                        <button class="btn btn-secondary" v-if="appt['patient'] === null" @click="book(appt['_id'], patientId)"> Book </button>
                         <p v-else> <i> Unavailable </i> </p>
                     </td> 
                 </tr>
@@ -62,7 +62,16 @@ export default {
             days: {},
             clinic: {},
             timeslots: [],
-            patientId: JSON.parse(localStorage.getItem("patientData"))._id
+            patientId: JSON.parse(localStorage.getItem("patientData"))._id,
+            startDate: new Date().toLocaleDateString('sv-SE'),
+        }
+    },
+    computed: {
+        endDate() {
+            const endDate = new Date(this.startDate);
+            endDate.setDate(endDate.getDate() + 60); // Default endDate of 2 months
+
+            return endDate.toLocaleDateString('sv-SE');
         }
     },
     props: {
@@ -70,7 +79,7 @@ export default {
     },
     created() {
         this.getClinic(),
-        this.getTimeSlots()
+        // this.getTimeSlots()
         setInterval(this.getTimeSlots, 60000); // refresh the timeslot data every minute (60 000 milliseconds)
     },
     methods: {
@@ -78,13 +87,15 @@ export default {
             Api.get('/clinics/' + this.clinicId, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
                 .then(response => {
                     this.clinic = response.data;
+                    this.getTimeSlots();
                 }).catch(error => {
                     console.log(error);
                 })
         },
         getTimeSlots(){
             // add sorting filtering
-            Api.get('/clinics/65805c5299d295eb1305e342/timeslots?startDate=2023-12-26&endDate=2023-12-27', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+            // TODO: add a date picker for startDate and endDate
+            Api.get(`/clinics/${this.clinic._id}/timeslots?startDate=${this.startDate}&endDate=${this.endDate}`, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
             .then(response => {
                     this.timeslots = response.data.Timeslots;
                     this.organizeAppointments();

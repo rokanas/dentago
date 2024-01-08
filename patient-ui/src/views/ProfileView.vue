@@ -53,7 +53,7 @@
                                                 <p>{{ formatDateTime(appointment.startTime) }}</p>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @click="confirmCancellation(appointment._id, patientId)">
+                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @click="confirmCancellation(appointment._id, patientId, appointment.clinic._id)">
                                                     Yes
                                                 </button>
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -170,8 +170,8 @@ export default {
                     console.log(err)
                 })
         },
-        confirmCancellation(timeslotId, patientId) {
-            Api.patch('/clinics/' + this.clinicId + '/timeslots/' + timeslotId, {
+        confirmCancellation(timeslotId, patientId, clinicId) {
+            Api.patch('/clinics/' + clinicId + '/timeslots/' + timeslotId, {
                 instruction: 'CANCEL',
                 patient_id: patientId
             }, { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })

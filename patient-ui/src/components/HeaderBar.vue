@@ -1,6 +1,7 @@
 <template>
     <div id="navbar">
-        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="navigateTo('/')" data-toggle="tooltip" data-placement="bottom" title="Home">
+        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="navigateTo('/')"
+            data-toggle="tooltip" data-placement="bottom" title="Home">
             <span class="material-symbols-outlined">
                 home
             </span>
@@ -25,9 +26,17 @@
             </div>
         </div>
 
-        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="redirect()" data-toggle="tooltip" data-placement="bottom" title="Profile">
+        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="redirect()"
+            data-toggle="tooltip" data-placement="bottom" title="Profile">
             <span class="material-symbols-outlined">
                 account_circle
+            </span>
+        </button>
+
+        <button v-if="$route.path !== '/login' && $route.path !== '/register'" class="btn btn-link" @click="handleLogout()"
+            data-toggle="tooltip" data-placement="bottom" title="Logout">
+            <span class="material-symbols-outlined">
+                logout
             </span>
         </button>
 
@@ -98,6 +107,7 @@
 
 <script>
 import NotificationItem from '@/components/NotificationItem.vue'
+import { Api } from '../Api'
 
 export default {
     data() {
@@ -127,6 +137,22 @@ export default {
         },
         getNotifications() {
             // TODO
+        },
+        async handleLogout() {
+            const userId = JSON.parse(localStorage.getItem("patientData")).id;
+            console.log(userId);
+            Api.patch('/logout', {
+                id: userId,
+            })
+                .then((res) => {
+                    console.log(res);
+                    localStorage.removeItem("patientData");
+                    localStorage.removeItem("access-token");
+                    this.$router.push('/login')
+                })
+                .catch((err) => {
+                    console.log(err)
+                })
         }
     }
 }

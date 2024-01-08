@@ -4,7 +4,13 @@
   <div>
     <div class="banner">
       <h1> Welcome to Dentago! </h1>
-      <p> {{ fillertext }} </p>
+      <p>
+        Booking dentist appointments in Sweden is difficult: free times seem to be few and far between, and people who don't speak Swedish are at a disadvantage.
+        We at Dentago understand these struggles, so we created this centralized platform to help ease the process.
+        We collaborate with hundreds of dental clinics to ensure there are always places nearby to choose from.
+
+        Create an account, find clinics near you using the Google Map below, check available booking times, and pick the best one for you! You'll find all your upcoming appointments under your profile.
+      </p>
     </div>
     <div class="p-4">
       <!-- Google Map
@@ -65,7 +71,6 @@ export default defineComponent ({
       center: {lat: 58.572053, lng: 14.702880},
       zoom: 7,
       clinics: [],
-      fillertext: "Say cheese! Book your dental appointment with a Dentago Partner — now all across Sweden."
     }
   },
   methods: {
