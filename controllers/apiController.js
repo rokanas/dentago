@@ -77,7 +77,12 @@ router.get('/patients/:patient_id/timeslots', authenticateToken, async (req, res
         // find timeslots with matching patient id
         const timeslots = await Timeslot.find({ patient: patientId }).populate('clinic').populate('dentist').exec();
 
-        // TODO: this was triggering an error in the UI
+        /**
+         * I (Ionel) deactivated this because his was triggering an error in the UI
+         * I don't think we should send a 404 if the user has no timeslots
+         * We should send an empty object which we already do
+         *  */
+
         // // if no timeslots are found
         // if(timeslots.length === 0 || timeslots === null) {
         //     return res.status(404).json({ Message: 'No timeslots found' });
