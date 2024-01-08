@@ -42,7 +42,7 @@ const swedishTimeFormatter = new Intl.DateTimeFormat('sv-SE', {
 });
 
 // converts UTC time to an English String-representation of the current weekday according to Swedish local time
-const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Europe/Stockholm' }); 
 
 
 // Connect to the MQTT broker
@@ -153,7 +153,7 @@ client.on('message', async (topic, message) => {
 
                 // Publish the result
                 client.publish(responseTopic, JSON.stringify(responseObject));
-                console.log(responseObject);
+                console.log(`Timeslot(s) forwarded to requesting ID: ${reqId}`);
 
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
@@ -163,7 +163,6 @@ client.on('message', async (topic, message) => {
         // Incoming request for recommended timeslot data according to user preference
         case MQTT_SUB_TOPICS['RECOMMENDATION']:
             try {
-                console.log('message received')
                 const payload = JSON.parse(message);
                 const reqId = payload.reqId;
                 const patientId = payload.patientId;
@@ -233,6 +232,7 @@ client.on('message', async (topic, message) => {
 
                 // Publish the result
                 client.publish(responseTopic, JSON.stringify(responseObject));
+                console.log(`Recommendation forwarded to requesting ID: ${reqId}`);
 
             } catch (error) {
                 console.log("Error when processing MQTT message: ", error);
@@ -243,7 +243,6 @@ client.on('message', async (topic, message) => {
         // Received ping from Monitor-service
         case MQTT_SUB_TOPICS['MONITOR_SUB']:
             client.publish(MONITOR_PUB);
-            console.log('Pong!');
             break;
 
         // Show error in case of unhandled topic
