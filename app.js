@@ -4,14 +4,8 @@
  * 
  *  ===========================================================================================================================
  * 
- *  REGARDING THE HORRIBLY NESTED FUNCTIONS: Due to the asynchronous nature of JavaScript, a choice had to be made between either 
- *  nesting the prompted questions or using tons of Promises (one for each question), as otherwise all of the them would immediately 
- *  print to the terminal instead of waiting for the answer before asking the next question. Initially, the user was only prompted 
- *  a low number of questions for any of the "read-input" functions, so the choice of nesting was made due to it being simpler. 
- *  However, as the complexity (and amount) of prompts/input needed for many of the functions has grown, so has the the nesting, 
- *  which is now making the code quite hard to understand and maintain.
- * 
- *  (!) This is most likely to be fixed in a future commit by refactoring to Promise-based functions - if time permits.
+ *  DISCLAIMER: For anyone worried about the amount of Promises necessary for the user prompts; you should rejoice in the fact 
+ *  that you were not here for indentation hell...
 **/
 
 // Used for random ID generation
@@ -54,30 +48,30 @@ MQTT_TOPICS = {
     createDentist: 'dentago/dentist/creation/dentists/',
     createTimeslot: 'dentago/dentist/creation/timeslots/',
     assignTimeslot: 'dentago/dentist/assignment/timeslot/',
-    bookingNotification: () => { return `dentago/booking/+/${clinicMongoId}/SUCCESS` },
+    bookingNotification: () => { return `dentago/booking/+/${clinicMongoId}/SUCCESS`; }
 }
 
 const loginTopic = 'dentago/dentist/login/';
 const getClinics = 'dentago/dentist/clinics/';
 const preLoginTopics = [loginTopic, getClinics, MQTT_TOPICS.createClinic, MQTT_TOPICS.createDentist].map(topic => { 
-    return topic + preLoginReqId 
+    return topic + preLoginReqId; 
 });
 
 //============================== TOPIC SUBSCRIBE FUNCTIONS ==============================//
 
-// Unsubscribes from the topics used before successful login using a temporary ID
+// Unsubscribes from the temporary topics with a temporary ID that are used before successful login 
 function unSubscribeToLoginTopics() {
     mqttClient.unsubscribe(preLoginTopics, (error) => {
         if (error) console.log('Error when unsubscribing to topics: ' + error);
     });
 }
 
-// Subscribe to all topics using a dentist ID (after successful login)
+// Subscribe to all topics using a Dentist ID (after successful login)
 function subscribeToMainTopics() {
     // Append the clinicId to all topics and subscribe to each 
     mqttClient.subscribe(Object.values(MQTT_TOPICS).map(topic => { 
         // Do not append clinicId to the "bookingNotification" topic
-        return topic !== MQTT_TOPICS.bookingNotification ? topic + userId : topic(); // Treat "bookingNotification" as function that returns the correct String
+        return topic !== MQTT_TOPICS.bookingNotification ? topic + userId : topic(); // Treat "bookingNotification" as function (that returns the correct String)
     }), (error, granted) => {
         if(!error) {
             granted.forEach(key => {
@@ -97,7 +91,7 @@ function displayLoginMenu() {
     console.log('1. Login Dentist'); 
     console.log('2. Register Dentist');
     console.log('3. Register Clinic');
-    console.log('4. Get all Clinics')
+    console.log('4. Get all Clinics');
     console.log('0. Exit');
     rl.question('Enter your option: ', (input) => {
         handleLoginMenuInput(input);
@@ -110,7 +104,7 @@ function displayMainMenu() {
     console.log('1. Add new Dentist to Database'); 
     console.log('2. Add new Timeslot for appointment');
     console.log('3. Get all Timeslots for your Clinic');
-    console.log('4. Get all your Timeslots')
+    console.log('4. Get all your Timeslots');
     console.log('5. Assign Dentist to existing Timeslot');
     console.log('6. Cancel booked appointment');
     console.log('0. Exit');
@@ -207,126 +201,154 @@ async function handleLoginMenuInput(choice) {
 }
 
 // Login function
-function login(loginInfo) {    
+function login(loginInfo) {
     return new Promise(async (resolve, reject) => {
         // Make Promise functions available to the on-message event handler using the global variables
         loginResolve = resolve;
         loginReject = reject;
 
-        rl.question('Enter your ID: ', (dentistId) => {
-            loginInfo.id = dentistId;
-
-            rl.question('Enter your password: ', (dentistPassword) => {
-                loginInfo.password = dentistPassword;
-                loginInfo.reqId = preLoginReqId;
-                loginInfo.status.message = 'CLI app login request from user with ID: ' + dentistId;
-
-                mqttClient.publish(loginTopic, JSON.stringify(loginInfo));
+        // Prompt for User/Dentist ID
+        loginInfo.id = await new Promise((resolve) => {
+            rl.question('Enter your ID: ', (id) => {
+                if (id.trim() !== '') {
+                    resolve(id.trim());
+                } else {
+                    reject('Invalid input: Dentist ID cannot be empty');
+                }
             });
         });
+
+        // Prompt for password
+        loginInfo.password = await new Promise((resolve) => {
+            rl.question('Enter your password: ', (password) => {
+                resolve(password);
+            });
+        });
+
+        // Add request ID and logging message to payload then publish login request
+        loginInfo.reqId = preLoginReqId;
+        loginInfo.status.message = 'CLI app login request from user with ID: ' + loginInfo.id;
+        mqttClient.publish(loginTopic, JSON.stringify(loginInfo));
     });
 }
-
 // Prompt for new Clinic input from user
 function promptForClinicInfo(newClinic) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter the Clinic ID: ', (id) => {
-            newClinic.id = id.trim();
-
-            rl.question('Enter the name: ', (name) => {
-                newClinic.name = name.trim();
-
-                rl.question('Enter the address: ', (address) => {
-                    newClinic.address = address.trim();
-
-                    console.log('Enter the coordinates');
-                    rl.question('Enter latitude: ', (latitude) => {
-                        // Try-catch blocks must be inside the "question" function scope or the app crashes
-                        // It is not enough to put just one at the highest level block of the function itself
-                        // For the same reason there is a second try-catch for the second Error
-                        try {
-                            if (coordinateRegex.test(latitude)) {
-                                newClinic.location.lat = parseFloat(latitude);
-                            } else {
-                                throw new Error('Invalid latitude input, expecting a valid number format');
-                            }
-    
-                            rl.question('Enter longitude: ', async (longitude) => {
-                                try {
-                                    if (coordinateRegex.test(longitude)) {
-                                        newClinic.location.lng = parseFloat(longitude);
-                                    } else {
-                                        throw new Error('Invalid longitude input, expecting a valid number format');
-                                    }
-        
-                                    rl.question('Do you want to add opening hours (default: 08:00-17:00)? (Y/N) ', async (answer) => {
-                                        let addOpeningHours = false;
-                                        if (answer.toLowerCase() === 'y') {
-                                            addOpeningHours = true;
-                                        }
-
-                                        let isValidOpeningHours = true;
-                                        console.log("is the check before this stuff???")
-                                        if (addOpeningHours) {
-                                            try {
-                                                const openingHours = await new Promise((resolve, reject) => {
-                                                    const hoursArray = [];
-                                                    rl.question('Enter the starting hour (number between 0-23): ', (startHour) => {
-        
-                                                        let integerStartHour = null;
-                                                        if (dayHourRegex.test(startHour)) {
-                                                            integerStartHour = parseInt(startHour);
-                                                            hoursArray.push(integerStartHour);
-                                                        } else {
-                                                            isValidOpeningHours = false;
-                                                            reject('Invalid starting hour: number must be integer between 0-23');
-                                                        }
-
-                                                        if (isValidOpeningHours) {
-                                                            rl.question('Enter the closing hour (number between 0-23): ', (endHour) => {
-
-                                                                if (dayHourRegex.test(endHour)) {
-                                                                    integerEndHour = parseInt(endHour);
-                                                                    hoursArray.push(integerEndHour);
-                                                                } else {
-                                                                    isValidOpeningHours = false;
-                                                                    reject('Invalid closing hour: number must be integer between 0-23');
-                                                                }
-    
-                                                                resolve(hoursArray);
-                                                            });
-                                                        }
-                                                    });
-                                                });
-
-                                                if (openingHours[0] >= openingHours[1]) throw new Error('Invalid opening hours: starting hour is greater than or equal to closing hour');
-                                                newClinic.hours = openingHours;
-                                            } catch (error) {
-                                                isValidOpeningHours = false;
-                                                reject(error.toString());
-                                            }
-                                        }
-                                        if (isValidOpeningHours) {
-                                            rl.question(`Do you want to save a new Clinic with the following information? (Y/N) \n${JSON.stringify(newClinic)}\n`, (answer) => {
-                                                if (answer.toLowerCase() === 'y') {
-                                                    resolve();
-                                                } else {
-                                                    newClinic = {};
-                                                    reject('Did not create new Clinic');
-                                                }
-                                            });
-                                        }
-                                    }); // async function
-                                } catch (error) {
-                                    reject(error.toString());
-                                }
-                            });
-                        } catch (error) {
-                            reject(error.toString());
-                        }
-                    });
-                });
+        // Prompt for Clinic ID
+        newClinic.id = await new Promise((resolve) => {
+            rl.question('Enter the Clinic ID: ', (id) => {
+                if (id.trim() !== '') {
+                    resolve(id.trim());
+                } else {
+                    reject('Invalid input: Clinic ID cannot be empty');
+                }
             });
+        });
+
+        // Prompt for Clinic name
+        newClinic.name = await new Promise((resolve) => {
+            rl.question("Enter the Clinic's name: ", (name) => {
+                if (name.trim() !== '') {
+                    resolve(name.trim());
+                } else {
+                    reject('Invalid input: Clinic name cannot be empty');
+                }
+            });
+        });
+
+        // Prompt for Clinic address
+        newClinic.address = await new Promise((resolve) => {
+            rl.question('Enter the address: ', (address) => {
+                if (address.trim() !== '') {
+                    resolve(address.trim());
+                } else {
+                    reject('Invalid input: address cannot be empty');
+                }
+            });
+        });
+
+        // Ask for the coordinates - [not yet implemented]: validate that the entered number is between -90 and +90
+        // Prompt for latitude
+        newClinic.location.lat = await new Promise((resolve) => {
+            console.log('Input the coordinates.');
+            rl.question('Enter latitude: ', (latitude) => {
+                if (coordinateRegex.test(latitude) && latitude !== '') {
+                    resolve(parseFloat(latitude));
+                } else {
+                    reject('Invalid input: expecting a valid coordinate number format');
+                }
+            });
+        });
+
+        // Prompt for longitude
+        newClinic.location.lng = await new Promise((resolve) => {
+            console.log('Input the coordinates.');
+            rl.question('Enter longitude: ', (longitude) => {
+                if (coordinateRegex.test(longitude) && longitude !== '') {
+                    resolve(parseFloat(longitude));
+                } else {
+                    reject('Invalid input: expecting a valid coordinate number format');
+                }
+            });
+        });
+
+        // Ask if the user wants to add custom opening hours (default is defined in the mongoose schema)
+        const addOpeningHours = await new Promise((resolve) => {
+            rl.question('Do you want to add opening hours (default: 08:00-17:00)? (Y/N) ', (answer) => {
+                if (answer.toLowerCase() === 'y') {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+
+        // Only prompt the user to input opening hours if their previous answer was 'yes'
+        if (addOpeningHours) {
+            // Store the hours in temporary array
+            const hoursArray = [];
+
+            // Prompt for opening hour
+            hoursArray.push(await new Promise((resolve) => {
+                rl.question('Enter the opening hour (number between 0-23): ', (startHour) => {
+                    if (dayHourRegex.test(startHour)) {
+                        resolve(parseInt(startHour));
+                    } else {
+                        reject('Invalid input: number must be integer between 0-23');
+                    }
+                });
+            }));
+
+            // Prompt for closing hour
+            hoursArray.push(await new Promise((resolve) => {
+                rl.question('Enter the closing hour (number between 0-23): ', (endHour) => {
+                    if (dayHourRegex.test(endHour)) {
+                        resolve(parseInt(endHour));
+                    } else {
+                        reject('Invalid input: number must be integer between 0-23');
+                    }
+                });
+            }));
+            
+            // Validate opening hours
+            await new Promise((resolve) => {
+                if (hoursArray[0] >= hoursArray[1]) {
+                    reject('Invalid opening hours: starting hour is greater than or equal to closing hour');
+                } else {
+                    // Assign opening hours to Clinic object payload
+                    newClinic.hours = hoursArray;
+                    resolve();
+                }
+            });
+        }
+
+        // Prompt user for confirmation
+        rl.question(`Do you want to save a new Clinic with the following information? (Y/N) \n${JSON.stringify(newClinic)}\n`, (answer) => {
+            if (answer.toLowerCase() === 'y') {
+                resolve('Attempting to create new Clinic');
+            } else {
+                reject('Did not create new Clinic');
+            }
         });
     });
 }
@@ -342,7 +364,6 @@ async function handleMenuInput(choice) {
             console.log("Please enter the Dentist's credentials");
             try {
                 await promptForDentistInfo(newDentist);
-                if (!newDentist.clinic) newDentist.clinic = clinicId; // If clinic ID was not manually added set the global one
                 const statusObject = { message: 'Request to create new Dentist resource in the database' };
                 const payload = { dentist: newDentist, reqId: userId, status: statusObject };
                 mqttClient.publish(MQTT_TOPICS.createDentist, JSON.stringify(payload));
@@ -423,48 +444,62 @@ async function handleMenuInput(choice) {
 // Read new Dentist input from user
 function promptForDentistInfo(newDentist) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter the ID: ', (id) => {
-            newDentist.id = id.trim();
-
-            rl.question('Enter the name: ', (dentistName) => {
-                newDentist.name = dentistName.trim();
-
-                // The 'async' flag is needed so we can 'await' the promise and pause execution
-                rl.question('Enter a password: ', async (password) => {
-                    newDentist.password = password;
-
-                    let isValidClinicId = true;
-                    if (!clinicId) {    // Prompt user if there is no global ID (which is the case before login)
-                        try {
-                            const enteredClinicId = await new Promise((resolve, reject) => {
-                                rl.question('Enter Clinic ID: ', (enteredClinicId) => {
-                                    if (enteredClinicId.trim() !== '') {
-                                        resolve(enteredClinicId.trim());
-                                    } else {
-                                        isValidClinicId = false;
-                                        reject('Invalid Clinic ID: ID cannot be empty')
-                                    }
-                                });
-                            });
-                            newDentist.clinic = enteredClinicId;
-                        } catch (error) {
-                            reject(error);
-                        }  
-                    }
-
-                    // Ensure this prompt is not triggered if clinic ID is invalid
-                    if (isValidClinicId) {
-                        rl.question(`Do you want to save a new Dentist with the following information? (Y/N) \n${JSON.stringify(newDentist)}\n`, (answer) => {
-                            if (answer.toLowerCase() === 'y') {
-                                resolve();
-                            } else {
-                                newDentist = {};
-                                reject('Did not create new Dentist');
-                            }
-                        });
-                    }
-                }); // async function
+        // Prompt for Dentist ID
+        newDentist.id = await new Promise((resolve) => {
+            rl.question('Enter an ID: ', (id) => {
+                if (id.trim() !== '') {
+                    resolve(id.trim());
+                } else {
+                    reject('Invalid input: Dentist ID cannot be empty');
+                }
             });
+        });
+
+        // Prompt for Dentist name
+        newDentist.name = await new Promise((resolve) => {
+            rl.question('Enter the name: ', (dentistName) => {
+                if (dentistName.trim() !== '') {
+                    resolve(dentistName.trim());
+                } else {
+                    reject('Invalid input: name cannot be empty');
+                }
+            });
+        });
+
+        // Prompt for password
+        newDentist.password = await new Promise((resolve) => {
+            rl.question('Enter a password: ', (password) => {
+                if (password !== '') {
+                    resolve(password);
+                } else {
+                    reject('Invalid input: password cannot be empty');
+                }
+            });
+        });
+
+        // Prompt user if there is no global ID (which is the case before login)
+        if (!clinicId) {
+            newDentist.clinic = await new Promise((resolve) => {
+                rl.question('Enter the Clinic ID: ', (enteredClinicId) => {
+                    if (enteredClinicId.trim() !== '') {
+                        resolve(enteredClinicId.trim());
+                    } else {
+                        reject('Invalid input: Clinic ID cannot be empty');
+                    }
+                });
+            });
+        } else {
+            // Otherwise add the saved global ID
+            newDentist.clinic = clinicId;
+        }
+
+        // Prompt user for confirmation
+        rl.question(`Do you want to save a new Dentist with the following information? (Y/N) \n${JSON.stringify(newDentist)}\n`, (answer) => {
+            if (answer.toLowerCase() === 'y') {
+                resolve('Attempting to create new Dentist');
+            } else {
+                reject('Did not create new Dentist');
+            }
         });
     });
 }
@@ -472,38 +507,72 @@ function promptForDentistInfo(newDentist) {
 // Read new Timeslot input from user
 function promptForTimeslotInfo(newTimeslot) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter start date (YYYY-MM-DD HH:mm): ', (startDateInput) => {
-            const startDate = new Date(startDateInput);
-            if (isNaN(startDate)) {
-                reject('Invalid date format. Please use YYYY-MM-DD HH:mm.');
-                return;
-            }
-            newTimeslot.startTime = startDate;
+        // Prompt for start time in Date format
+        newTimeslot.startTime = await new Promise((resolve) => {
+            rl.question('Enter start date (YYYY-MM-DD HH:mm): ', (startDateInput) => {
+                const startDate = new Date(startDateInput);
+                if (isNaN(startDate)) {
+                    reject('Invalid date format. Please use YYYY-MM-DD HH:mm.');
+                } else {
+                    resolve(startDate);
+                }
+            });
+        });
 
+        // Prompt for end time in Date format
+        newTimeslot.endTime = await new Promise((resolve) => {
             rl.question('Enter end time(YYYY-MM-DD HH:mm): ', (endDateInput) => {
                 const endDate = new Date(endDateInput);
                 if (isNaN(endDate)) {
                     reject('Invalid date format. Please use YYYY-MM-DD HH:mm.');
-                    return;
+                } else {
+                    resolve(endDate);
                 }
-                if (endDate <= startDate) {
-                    reject('Invalid input. End time must be later than the start time.')
-                    return;
-                }
-                newTimeslot.endTime = endDate;
+            });
+        });
 
-                rl.question('Do you want to assign a Dentist? (Y/N): ', (answer) => {
-                    if (answer.toLowerCase() == 'y') {
-                        rl.question('Enter the Dentist ID: ', (id) => {
-                            const noWhitespaceId = id.trim();
-                            newTimeslot.dentist = noWhitespaceId;
-                            resolve();
-                        });
+        // Check if startTime >= endTime
+        // The promise is necessary to prevent execution of the final question if we reject
+        await new Promise((resolve) => {
+            if (newTimeslot.startTime >= newTimeslot.endTime) {
+                reject('Invalid input: start time cannot be equal to or later than end time');
+            } else {
+                resolve();
+            }
+        });
+
+        // Ask if the user wants to assign a Dentist
+        const addDentist = await new Promise((resolve) => {
+            rl.question('Do you want to assign a Dentist? (Y/N): ', (answer) => {
+                if (answer.toLowerCase() === 'y') {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+
+        // Only prompt the user to input a Dentist ID if their previous answer was 'yes'
+        if (addDentist) {
+            // Prompt for Dentist ID
+            newTimeslot.dentist = await new Promise((resolve) => {
+                rl.question("Enter the Dentist's ID: ", (id) => {
+                    if (id.trim() !== '') {
+                        resolve(id.trim());
                     } else {
-                        resolve('Did not create new Timeslot');
+                        reject('Invalid input: Dentist ID cannot be empty');
                     }
                 });
             });
+        }
+
+        // Prompt user for confirmation
+        rl.question(`Do you want to create a new Timeslot with the following information? (Y/N) \n${JSON.stringify(newTimeslot)}\n`, (answer) => {
+            if (answer.toLowerCase() === 'y') {
+                resolve('Attempting to create new Timeslot');
+            } else {
+                reject('Did not create new Timeslot');
+            }
         });
     });
 }
@@ -532,20 +601,35 @@ function fetchTimeslots(dentistId) {
 // Assigning dentist makes Timeslot (appointment) bookable by "publishing" it
 function assignDentist(timeslotUpdate) {
     return new Promise(async (resolve, reject) => {
-        rl.question('Enter the Timeslot ID: ', (timeslotId) => {
-            timeslotUpdate.timeslot = timeslotId.trim();
-
-            rl.question('Enter the Dentist ID: ', (dentistId) => {
-                timeslotUpdate.dentist = dentistId.trim();
-                rl.question(`Do you want to assign the following dentist [${dentistId}] to this Timeslot [${timeslotId}]? (Y/N): `, (answer) => {
-                    if (answer.toLowerCase() === 'y') {
-                        resolve();
-                    } else {
-                        timeslotUpdate = {};
-                        reject('Did not assign Dentist');
-                    }
-                });
+        // Prompt for Timeslot ID
+        timeslotUpdate.timeslot = await new Promise((resolve) => {
+            rl.question('Enter the Timeslot ID: ', (timeslotId) => {
+                if (timeslotId.trim() !== '') {
+                    resolve(timeslotId.trim());
+                } else {
+                    reject('Invalid input: Timeslot ID cannot be empty');
+                }
             });
+        });
+
+        // Prompt for Dentist ID
+        timeslotUpdate.dentist = await new Promise((resolve) => {
+            rl.question('Enter the Dentist ID: ', (dentistId) => {
+                if (dentistId.trim() !== '') {
+                    resolve(dentistId.trim());
+                } else {
+                    reject('Invalid input: Dentist ID cannot be empty');
+                }
+            });
+        });
+
+        // Prompt user for confirmation
+        rl.question(`Do you want to assign the following dentist [${timeslotUpdate.dentist}] to this Timeslot [${timeslotUpdate.timeslot}]? (Y/N): `, (answer) => {
+            if (answer.toLowerCase() === 'y') {
+                resolve('Attempting to assign Dentist to Timeslot');
+            } else {
+                reject('Did not assign Dentist to Timeslot');
+            }
         });
     });
 }
@@ -553,11 +637,15 @@ function assignDentist(timeslotUpdate) {
 // If Timeslot is not booked then unassigning the dentist makes the Timeslot unavailable to patients
 // If Timeslot is booked then unassigning the dentist will cancel the existing booking
 function unassignDentist(timeslotCancellation) {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
         rl.question('Enter the Timeslot ID: ', (timeslotId) => {
-            timeslotCancellation.timeslot = timeslotId.trim();
-            timeslotCancellation.dentist = null;
-            resolve();
+            if (timeslotId.trim() !== '') {
+                timeslotCancellation.timeslot = timeslotId.trim();
+                timeslotCancellation.dentist = null;
+                resolve(`Attempting to unassign Dentist from timeslot with ID: ${timeslotCancellation.timeslot}`);
+            } else {
+                reject('Invalid input: Timeslot ID cannot be empty');
+            }
         });
     });
 }
@@ -581,6 +669,7 @@ mqttClient.on('connect', () => {
 });
 
 mqttClient.on('message', (topic, message) => {
+    // Remove the appended ID from the incoming topic before matching it in the switch
     const trimmedTopic = topic.substring(0, topic.lastIndexOf('/') + 1);
 
     switch (trimmedTopic) {
@@ -667,7 +756,7 @@ mqttClient.on('message', (topic, message) => {
                     loginReject('Login failed - try again!');
                 }
             } catch (error) {
-                resolve("Error when processing MQTT message: ", error);
+                loginReject("Error when processing MQTT message: ", error);
             }
             break;
         default:
@@ -682,7 +771,6 @@ mqttClient.on('message', (topic, message) => {
                     const payload = JSON.parse(message);
                     const timeslot = JSON.parse(payload.timeslotJSON);
                     const timeslotId = timeslot._id;
-                    console.log(payload) // TODO: remove after testing that notifications properly work
                     const action = payload.instruction === 'BOOK' ? 'BOOKED' : 'CANCELLED';
                     console.log('\n\nMessage received on topic: ' + topic);
                     console.log(`Timeslot with the ID [${timeslotId}] has been ${action}`);
