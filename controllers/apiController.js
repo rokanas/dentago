@@ -70,16 +70,18 @@ router.get('/dentists/:dentist_id', authenticateToken, async (req, res) => {
 
 router.get('/patients/:patient_id/timeslots', authenticateToken, async (req, res) => {
     try {
+        console.log('fetch timeslots for user');
         // extract patient id from request parameters
         const patientId = req.params.patient_id;
 
         // find timeslots with matching patient id
         const timeslots = await Timeslot.find({ patient: patientId }).populate('clinic').populate('dentist').exec();
 
-        // if no timeslots are found
-        if(timeslots.length === 0 || timeslots === null) {
-            return res.status(404).json({ Message: 'No timeslots found' });
-        }
+        // TODO: this was triggering an error in the UI
+        // // if no timeslots are found
+        // if(timeslots.length === 0 || timeslots === null) {
+        //     return res.status(404).json({ Message: 'No timeslots found' });
+        // }
 
         res.status(200).json({ Timeslots: timeslots });  // request successful
 
