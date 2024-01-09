@@ -15,22 +15,23 @@ const router = express.Router();
 router.patch('/patients/:patient_id/preferences', authenticateToken, async (req, res) => {
     try {
         // extract recommendations from request body
-        const preferences = req.body;
+        const preferences = req.body.preferredTimeWindow;
 
         // extract user id from request parameters
         const patientId = req.params.patient_id;
 
         // find patient in DB using provided id
-        const patient = await Patient.findOne({ id: patientId });
+        const patient = await Patient.findOne({ _id: patientId });
         
-        // if patient is not found in databse, return 403
+        // if patient is not found in database, return 404
         if(!patient) {
-            return res.status(403).json({ Message: "Access forbidden: invalid patient ID"});
+            return res.status(404).json({ Message: "Access forbidden: invalid patient ID"});
         }
 
         // update the patient's preferences and save the resource
         patient.schedulePreferences = preferences;
         await patient.save();
+        console.log(JSON.stringify(patient));
 
         // respond with relevant status code and message
         res.status(200).json({ Message: "Patient preferences saved successfully" });
