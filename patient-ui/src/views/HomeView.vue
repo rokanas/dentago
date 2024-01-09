@@ -4,11 +4,15 @@
   <div>
     <div class="banner">
       <h1> Welcome to Dentago! </h1>
-      <p> {{ fillertext }} </p>
+      <p>
+        Booking dentist appointments in Sweden is difficult: free times seem to be few and far between, and people who don't speak Swedish are at a disadvantage.
+        We at Dentago understand these struggles, so we created this centralized platform to help ease the process.
+        We collaborate with hundreds of dental clinics to ensure there are always places nearby to choose from.
+
+        Create an account, find clinics near you using the Google Map below, check available booking times, and pick the best one for you! You'll find all your upcoming appointments under your profile.
+      </p>
     </div>
     <div class="p-4">
-      <button class="btn btn-outline-primary" @click="getClinics()"> Find clinics near you </button>
-
       <!-- Google Map
         - shows all clinics at their location using markers.
         - centers on the user's location if they enable that permission, and gives a different zoom level
@@ -19,6 +23,7 @@
           <Marker v-for="clinic in clinics" :key="clinic.id" :options="{ position: clinic.location }">
             <InfoWindow>
               Clinic name: {{ clinic.name }} <br>
+              Opening hours: {{ clinic.hours[0] + '-' + clinic.hours[1] }} <br>
               Clinic booking page
               <BookingButton :clinicId="clinic._id"></BookingButton>
             </InfoWindow>
@@ -51,7 +56,7 @@ import BookingButton from '@/components/BookingButton.vue';
 export default defineComponent ({
   // When the page is created, it calls to get all clinics and tries to access the user's location
   created() {
-    // this.getClinics(),
+    this.getClinics(),
     this.findUserLocation()
   },
   components: {
@@ -67,12 +72,11 @@ export default defineComponent ({
       center: {lat: 58.572053, lng: 14.702880},
       zoom: 7,
       clinics: [],
-      fillertext: "Say cheese! Book your dental appointment with a Dentago Partner — now all across Sweden."
     }
   },
   methods: {
     async getClinics() {
-            Api.get('/clinics')
+            Api.get('/clinics', {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
         .then(response => {
           for(let i=0; i<response.data.length; i++){
             this.clinics.push(response.data[i]);

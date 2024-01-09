@@ -29,7 +29,7 @@
                 />
               </div>
               <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Login</button>
+                <button type="submit" class="btn btn-primary" @click="handleLogin()">Login</button>
               </div>
             </form>
           </div>
@@ -45,6 +45,8 @@
 </template>
 
 <script>
+import { Api } from '../Api';
+
 export default {
   name: 'LoginPage',
   data() {
@@ -57,14 +59,22 @@ export default {
   },
   methods: {
     async handleLogin() {
-      console.log(this.loginForm)
-      try {
-        // We need to replace with the actual API call
-        const response = await this.$http.post('/api/login', this.loginForm)
-        // Handle response, store token, redirect, etc.
-      } catch (error) {
-        // Handle error, show message, etc.
-      }
+      Api.patch('/login', {
+        id: this.loginForm.email,
+        password: this.loginForm.password
+      })
+        .then((res) => {
+          if (res.status === 200){
+            localStorage.setItem("access-token", res.data.AccessToken)
+
+            localStorage.setItem("patientData", JSON.stringify(res.data.Patient));
+          }
+          this.loginForm = {}
+          this.$router.push('/')
+        })
+        .catch((err) => {
+          console.log(err)
+        })
     }
   }
 }

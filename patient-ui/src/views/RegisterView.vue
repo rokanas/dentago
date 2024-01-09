@@ -12,7 +12,27 @@
                   type="email"
                   class="form-control"
                   id="registerEmail"
-                  v-model="registerForm.email"
+                  v-model="registerForm.id"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="firstName" class="form-label">First Name</label>
+                <input
+                  type="firstName"
+                  class="form-control"
+                  id="firstName"
+                  v-model="registerForm.firstName"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input
+                  type="lastName"
+                  class="form-control"
+                  id="lastName"
+                  v-model="registerForm.lastName"
                   required
                 />
               </div>
@@ -37,9 +57,6 @@
                 />
               </div>
               <div class="d-grid gap-2">
-                <div v-if="passwordError" class="alert alert-danger">
-                  {{ passwordErrorMessage }}
-                </div>
                 <button type="submit" class="btn btn-primary">Register</button>
               </div>
             </form>
@@ -56,37 +73,47 @@
 </template>
 
 <script>
+import { Api } from '../Api';
+
 export default {
   name: 'RegisterPage',
   data() {
     return {
       registerForm: {
-        email: '',
+        id: '',
         password: '',
+        firstName: '',
+        lastName: '',
         confirmPassword: ''
-      },
-      passwordError: false,
-      passwordErrorMessage: ''
+      }
     }
   },
   methods: {
     async handleRegister() {
-      console.log(this.registerForm)
       // Validate passwords match, etc.
       if (this.registerForm.password !== this.registerForm.confirmPassword) {
-        this.passwordError = true
-        this.passwordErrorMessage = 'Passwords do not match.'
-        return
-      }
-      this.passwordError = false // Reset error state before the API call
+        alert('Passwords do not match!')
+      } else {
+        Api.post('/register', {
+          id: this.registerForm.id,
+          password: this.registerForm.password,
+          firstName: this.registerForm.firstName,
+          lastName: this.registerForm.lastName
+        })
+          .then((res) => {
+            if (res.status === 201){
+              localStorage.setItem("access-token", res.data.AccessToken)
+              localStorage.setItem("refresh-token", res.data.Patient.refreshToken)
+              localStorage.setItem("patientId", res.data.Patient._id)
 
-      // API call to backend to register the user
-      try {
-        // We need to replace with an actual API call
-        const response = await this.$http.post('/api/register', this.registerForm)
-        // Handle response, possibly autologin and redirect to home
-      } catch (error) {
-        // Handle error, perhaps show message to the user
+              localStorage.setItem("patientData", JSON.stringify(res.data.Patient));
+            }
+            this.registerForm = {}
+            this.$router.push('/')
+          })
+          .catch((err) => {
+            console.log(err)
+          })
       }
     }
   }
