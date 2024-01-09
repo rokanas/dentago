@@ -11,8 +11,9 @@
                     <button class="nav-link" id="nav-preferences-tab" data-bs-toggle="tab" data-bs-target="#nav-preferences"
                         type="button" role="tab" aria-controls="nav-preferences" aria-selected="false">Your
                         Preferences</button>
-                    <button class="nav-link" id="nav-recommendations-tab" data-bs-toggle="tab" data-bs-target="#nav-recommendations"
-                        type="button" role="tab" aria-controls="nav-recommendations" aria-selected="false" @click="getRecommendations">Your
+                    <button class="nav-link" id="nav-recommendations-tab" data-bs-toggle="tab"
+                        data-bs-target="#nav-recommendations" type="button" role="tab" aria-controls="nav-recommendations"
+                        aria-selected="false" @click="getRecommendations">Your
                         Recommendations</button>
                 </div>
             </nav>
@@ -27,7 +28,8 @@
 
                             <div v-else class="col m-2" v-for="(appointment, index) in appointments" :key="index">
                                 <!-- CARD -->
-                                <div class="card card-container" style="width: 18rem;" data-bs-toggle="modal" data-bs-target="#appointmentModal">
+                                <div class="card card-container" style="width: 18rem;" data-bs-toggle="modal"
+                                    data-bs-target="#appointmentModal">
                                     <div class="card-header">
                                         <h5 href="#" class="card-title"> {{ appointment.clinic.name }} </h5>
                                     </div>
@@ -56,7 +58,8 @@
                                                 <p>{{ formatDateTime(appointment.startTime) }}</p>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @click="confirmCancellation(appointment._id, patientId, appointment.clinic._id)">
+                                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+                                                    @click="confirmCancellation(appointment._id, patientId, appointment.clinic._id)">
                                                     Yes
                                                 </button>
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -104,10 +107,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="nav-recommendations" role="tabpanel" aria-labelledby="nav-recommendations-tab"
-                    tabindex="0">
-                    <h1>GET RECOMMENDATIONS</h1>
-                    {{ recommendedTimeslots }}
+                <div class="tab-pane fade" id="nav-recommendations" role="tabpanel"
+                    aria-labelledby="nav-recommendations-tab" tabindex="0">
+                    <h1>Your Recommendations</h1>
+
+                    <div v-for="timeslot in recommendedTimeslots" :key="timeslot">
+                        <div class="card card-container" style="width: 18rem;">
+                        <div class="card-body">
+                            <h6> {{ 'Clinic: ' + timeslot.clinic.name }} </h6>
+                            <h6> {{ 'Dentist: ' + timeslot.dentist.name }} </h6>
+                            <h6> {{ formatDateTime(timeslot.startTime) }} </h6>
+                            <button @click="book(timeslot._id, patientId, timeslot.clinic._id)">Book</button>
+                        </div>
+                    </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -156,7 +170,7 @@ export default {
             Api.get('/patients/' + this.patientId + '/recommendations', { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
                 .then((res) => {
                     this.recommendedTimeslots = res.data.Timeslots;
-                    // console.log(this.appointments);
+                    // console.log(res);
                 })
                 .catch((err) => {
                     console.log(err)
@@ -184,7 +198,7 @@ export default {
                 { preferredTimeWindow: this.preferredTimeWindow },
                 { headers: { Authorization: `Bearer ${localStorage.getItem("access-token")}` } })
                 .then((res) => {
-                    console.log(res)
+                    // console.log(res)
                     alert('success!')
                 })
                 .catch((err) => {
@@ -212,6 +226,29 @@ export default {
             const options = { month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
             const dateTime = new Date(dateTimeString);
             return dateTime.toLocaleString('en-US', options);
+        },
+        book(timeslotId, patientId, timeslotClinic){
+            Api.patch('/clinics/' + timeslotClinic + '/timeslots/' + timeslotId, {
+                instruction: 'BOOK',
+                patient_id: patientId
+            }, {headers: {Authorization: `Bearer ${localStorage.getItem("access-token")}`}})
+            .then(response => {
+                    if (response.data.Message === 'FAILURE'){
+                        alert('This appointment has already been booked by someone else.');
+                        this.$router.go()                   // Refresh the page to force a timeslot data update
+                    } else {
+                        alert('Booking successful!');
+                        const username = JSON.parse(localStorage.getItem("patientData")).id;
+
+                        this.$router.push(`/user/${username}`);
+                        this.getAppointments();
+                        this.getRecommendations();
+                    }
+                    // console.log(response);
+                }).catch(error => {
+                    alert('Something went wrong. Please try again.');
+                    console.log(error);
+                })
         },
     }
 }
@@ -295,6 +332,4 @@ a:hover {
 #day-thingy {
     overflow-y: scroll;
     max-height: 20rem;
-}
-
-</style>
+}</style>
