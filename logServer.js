@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');       // mongoDB data structuring and schema validation
-const path = require('path');               // handles file paths
 const mqtt = require('./mqtt.js');          // contains mqtt functions
 const controller = require('./controller'); // contains message parsing and logging functions
 
@@ -9,10 +8,10 @@ require('dotenv').config();                 // load environmental variables from
 const mongoURI = process.env.MONGODB_URI || process.env.CI_MONGODB_URI;
 
 // subscribe to mqtt topics
-mqtt.subscribe("dentago/authentication/#"); 
-mqtt.subscribe("dentago/availability/#");   
-mqtt.subscribe("dentago/booking/#");               
-mqtt.subscribe("dentago/dentist/#");
+mqtt.subscribe("dentago/authentication/#", { qos: 2 }); 
+mqtt.subscribe("dentago/availability/#", { qos: 2 });   
+mqtt.subscribe("dentago/booking/#", { qos: 2 });               
+mqtt.subscribe("dentago/dentist/#", { qos: 2 });
 mqtt.subscribe("dentago/monitor/logging/ping");
 
 // Connect to MongoDB

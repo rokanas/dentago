@@ -3,11 +3,18 @@ const controller = require('./controller');
 require('dotenv').config();
 
 /*====================  MQTT SETUP  ==================== */
+const clientId = "theOneTrueLogger";
 
 const broker = process.env.MOSQUITTO_URI || process.env.CI_MOSQUITTO_URI;
 
+const options = {
+  clientId,
+  clean: false, // to have a persistent session (for the message queue)
+  queue_qos0_messages: true,
+};
+
 // connect to the MQTT broker
-const client = mqtt.connect(broker);
+const client = mqtt.connect(broker, options);
 
 // event handler for successful connection
 client.on('connect', () => {
@@ -82,14 +89,14 @@ const unsubscribe = (topic) => {
     });
 };
 
-// close connection to MQTT broker gracefully when app is manually terminated
+/*// close connection to MQTT broker gracefully when app is manually terminated
 process.on('SIGINT', () => {
     console.log('Closing MQTT connection...');
     client.end({ reasonCode: 0x00 }, () => {
       console.log('MQTT connection closed');
       process.exit();
     });
-  });
+  });*/
 
 
 module.exports = {
