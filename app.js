@@ -89,9 +89,9 @@ function subscribeToMainTopics() {
 // Function to display the login menu
 function displayLoginMenu() {
     console.log('\n=== Login Menu ===');
-    console.log('1. Login Dentist'); 
-    console.log('2. Register Dentist');
-    console.log('3. Register Clinic');
+    console.log('1. Login (Dentist)'); 
+    console.log('2. Register new Dentist');
+    console.log('3. Register new Clinic');
     console.log('4. Get all Clinics');
     console.log('0. Exit');
     rl.question('Enter your option: ', (input) => {
@@ -102,12 +102,12 @@ function displayLoginMenu() {
 // Function to display the main menu
 function displayMainMenu() {
     console.log('\n=== Main Menu ===');
-    console.log('1. Add new Dentist to Database'); 
+    console.log('1. Add new Dentist for your Clinic'); 
     console.log('2. Add new Timeslot for appointment');
-    console.log('3. Get all Timeslots for your Clinic');
-    console.log('4. Get all your Timeslots');
+    console.log('3. Get all Timeslots (Clinic)');
+    console.log('4. Get all Timeslots (Current User)');
     console.log('5. Assign Dentist to existing Timeslot');
-    console.log('6. Cancel booked appointment');
+    console.log('6. Cancel Timeslot/appointment');
     console.log('0. Exit');
     rl.question('Enter your option: ', (input) => {
         handleMenuInput(input);
