@@ -249,7 +249,7 @@ client.on('message', async (topic, message) => {
                     dentist:    { $ne: null },
                     startTime:  { $gt: startDate },
                     endTime:    { $lt: endDate }
-                });
+                }).populate('dentist');
 
                 // extract preferences object from patient resource
                 const preferences = patient.schedulePreferences.toObject();
