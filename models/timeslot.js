@@ -21,10 +21,24 @@ const timeslotSchema = new Schema({
     startTime: {
         type: Date,
         required: true,
+        validate: {
+            validator: function (value) {
+                // Check that date is after today's date
+                return value > new Date();
+            },
+            message: 'Start time must be after today'
+        }
     },
     endTime: {
         type: Date,
         required: true,
+        validate: {
+            validator: function(value) {
+                // Check if endTime is after startTime
+                return value > this.startTime;
+            },
+            message: 'End time must be after start time'
+        }
     },
 });
 
