@@ -21,6 +21,9 @@ const subscribeTopic = `dentago/booking/`;
 const sharedSubscribeTopic = `${sharedSubscriptionPrefix}dentago/booking/`;
 const publishTopic = "dentago/booking/";
 
+const pingTopic = "dentago/monitor/booking/ping";
+const echoTopic = "dentago/monitor/booking/echo";
+
 client.on("connect", () => {
   console.log(`Connected to the MQTT broker: ${brokerUrl}`);
   client.subscribe(sharedSubscribeTopic, (err) => {
@@ -28,6 +31,13 @@ client.on("connect", () => {
       console.error(`Error subscribing to: ${subscribeTopic}`, err);
     }
   });
+
+  client.subscribe(`${pingTopic}`, (err) => {
+    if (err) {
+      console.error(`Error subscribing to: ${pingTopic}`, err);
+    }
+  });
+
 });
 
 client.on("reconnect", () => {
@@ -47,6 +57,12 @@ client.on("message", async (topic, mqttMessage) => {
   console.log(topic);
 
   const payload = mqttMessage.toString();
+
+  if (topic === pingTopic) {
+    // publish an empty echo response back to monitoring service
+    client.publish(`${echoTopic}`, "");
+    return;
+  }
 
   try {
     JSON.parse(payload);
