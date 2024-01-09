@@ -60,6 +60,8 @@ const MQTT_SUB_TOPICS = {
 const MONITOR_PUB = 'dentago/monitor/availability/echo';
 
 
+//================================= Helper functions =================================//
+
 // Order Timelots by Clinic in key-value pairs (unused)
 function orderByClinic(timeslots) {
     const timeslotsByClinic = {};
@@ -73,6 +75,48 @@ function orderByClinic(timeslots) {
     });
     return timeslotsByClinic;
 };
+
+// function that returns timeslots filtered according to patient preferences
+async function generateRecommendations(preferences, timeslots) {
+    try {
+        // extract non-empty days from preferences object
+        const days = Object.keys(preferences).filter(
+            (day) =>
+            Array.isArray(preferences[day]) &&  // check that attribute is an array of times
+            preferences[day].length > 0         // check that day contains > 0 preferred hours
+        );
+
+        // filter timeslots aaccording to patient preferences
+        const recommendedTimeslots = timeslots.filter((timeslot) => {
+
+            // parse name of day
+            const day = dayFormatter.format(timeslot.startTime);
+            
+            // check if the timeslot's day is present in patient preferences
+            if (days.includes(day)) {
+                // if so, extract the patient's preferred times
+                const preferredTimes = preferences[day];
+        
+                // extract hour from timeslot's startTime 
+                const startHour = new Date(swedishTimeFormatter.format(timeslot.startTime)).getHours();
+                
+                // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
+                return preferredTimes.includes(startHour);
+                
+            } else {
+                // if the timeslot's day is not present in patient preferences, exclude it
+                return false;
+            }
+        });
+
+        // return array of timeslot objects
+        return recommendedTimeslots;
+    
+    } catch(err) {
+        // log error
+        console.log(err.message);
+    }
+}
 
 
 //=================================== MQTT Event-Listeners ===================================//
@@ -266,45 +310,3 @@ process.on('SIGINT', () => {
         process.exit(0);
     });
 });
-
-// function that returns timeslots filtered according to patient preferences
-async function generateRecommendations(preferences, timeslots) {
-    try {
-        // extract non-empty days from preferences object
-        const days = Object.keys(preferences).filter(
-            (day) =>
-            Array.isArray(preferences[day]) &&  // check that attribute is an array of times
-            preferences[day].length > 0         // check that day contains > 0 preferred hours
-        );
-
-        // filter timeslots aaccording to patient preferences
-        const recommendedTimeslots = timeslots.filter((timeslot) => {
-
-            // parse name of day
-            const day = dayFormatter.format(timeslot.startTime);
-            
-            // check if the timeslot's day is present in patient preferences
-            if (days.includes(day)) {
-                // if so, extract the patient's preferred times
-                const preferredTimes = preferences[day];
-        
-                // extract hour from timeslot's startTime 
-                const startHour = new Date(swedishTimeFormatter.format(timeslot.startTime)).getHours();
-                
-                // include/exclude timeslot depending on whether start time corresponds to patient's preferred time
-                return preferredTimes.includes(startHour);
-                
-            } else {
-                // if the timeslot's day is not present in patient preferences, exclude it
-                return false;
-            }
-        });
-
-        // return array of timeslot objects
-        return recommendedTimeslots;
-    
-    } catch(err) {
-        // log error
-        console.log(err.message);
-    }
-}
