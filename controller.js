@@ -8,7 +8,7 @@ require('dotenv').config();
 // generate jwt access token
 function generateAccessToken(user) {
     // serialize user objecct into jwt using secret key and set expiration time
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10s'});
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
 }
 
 // generate jwt refresh token
@@ -169,7 +169,7 @@ async function logout (message) {
         }
 
         // clear the refresh token
-        patient.refreshToken = "";
+        //patient.refreshToken = "";
         patient.save();
 
         // return success message
