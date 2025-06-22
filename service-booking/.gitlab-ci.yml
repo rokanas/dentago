@@ -1,0 +1,34 @@
+image: node:18-alpine
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - ./node_modules/
+
+stages:
+  - build
+  - test
+  #- deploy
+
+build:
+  stage: build
+  tags:
+    - docker
+  script:
+    - echo "Installing..." 
+    - npm install
+    - echo "All dependencies installed. Listing files:"
+    - ls
+
+test:
+  stage: test
+  tags:
+    - docker
+  script:
+  - echo npm run ci-test 
+
+#deploy:
+  #stage: deploy
+  #tags:
+    #- docker
+  #script:
