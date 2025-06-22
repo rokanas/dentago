@@ -1,0 +1,978 @@
+{
+	"info": {
+		"_postman_id": "b948a13c-0006-4138-a1fb-46be57e25631",
+		"name": "Dentago Patient API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29533952"
+	},
+	"item": [
+		{
+			"name": "Get all clinics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('id');\r",
+							"            pm.expect(item).to.have.property('name');\r",
+							"            pm.expect(item).to.have.property('address');\r",
+							"            pm.expect(item).to.have.property('location');\r",
+							"        \r",
+							"            // Check clinicLocation for the required attributes\r",
+							"            const locationObject = item.location;\r",
+							"            pm.expect(locationObject).to.have.property('lat');\r",
+							"            pm.expect(locationObject).to.have.property('lng');\r",
+							"        });\r",
+							"    \r",
+							"        // Set CLINIC collection variable with the id of the first item in the array\r",
+							"        const clinicID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", clinicID);\r",
+							"\r",
+							"    // If no clinics in the DB\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get specific clinic",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const clinicID = pm.collectionVariables.get(\"CLINIC_ID\");\r",
+							"\r",
+							"pm.test(\"Response to have correct status code\", function () {\r",
+							"    if (clinicID === undefined || clinicID.length != 24) {\r",
+							"        pm.response.to.have.status(400);\r",
+							"    } else if (clinicID === '000000000000000000000000') {\r",
+							"        pm.response.to.have.status(404);\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes\", function () {\r",
+							"\r",
+							"    if(pm.response.status === 200) {\r",
+							"        const responseData = pm.response.json();\r",
+							"\r",
+							"        pm.expect(responseData).to.have.property('_id');\r",
+							"        pm.expect(responseData).to.have.property('id');\r",
+							"        pm.expect(responseData).to.have.property('name');\r",
+							"        pm.expect(responseData).to.have.property('address');\r",
+							"        pm.expect(responseData).to.have.property('location');\r",
+							"        \r",
+							"        // Check clinicLocation for the required attributes\r",
+							"        const locationObject = responseData.location;\r",
+							"        pm.expect(locationObject).to.have.property('lat');\r",
+							"        pm.expect(locationObject).to.have.property('lng');\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Reset the CLINIC collection variable\r",
+							"pm.collectionVariables.unset(\"CLINIC_ID\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/{{CLINIC_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						"{{CLINIC_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all dentists",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('id');\r",
+							"            pm.expect(item).to.have.property('name');\r",
+							"            pm.expect(item).to.have.property('password');\r",
+							"            pm.expect(item).to.have.property('clinic');\r",
+							"        });\r",
+							"\r",
+							"        // Set dentist id variable with the id of the first item in the array\r",
+							"        const dentistID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"DENTIST_ID\", dentistID);\r",
+							"    \r",
+							"    // If no dentists in the DB, set dentist ID variable to 0x12\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"DENTIST_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/dentists/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"dentists",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get specific dentist",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const dentistID = pm.collectionVariables.get(\"DENTIST_ID\");\r",
+							"\r",
+							"pm.test(\"Response to have correct status code\", function () {\r",
+							"    if (dentistID === undefined || dentistID.length != 24) {\r",
+							"        pm.response.to.have.status(400);\r",
+							"    } else if (dentistID === '000000000000000000000000') {\r",
+							"        pm.response.to.have.status(404);\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    if (pm.response.status === 200) {\r",
+							"        pm.expect(responseData).to.have.property('_id');\r",
+							"        pm.expect(responseData).to.have.property('id');\r",
+							"        pm.expect(responseData).to.have.property('name');\r",
+							"        pm.expect(responseData).to.have.property('clinic');\r",
+							"    }\r",
+							"});\r",
+							"\r",
+							"// Reset the CLINIC collection variable\r",
+							"pm.collectionVariables.unset(\"DENTIST_ID\");\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/dentists/{{DENTIST_ID}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"dentists",
+						"{{DENTIST_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get patient timeslots",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Timeslots');\r",
+							"\r",
+							"    const timeslots = responseData.Timeslots;\r",
+							"\r",
+							"    pm.expect(timeslots).to.be.an('array');\r",
+							"\r",
+							"    if(timeslots.length !== 0) {\r",
+							"        timeslots.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('clinic');\r",
+							"            pm.expect(item).to.have.property('dentist');\r",
+							"            pm.expect(item).to.have.property('patient');\r",
+							"            pm.expect(item).to.have.property('startTime');\r",
+							"            pm.expect(item).to.have.property('endTime');\r",
+							"        })\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/patients/659c4e5997edd2fb2978df02/timeslots",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"patients",
+						"659c4e5997edd2fb2978df02",
+						"timeslots"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Save patient preferences",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response to have correct status code\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Message');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Monday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Tuesday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Wednesday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Thursday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Friday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Saturday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],\r\n    \"Sunday\": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/patients/659c4e5997edd2fb2978df02/preferences",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"patients",
+						"659c4e5997edd2fb2978df02",
+						"preferences"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Patch patient info",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Message');\r",
+							"    pm.expect(responseData).to.have.property('Patient');\r",
+							"\r",
+							"    const patient = responseData.Patient;\r",
+							"\r",
+							"    pm.expect(patient).to.be.an('object');\r",
+							"\r",
+							"    pm.expect(patient).to.have.property('_id');\r",
+							"    pm.expect(patient).to.have.property('id');\r",
+							"    pm.expect(patient).to.have.property('firstName');\r",
+							"    pm.expect(patient).to.have.property('lastName');\r",
+							"    pm.expect(patient).to.have.property('password');\r",
+							"    pm.expect(patient).to.have.property('refreshToken');\r",
+							"    pm.expect(patient).to.have.property('notifications');\r",
+							"    pm.expect(patient).to.have.property('schedulePreferences');\r",
+							"        \r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstName\": \"Duke\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/patients/659c4e5997edd2fb2978df02",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"patients",
+						"659c4e5997edd2fb2978df02"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all clinics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('id');\r",
+							"            pm.expect(item).to.have.property('name');\r",
+							"            pm.expect(item).to.have.property('address');\r",
+							"            pm.expect(item).to.have.property('location');\r",
+							"        \r",
+							"            // Check clinicLocation for the required attributes\r",
+							"            const locationObject = item.location;\r",
+							"            pm.expect(locationObject).to.have.property('lat');\r",
+							"            pm.expect(locationObject).to.have.property('lng');\r",
+							"        });\r",
+							"    \r",
+							"        // Set CLINIC collection variable with the id of the first item in the array\r",
+							"        const clinicID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", clinicID);\r",
+							"\r",
+							"    // If no clinics in the DB\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get timeslots (timerange)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Message');\r",
+							"    pm.expect(responseData).to.have.property('Timeslots');\r",
+							"\r",
+							"    const timeslots = responseData.Timeslots;\r",
+							"\r",
+							"    pm.expect(timeslots).to.be.an('array');\r",
+							"\r",
+							"    if(timeslots.length !== 0) {\r",
+							"        timeslots.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('clinic');\r",
+							"            pm.expect(item).to.have.property('dentist');\r",
+							"            pm.expect(item).to.have.property('patient');\r",
+							"            pm.expect(item).to.have.property('startTime');\r",
+							"            pm.expect(item).to.have.property('endTime');\r",
+							"        })\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/clinics/{{CLINIC_ID}}/timeslots?startDate=2023-12-26&endDate=2024-12-27",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"clinics",
+						"{{CLINIC_ID}}",
+						"timeslots"
+					],
+					"query": [
+						{
+							"key": "startDate",
+							"value": "2023-12-26"
+						},
+						{
+							"key": "endDate",
+							"value": "2024-12-27"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all clinics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('id');\r",
+							"            pm.expect(item).to.have.property('name');\r",
+							"            pm.expect(item).to.have.property('address');\r",
+							"            pm.expect(item).to.have.property('location');\r",
+							"        \r",
+							"            // Check clinicLocation for the required attributes\r",
+							"            const locationObject = item.location;\r",
+							"            pm.expect(locationObject).to.have.property('lat');\r",
+							"            pm.expect(locationObject).to.have.property('lng');\r",
+							"        });\r",
+							"    \r",
+							"        // Set CLINIC collection variable with the id of the first item in the array\r",
+							"        const clinicID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", clinicID);\r",
+							"\r",
+							"    // If no clinics in the DB\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get timeslots (no timerange)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Message');\r",
+							"    pm.expect(responseData).to.have.property('Timeslots');\r",
+							"\r",
+							"    const timeslots = responseData.Timeslots;\r",
+							"\r",
+							"    pm.expect(timeslots).to.be.an('array');\r",
+							"\r",
+							"    if(timeslots.length !== 0) {\r",
+							"        timeslots.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('clinic');\r",
+							"            pm.expect(item).to.have.property('dentist');\r",
+							"            pm.expect(item).to.have.property('patient');\r",
+							"            pm.expect(item).to.have.property('startTime');\r",
+							"            pm.expect(item).to.have.property('endTime');\r",
+							"        })\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/api/clinics/{{CLINIC_ID}}/timeslots",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"clinics",
+						"{{CLINIC_ID}}",
+						"timeslots"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all clinics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    // Check if responseData is an array\r",
+							"    pm.expect(responseData).to.be.an('array');\r",
+							"\r",
+							"    if(responseData.length !== 0) {\r",
+							"        // Check each object in the array for the required attributes\r",
+							"        responseData.forEach(function (item) {\r",
+							"            pm.expect(item).to.have.property('_id');\r",
+							"            pm.expect(item).to.have.property('id');\r",
+							"            pm.expect(item).to.have.property('name');\r",
+							"            pm.expect(item).to.have.property('address');\r",
+							"            pm.expect(item).to.have.property('location');\r",
+							"        \r",
+							"            // Check clinicLocation for the required attributes\r",
+							"            const locationObject = item.location;\r",
+							"            pm.expect(locationObject).to.have.property('lat');\r",
+							"            pm.expect(locationObject).to.have.property('lng');\r",
+							"        });\r",
+							"    \r",
+							"        // Set CLINIC collection variable with the id of the first item in the array\r",
+							"        const clinicID = responseData[0]._id;\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", clinicID);\r",
+							"\r",
+							"    // If no clinics in the DB\r",
+							"    } else {\r",
+							"        pm.collectionVariables.set(\"CLINIC_ID\", '000000000000000000000000');\r",
+							"    }\r",
+							"\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ4NTIzMn0.Dey6othaUQSl-taCAS4ifez4DYqL4Ctz-hTdwl2fLwA",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{HOST}}/api/clinics/",
+					"host": [
+						"{{HOST}}"
+					],
+					"path": [
+						"api",
+						"clinics",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Book appointment",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response to be json\", function () {\r",
+							"    pm.response.to.be.json;\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response to have all attributes in each object\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"\r",
+							"    pm.expect(responseData).to.have.property('Message');\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjExMSIsImlhdCI6MTcwMjQ2MDQyMH0.hgSRlSjVD4RcbBGEuqPATi-zTzEPoFQOwKyb1r5DZIE",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"instruction\": \"BOOK\",\r\n    \"patient_id\": \"6585eb70af42534aebff70f3\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/clinics/{{CLINIC_ID}}/timeslots/659c31cda31820e99ca3a10e",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"clinics",
+						"{{CLINIC_ID}}",
+						"timeslots",
+						"659c31cda31820e99ca3a10e"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "HOST",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "NUM_DENTISTS",
+			"value": ""
+		},
+		{
+			"key": "CLINIC_ID",
+			"value": ""
+		}
+	]
+}
